@@ -8,9 +8,11 @@ import {
   useMotionTemplate,
 } from 'framer-motion';
 
+/* ================= 1. CONSTANTS & ASSETS ================= */
 const HERO_IMG = '/pic1.png';
 const LOGO = '/logo.png';
 
+// Images extension updated to .png as requested
 const SIG_IMG = '/Signature.png';
 const ALI_IMG = '/Alibaug.png';
 const DEL_IMG = '/Delhi.png';
@@ -38,7 +40,7 @@ const EMAIL = 'info@propertygallery.com';
 const YOUTUBE = 'Property Gallery Vlogs';
 const YOUTUBE_URL = 'https://www.youtube.com/@PropertyGalleryVlogs';
 const ABOUT_TEXT =
-  "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua";
+  "Add your founder story here. Share why you started Property Gallery, what you believe about real estate, and how you help buyers find the right home. Keep it to a few short lines so it stays easy to read.";
 
 const inOut = [0.76, 0, 0.24, 1];
 const outExpo = [0.16, 1, 0.3, 1];
@@ -62,6 +64,7 @@ const PILL = 'inset(39% 37.5% 39% 37.5% round 200px)';
 const MID = 'inset(3% 1.5% 3% 1.5% round 28px)';
 const FULL = 'inset(0% 0% 0% 0% round 0px)';
 
+/* ================= 2. HELPER HOOKS & SUB-COMPONENTS ================= */
 
 function useIsMobile() {
   const [m, setM] = useState(typeof window !== 'undefined' && window.innerWidth < 800);
@@ -191,6 +194,7 @@ function ReelScreen() {
   );
 }
 
+/* ---------- iPhone status bar (time + signal/wifi/battery) ---------- */
 function StatusBar() {
   return (
     <div
@@ -224,6 +228,13 @@ function StatusBar() {
   );
 }
 
+/* ---------- phone constants (module level: minified build me safe) ---------- */
+const PHONE_RADIUS = '17% / 7.9%'; // iPhone jaisa squircle corner
+const PHONE_TITANIUM =
+  'linear-gradient(145deg, #f6b378 0%, #d2692a 20%, #8f3f12 46%, #de7630 74%, #fbc08a 100%)';
+const PHONE_DEPTH = [0, 1, 2, 3, 4, 5, 6, 7];
+
+/* ---------- iPhone Pro style phone: titanium frame, slight side angle, glass reflection ---------- */
 function Phone({ small }) {
   const [i, setI] = useState(0);
   useEffect(() => {
@@ -231,12 +242,11 @@ function Phone({ small }) {
     return () => clearInterval(t);
   }, []);
 
+  // Side angle: values yahan se kam/zyada kar sakte ho
   const tilt = small
     ? 'perspective(1200px) rotateY(-10deg) rotateX(3deg)'
     : 'perspective(1600px) rotateY(-16deg) rotateX(5deg) rotateZ(1deg)';
 
-  const titanium =
-    'linear-gradient(145deg, #9a968f 0%, #45433f 18%, #1d1d1f 46%, #4d4b47 74%, #a6a29a 100%)';
 
   const sideBtn = (side, top, height) => ({
     position: 'absolute',
@@ -245,7 +255,7 @@ function Phone({ small }) {
     height,
     width: '0.34em',
     borderRadius: '0.2em',
-    background: titanium,
+    background: PHONE_TITANIUM,
     transform: 'translateZ(-3px)',
   });
 
@@ -265,6 +275,7 @@ function Phone({ small }) {
           transformStyle: 'preserve-3d',
         }}
       >
+        {/* ground shadow */}
         <div
           style={{
             position: 'absolute', left: '10%', right: '-8%', bottom: '-3%', height: '7%',
@@ -273,29 +284,33 @@ function Phone({ small }) {
           }}
         />
 
-        {Array.from({ length: 8 }).map((_, k) => (
+        {/* body thickness (side edge) */}
+        {PHONE_DEPTH.map((k) => (
           <div
             key={k}
             style={{
-              position: 'absolute', inset: 0, borderRadius: R,
-              background: k % 2 ? '#2b2a28' : '#3d3b37',
+              position: 'absolute', inset: 0, borderRadius: PHONE_RADIUS,
+              background: k % 2 ? '#7a3510' : '#9a4817',
               transform: `translateZ(${-(k + 1) * 1.2}px)`,
             }}
           />
         ))}
 
+        {/* side buttons: left = action + volume, right = power + camera control */}
         <div style={sideBtn('left', '13%', '3.2%')} />
         <div style={sideBtn('left', '19%', '6.5%')} />
         <div style={sideBtn('left', '27%', '6.5%')} />
         <div style={sideBtn('right', '22%', '10.5%')} />
         <div style={sideBtn('right', '60%', '7.5%')} />
 
+        {/* titanium frame */}
         <div
           style={{
-            position: 'absolute', inset: 0, boxSizing: 'border-box', borderRadius: R,
-            background: titanium, padding: '0.5em',
+            position: 'absolute', inset: 0, boxSizing: 'border-box', borderRadius: PHONE_RADIUS,
+            background: PHONE_TITANIUM, padding: '0.5em',
           }}
         >
+          {/* black bezel */}
           <div
             style={{
               width: '100%', height: '100%', boxSizing: 'border-box', borderRadius: '16.2% / 7.5%',
@@ -324,6 +339,7 @@ function Phone({ small }) {
 
               <StatusBar />
 
+              {/* Dynamic Island */}
               <div
                 style={{
                   position: 'absolute', top: '0.85em', left: '50%', transform: 'translateX(-50%)',
@@ -331,6 +347,7 @@ function Phone({ small }) {
                 }}
               />
 
+              {/* home indicator */}
               <div
                 style={{
                   position: 'absolute', bottom: '0.55em', left: '50%', transform: 'translateX(-50%)',
@@ -338,6 +355,8 @@ function Phone({ small }) {
                   zIndex: 4, pointerEvents: 'none',
                 }}
               />
+
+              {/* glass reflection (static) */}
               <div
                 style={{
                   position: 'absolute', inset: 0, zIndex: 6, pointerEvents: 'none',
@@ -345,11 +364,25 @@ function Phone({ small }) {
                     'linear-gradient(118deg, rgba(255,255,255,.22) 0%, rgba(255,255,255,.08) 20%, rgba(255,255,255,0) 38%, rgba(255,255,255,0) 72%, rgba(255,255,255,.06) 100%)',
                 }}
               />
+
+              {/* glass reflection (slides across every few seconds) */}
+              <motion.div
+                animate={{ x: ['-140%', '340%'] }}
+                transition={{ duration: 2.4, ease: inOut, repeat: Infinity, repeatDelay: 3.6 }}
+                style={{
+                  position: 'absolute', top: '-20%', bottom: '-20%', left: 0, width: '42%',
+                  rotate: 14, zIndex: 7, pointerEvents: 'none',
+                  background:
+                    'linear-gradient(100deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.2) 50%, rgba(255,255,255,0) 100%)',
+                }}
+              />
             </div>
           </div>
+
+          {/* frame highlight (metal shine on the edge) */}
           <div
             style={{
-              position: 'absolute', inset: 0, borderRadius: R, pointerEvents: 'none',
+              position: 'absolute', inset: 0, borderRadius: PHONE_RADIUS, pointerEvents: 'none',
               boxShadow:
                 'inset 0 0 0 0.07em rgba(255,255,255,.4), inset 0 0 0.5em rgba(255,255,255,.14), inset 0.2em 0.2em 0.5em rgba(255,255,255,.18)',
             }}
@@ -373,6 +406,7 @@ function Rise({ style, children }) {
   return <div style={{ minWidth: 0, ...style }}>{children}</div>;
 }
 
+/* ================= FOOTER ================= */
 const FOOTER_DISCLAIMER =
   'Images and project details are for illustration only and may change without notice. Please confirm availability and registration details with us before booking.';
 const RERA_LINE = 'ABCD1234';      
@@ -445,6 +479,7 @@ function Footer({ isMobile, footerRef, onProjects, onAbout }) {
         padding: '0 6vw 28px',
       }}
     >
+      {/* subtle royal dotted pattern */}
       <div
         style={{
           position: 'absolute',
@@ -454,6 +489,7 @@ function Footer({ isMobile, footerRef, onProjects, onAbout }) {
           backgroundSize: '26px 26px',
         }}
       />
+      {/* glowing gold top edge */}
       <div
         style={{
           position: 'absolute',
@@ -466,6 +502,7 @@ function Footer({ isMobile, footerRef, onProjects, onAbout }) {
       />
 
       <div style={{ position: 'relative', maxWidth: 1280, margin: '0 auto' }}>
+        {/* ---- Columns ---- */}
         <div
           style={{
             display: 'grid',
@@ -551,6 +588,7 @@ function Footer({ isMobile, footerRef, onProjects, onAbout }) {
 
         <GoldLine />
 
+        {/* ---- Bottom bar ---- */}
         <div
           style={{
             display: 'flex',
@@ -609,6 +647,8 @@ function Footer({ isMobile, footerRef, onProjects, onAbout }) {
     </footer>
   );
 }
+
+/* ================= 3. MAIN APP COMPONENT ================= */
 
 export default function App() {
   const isMobile = useIsMobile();
@@ -772,88 +812,13 @@ export default function App() {
   return (
     <>
       <style>{`
-        *, *::before, *::after { box-sizing: border-box; }
-        html {
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-          -webkit-text-size-adjust: 100%;
-          text-size-adjust: 100%;
-          scroll-behavior: smooth;
-        }
+        html { scrollbar-width: none; -ms-overflow-style: none; }
         html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; width: 0; height: 0; }
-        html, body, #root { width: 100%; min-height: 100%; }
-        body { margin: 0; min-width: 320px; overflow-x: hidden; }
-        img, svg, video { max-width: 100%; }
-        button, a { -webkit-tap-highlight-color: transparent; }
         .social-link:hover { opacity: 0.75; transform: translateX(4px); transition: all 0.2s ease; }
-
-        /* Use the dynamic viewport on modern mobile browsers (Safari/Chrome). */
-        .pg-hero { height: 100vh !important; height: 100svh !important; }
-        @supports (height: 100dvh) {
-          .pg-hero { height: 100dvh !important; }
-        }
-
-        @media (max-width: 767px) {
-          .pg-header { padding-left: 4vw !important; padding-right: 4vw !important; }
-          .pg-header nav {
-            gap: clamp(8px, 2.2vw, 14px) !important;
-            font-size: clamp(11px, 3.1vw, 13px) !important;
-            white-space: nowrap;
-          }
-          .pg-header nav span { flex-shrink: 0; }
-          .pg-hero { min-height: 540px; }
-          .pg-statement { height: 280svh !important; }
-          .pg-about-grid {
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: stretch !important;
-            justify-content: flex-start !important;
-            gap: 22px !important;
-            overflow-x: hidden !important;
-            overflow-y: auto !important;
-            overscroll-behavior: contain;
-            -webkit-overflow-scrolling: touch;
-            padding: max(86px, calc(env(safe-area-inset-top) + 76px)) 6vw
-                     max(30px, env(safe-area-inset-bottom)) !important;
-          }
-          .pg-about-grid > div:first-child { width: 100%; min-width: 0; }
-          .pg-about-grid p { overflow-wrap: anywhere; }
-          .pg-about-grid a { font-size: clamp(11px, 3.2vw, 13px) !important; }
-          .pg-about-grid > div:last-child { align-self: center; }
-          .pg-projects { padding: 72px 5vw 64px !important; }
-          .pg-projects > div:first-child { margin-bottom: 42px !important; }
-          .pg-projects > div:first-child span { font-size: 12px !important; }
-          .pg-project-cards {
-            gap: 5vh !important;
-            padding-bottom: 5vh !important;
-          }
-          .pg-project-cards > div { padding: 22px !important; }
-          .pg-project-preview {
-            position: relative !important;
-            top: auto !important;
-            height: clamp(250px, 65vw, 360px) !important;
-            min-height: 250px;
-          }
-        }
-
-        @media (min-width: 768px) and (max-width: 1024px) {
-          .pg-header { padding-left: 3vw !important; padding-right: 3vw !important; }
-          .pg-header nav { gap: clamp(14px, 2vw, 22px) !important; }
-          .pg-projects { padding-left: 5vw !important; padding-right: 5vw !important; }
-          .pg-project-cards { gap: 22vh !important; }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          *, *::before, *::after {
-            scroll-behavior: auto !important;
-            animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: 0.01ms !important;
-          }
-        }
       `}</style>
 
-      <header className="pg-header"
+      {/* Header Navigation */}
+      <header
         style={{
           position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
           height: isMobile ? 68 : 'clamp(76px, 10vh, 108px)',
@@ -908,7 +873,8 @@ export default function App() {
         </motion.nav>
       </header>
 
-      <div className="pg-hero" style={{ position: 'sticky', top: 0, height: '100vh', zIndex: 0, overflow: 'hidden', background: BG }}>
+      {/* Hero Section & Cinematic Split Intro */}
+      <div style={{ position: 'sticky', top: 0, height: '100vh', zIndex: 0, overflow: 'hidden', background: BG }}>
         <motion.div
           style={{
             position: 'absolute', inset: 0, background: BG,
@@ -985,7 +951,8 @@ export default function App() {
         </motion.div>
       </div>
 
-      <section className="pg-statement" ref={stmtRef} style={{ position: 'relative', zIndex: 1, height: isMobile ? '280vh' : '300vh', background: BG }}>
+      {/* Statement & About Section with Fixed Mailto and .png Paths */}
+      <section ref={stmtRef} style={{ position: 'relative', zIndex: 1, height: isMobile ? '280vh' : '300vh', background: BG }}>
         <div style={{ position: 'sticky', top: 0, height: '100vh', overflow: 'hidden', background: BG }}>
           <motion.div
             style={{
@@ -1015,14 +982,11 @@ export default function App() {
             }}
           >
             <motion.div
-              className="pg-about-grid"
               style={{
                 position: 'absolute', inset: 0, display: 'grid',
                 gridTemplateColumns: isMobile ? '1fr' : '1.2fr 0.8fr',
-                alignItems: isMobile ? 'start' : 'center', gap: isMobile ? '2vh' : '3vw',
+                alignItems: 'center', gap: isMobile ? '2vh' : '3vw',
                 padding: isMobile ? '11vh 6vw 3vh' : '11vh 6vw 4vh 7vw',
-                overflowY: isMobile ? 'auto' : 'visible',
-                WebkitOverflowScrolling: isMobile ? 'touch' : 'auto',
               }}
             >
               <div style={{ minWidth: 0 }}>
@@ -1065,7 +1029,7 @@ export default function App() {
                     </a>
                   </Rise>
 
-                  {/* Gmail Link */}
+                  {/* Gmail Link (Fixed mailto) */}
                   <Rise progress={sp} from={0.840} y={30}>
                     <a href={`mailto:${EMAIL}`} className="social-link" style={link}>
                       <Icon name="em" size={iconSize} /><span>{EMAIL}</span>
@@ -1080,7 +1044,8 @@ export default function App() {
         </div>
       </section>
 
-      <section className="pg-projects" ref={projectsRef} style={{ position: 'relative', zIndex: 10, background: BG, color: CREAM, padding: '10vh 4vw' }}>
+      {/* Our Projects Section */}
+      <section ref={projectsRef} style={{ position: 'relative', zIndex: 10, background: BG, color: CREAM, padding: '10vh 4vw' }}>
         <div style={{ textAlign: 'center', marginBottom: '8vh' }}>
           <span style={{ fontSize: '17px', letterSpacing: '0.3em', textTransform: 'uppercase', color: GOLD }}>Curated Portfolio</span>
           <h2 style={{ fontFamily: serif, fontSize: isMobile ? '32px' : '52px', marginTop: '1vh' }}>Our Projects</h2>
@@ -1088,7 +1053,7 @@ export default function App() {
 
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '4vw', alignItems: 'start', maxWidth: '1400px', margin: '0 auto' }}>
 
-          <div className="pg-project-cards" style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '5vh' : '40vh', paddingBottom: isMobile ? '5vh' : '20vh' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '40vh', paddingBottom: '20vh' }}>
             {projectsLocations.map((loc, idx) => (
               <motion.div
                 key={idx}
@@ -1124,7 +1089,7 @@ export default function App() {
             ))}
           </div>
 
-          <div className="pg-project-preview" style={{ position: isMobile ? 'relative' : 'sticky', top: '15vh', height: isMobile ? '300px' : '75vh', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ position: 'sticky', top: '15vh', height: isMobile ? '350px' : '75vh', display: 'flex', flexDirection: 'column' }}>
             <div style={{ flex: 1, borderRadius: '20px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.15)', position: 'relative', background: '#000' }}>
               <AnimatePresence mode="wait">
                 <motion.img
@@ -1148,6 +1113,7 @@ export default function App() {
         </div>
       </section>
 
+      {/* Royal Footer */}
       <Footer isMobile={isMobile} footerRef={footerRef} onProjects={goProjects} onAbout={goAbout} />
     </>
   );
