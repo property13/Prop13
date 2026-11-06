@@ -29,7 +29,6 @@ const sans = 'Inter, "Helvetica Neue", Arial, sans-serif';
 const mont = '"Montserrat", Inter, "Helvetica Neue", Arial, sans-serif';
 const script = '"Kaushan Script", "Brush Script MT", cursive';
 
-// "svh" based height helper (fixes the phone address-bar jump). V(100) = full screen height
 const V = (n) => `calc(var(--vh) * ${n})`;
 
 const STATEMENT_FIRST = 'Real estate';
@@ -47,7 +46,6 @@ const ABOUT_TEXT =
 
 const WA_URL = `https://wa.me/${WHATSAPP.replace(/[^0-9]/g, '')}`;
 
-// One list used by About (links) and Footer (icons)
 const CONTACTS = [
   { icon: 'ig', name: 'Instagram', label: INSTAGRAM, short: INSTAGRAM, href: `https://instagram.com/${INSTAGRAM}` },
   { icon: 'in', name: 'LinkedIn', label: LINKEDIN, short: 'LinkedIn', href: `https://${LINKEDIN}` },
@@ -58,10 +56,9 @@ const CONTACTS = [
 
 const FOOTER_DISCLAIMER =
   'Images and project details are for illustration only and may change without notice. Please confirm availability and registration details with us before booking.';
-// const RERA_LINE = 'ABCD1234';
 const FOOTER_ADDRESS = 'M4/32, Mushedpur, DLF Phase 2, Sector 25, Gurugram, Shahpur, Haryana 122002';
 const MAPS_URL = 'https://maps.app.goo.gl/LFTdNsrsJKLbcfP4A';
-/* ---- animation settings ---- */
+
 const inOut = [0.76, 0, 0.24, 1];
 const outExpo = [0.16, 1, 0.3, 1];
 const outSoft = [0.22, 1, 0.36, 1];
@@ -75,10 +72,9 @@ const IMG_DUR = 2.0;
 const IMG_ZOOM_DUR = 2.6;
 const UNLOCK_AFTER = 3.6;
 
-// Hero words
-const FONT_VW = 7; // desktop word size
-const FONT_VW_MOBILE = 9.4; // phone word size
-const START_LEFT = 18.1; // desktop (tuned by eye)
+const FONT_VW = 7;
+const FONT_VW_MOBILE = 9.4;
+const START_LEFT = 18.1;
 const START_RIGHT = 53.8;
 const NAV_FONT = 17;
 const NAV_GAP = 28;
@@ -88,8 +84,6 @@ const MID_D = 'inset(3% 1.5% 3% 1.5% round 28px)';
 const PILL_M = 'inset(40% 22% 40% 22% round 120px)';
 const MID_M = 'inset(2% 3% 2% 3% round 24px)';
 const FULL = 'inset(0% 0% 0% 0% round 0px)';
-
-/* ================= 2. HELPERS & SMALL COMPONENTS ================= */
 
 function useIsMobile() {
   const query = '(max-width: 799px)';
@@ -155,7 +149,6 @@ function Icon({ name, size = 34 }) {
   );
 }
 
-/* ---------- phone mockup ---------- */
 const fill = { position: 'absolute', inset: 0 };
 
 function ProfileScreen() {
@@ -211,7 +204,7 @@ function ReelScreen() {
         transition={{ duration: 3.4, ease: 'linear' }}
         style={{ ...fill, backgroundImage: `url(${HERO_IMG})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
       />
-      <div style={{ ...fill, background: 'linear-gradient(to bottom, rgba(0,0,0,.35), transparent 30%, transparent 55%, rgba(0,0,0,.75))' }} />
+      <div style={{ ...fill, background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.35), transparent 30%, transparent 55%, rgba(0,0,0,.75))' }} />
       <div style={{ position: 'absolute', top: '3.5em', left: '0.8em', right: '0.8em', height: 3, background: 'rgba(255,255,255,.3)', borderRadius: 2 }}>
         <motion.div initial={{ width: '0%' }} animate={{ width: '100%' }} transition={{ duration: 3.1, ease: 'linear' }} style={{ height: '100%', background: '#fff', borderRadius: 2 }} />
       </div>
@@ -259,11 +252,10 @@ function StatusBar() {
 const PHONE_RADIUS = '17% / 7.9%';
 const PHONE_TITANIUM = 'linear-gradient(145deg, #f6b378 0%, #d2692a 20%, #8f3f12 46%, #de7630 74%, #fbc08a 100%)';
 
-/* ---------- premium phone + social badges ---------- */
-const PHONE_TURN_DEG = 30; // 3D turn when the About page arrives (0 = off)
-const IG_DELAY = 0.1;      // Instagram badge start delay (seconds)
-const YT_DELAY = 0.7;      // YouTube badge starts a bit later
-const BADGE_DUR = 1.8;     // bigger = slower
+const PHONE_TURN_DEG = 30; 
+const IG_DELAY = 0.1;      
+const YT_DELAY = 0.7;      
+const BADGE_DUR = 1.8;     
 
 function CountUp({ to, run, suffix = '' }) {
   const mv = useMotionValue(0);
@@ -311,15 +303,6 @@ function Badge({ icon, label, to, suffix, caption, show, small, from, delay = 0,
             '0 18px 40px rgba(10,12,18,.38), 0 0 0 4px rgba(244,211,94,.06), inset 0 1px 0 rgba(255,255,255,.1)',
         }}
       >
-        {/* gold sheen sweeping across the card */}
-        <motion.div
-          animate={show ? { x: ['-130%', '330%'] } : { x: '-130%' }}
-          transition={{ duration: 2.2, ease: inOut, repeat: Infinity, repeatDelay: 4.5, delay: delay + 2.4 }}
-          style={{
-            position: 'absolute', top: '-30%', bottom: '-30%', left: 0, width: '40%', rotate: 14, pointerEvents: 'none',
-            background: 'linear-gradient(100deg, rgba(244,211,94,0), rgba(244,211,94,.22), rgba(244,211,94,0))',
-          }}
-        />
         <div
           style={{
             width: small ? 30 : 42, height: small ? 30 : 42, borderRadius: '50%', flex: 'none',
@@ -353,7 +336,6 @@ function Phone({ small, progress }) {
     return () => clearInterval(t);
   }, []);
 
-  // badges appear when the About page has arrived, and hide again if you scroll back up
   useEffect(() => {
     const unsub = progress.on('change', (v) =>
       setShow((prev) => (v > 0.72 ? true : v < 0.6 ? false : prev))
@@ -361,7 +343,6 @@ function Phone({ small, progress }) {
     return unsub;
   }, [progress]);
 
-  // 3D turn: phone rotates from the side to the front as the page arrives
   const deg = PHONE_TURN_DEG * (small ? 0.75 : 1);
   const rotY = useTransform(progress, [0.6, 0.82], [-deg, 0]);
   const rotX = useTransform(progress, [0.6, 0.82], [deg * 0.18, 0]);
@@ -382,18 +363,18 @@ function Phone({ small, progress }) {
       transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
       style={{ position: 'relative', justifySelf: 'center' }}
     >
-      {/* Instagram: slides out from behind the phone to the right (top-right) */}
+      {/* Instagram Badge: Shifted upper and sliding in from right to left (from: 150) */}
       <Badge
         icon="ig" label="Instagram" to={169} suffix="k" caption="Followers"
         show={show} small={small} from={small ? -70 : -150} delay={IG_DELAY}
-        style={{ top: small ? '12%' : '16%', left: 'calc(100% - 10px)', zIndex: 1 }}
+        style={{ top: small ? '6%' : '8%', left: 'calc(100% - 40px)', zIndex: 3 }}
       />
 
-      {/* YouTube: slides in from the left and stays at the bottom-left */}
+      {/* YouTube Badge: Bottom-left sliding from left to right */}
       <Badge
         icon="yt" label="YouTube" to={128} suffix="k+" caption="Subscribers"
         show={show} small={small} from={small ? -60 : -120} delay={YT_DELAY}
-        style={{ bottom: small ? '14%' : '18%', right: 'calc(100% - 10px)', zIndex: 3 }}
+        style={{ bottom: small ? '14%' : '18%', right: 'calc(100% - 40px)', zIndex: 3 }}
       />
 
       <motion.div
@@ -415,12 +396,11 @@ function Phone({ small, progress }) {
           <div
             style={{
               position: 'absolute', left: '10%', right: '-8%', bottom: '-3%', height: '7%',
-              borderRadius: '50%', background: 'rgba(20,22,28,.45)', filter: 'blur(16px)', pointerEvents: 'none',
+              borderRadius: '50%', background: '  rgba(206, 212, 231, 0.45)', filter: 'blur(16px)', pointerEvents: 'none',
               transform: 'translateZ(-30px)',
             }}
           />
 
-          {/* phone thickness (visible while it turns) */}
           {[1, 2, 3, 4, 5, 6].map((k) => (
             <div
               key={k}
@@ -456,10 +436,18 @@ function Phone({ small, progress }) {
 
                 <StatusBar />
 
-                {/* dynamic island */}
                 <div style={{ position: 'absolute', top: '0.85em', left: '50%', transform: 'translateX(-50%)', width: '31%', height: '2.05em', background: '#000', borderRadius: 999, zIndex: 5 }} />
-                {/* home indicator */}
                 <div style={{ position: 'absolute', bottom: '0.55em', left: '50%', transform: 'translateX(-50%)', width: '34%', height: '0.36em', borderRadius: 999, background: 'rgba(255,255,255,.85)', zIndex: 4, pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', inset: 0, zIndex: 6, pointerEvents: 'none', background: 'linear-gradient(118deg, rgba(255,255,255,.22) 0%, rgba(255,255,255,.08) 20%, rgba(255,255,255,0) 38%, rgba(255,255,255,0) 72%, rgba(255,255,255,.06) 100%)' }} />
+                <motion.div
+                  animate={{ x: ['-140%', '340%'] }}
+                  transition={{ duration: 2.4, ease: inOut, repeat: Infinity, repeatDelay: 3.6 }}
+                  style={{
+                    position: 'absolute', top: '-20%', bottom: '-20%', left: 0, width: '42%', rotate: 14,
+                    zIndex: 7, pointerEvents: 'none',
+                    background: 'linear-gradient(100deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.2) 50%, rgba(255,255,255,0) 100%)',
+                  }}
+                />
               </div>
             </div>
             <div style={{ position: 'absolute', inset: 0, borderRadius: PHONE_RADIUS, pointerEvents: 'none', boxShadow: 'inset 0 0 0 0.07em rgba(255,255,255,.4), inset 0 0 0.5em rgba(255,255,255,.14), inset 0.2em 0.2em 0.5em rgba(255,255,255,.18)' }} />
@@ -479,7 +467,6 @@ function RevealWord({ children, progress, range, first }) {
   );
 }
 
-/* ---------- footer ---------- */
 function GoldLine() {
   return (
     <motion.div
@@ -553,18 +540,19 @@ function Footer({ isMobile, footerRef, onProjects, onAbout }) {
             <h4 style={head}>✦ Get in touch</h4>
             <motion.a href={WA_URL} target="_blank" rel="noopener noreferrer" whileHover={hover} style={linkStyle}>{WHATSAPP}</motion.a>
             <motion.a href={`mailto:${EMAIL}`} whileHover={hover} style={linkStyle}>{EMAIL}</motion.a>
-{FOOTER_ADDRESS && (
-  <motion.a
-    href={MAPS_URL}
-    target="_blank"
-    rel="noopener noreferrer"
-    aria-label="Open office location in Google Maps"
-    whileHover={hover}
-    style={linkStyle}
-  >
-    {FOOTER_ADDRESS}
-  </motion.a>
-)}          </motion.div>
+            {FOOTER_ADDRESS && (
+              <motion.a
+                href={MAPS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Open office location in Google Maps"
+                whileHover={hover}
+                style={linkStyle}
+              >
+                {FOOTER_ADDRESS}
+              </motion.a>
+            )}
+          </motion.div>
 
           <motion.div {...up(0.24)}>
             <h4 style={head}>✦ Follow us</h4>
@@ -614,7 +602,6 @@ function Footer({ isMobile, footerRef, onProjects, onAbout }) {
 
         <p style={{ fontFamily: sans, fontSize: 12, lineHeight: 1.7, opacity: 0.45, textAlign: 'center', maxWidth: 760, margin: '10px auto 0' }}>
           {FOOTER_DISCLAIMER}
-          {/* {RERA_LINE ? ` ${RERA_LINE}` : ''} */}
         </p>
       </div>
     </footer>
@@ -661,7 +648,19 @@ export default function App() {
   const projectsRef = useRef(null);
   const footerRef = useRef(null);
 
-  /* ---- hero numbers (desktop uses your tuned values, phone is calculated) ---- */
+  // Custom Scroll Speed Multiplier Hook (2.2x faster scrolling)
+  useEffect(() => {
+    const handleWheel = (e) => {
+      if (e.ctrlKey) return;
+      window.scrollBy({
+        top: e.deltaY * 2.2,
+        behavior: 'auto'
+      });
+    };
+    window.addEventListener('wheel', handleWheel, { passive: true });
+    return () => window.removeEventListener('wheel', handleWheel);
+  }, []);
+
   const fs = isMobile ? FONT_VW_MOBILE : FONT_VW;
   const startLeft = isMobile ? 50 - 4.572 * FONT_VW_MOBILE : START_LEFT;
   const startRight = isMobile ? startLeft + 5.104 * FONT_VW_MOBILE : START_RIGHT;
@@ -670,7 +669,6 @@ export default function App() {
   const pill = isMobile ? PILL_M : PILL_D;
   const mid = isMobile ? MID_M : MID_D;
 
-  /* ---- scroll helpers ---- */
   const goProjects = () => projectsRef.current?.scrollIntoView({ behavior: 'smooth' });
   const goFooter = () => footerRef.current?.scrollIntoView({ behavior: 'smooth' });
   const goAbout = () => {
@@ -681,17 +679,14 @@ export default function App() {
     window.scrollTo({ top: top + (el.offsetHeight - stageH) * 0.9, behavior: 'smooth' });
   };
 
-  /* ---- scroll animations ---- */
-  // 1) statement page entering over the hero
   const { scrollYProgress: enterRaw } = useScroll({ target: stmtRef, offset: ['start end', 'start start'] });
   const ep = useSpring(enterRaw, SPRING);
   const introScale = useTransform(ep, [0, 1], [1, 0.92]);
   const introY = useTransform(ep, [0, 1], ['0%', '-6%']);
-  const introDim = useTransform(ep, [0, 1], [0, 0.65]); // dark overlay (cheaper than filter)
+  const introDim = useTransform(ep, [0, 1], [0, 0.65]);
   const logoOpacity = useTransform(ep, [0.55, 0.95], [0, 1]);
   const logoY = useTransform(ep, [0.55, 0.95], [-12, 0]);
 
-  // 2) inside the pinned stage: words light up, then About panel rises
   const { scrollYProgress: stmtRaw } = useScroll({ target: stmtRef, offset: ['start start', 'end end'] });
   const sp = useSpring(stmtRaw, SPRING);
   const panelY = useTransform(sp, [0.58, 0.85], ['100%', '0%']);
@@ -706,7 +701,6 @@ export default function App() {
   const total = rest.length + 1;
   const range = (i) => [(i / total) * 0.28, (i / total) * 0.28 + 0.08];
 
-  /* ---- setup ---- */
   useEffect(() => {
     if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
     window.scrollTo(0, 0);
@@ -718,7 +712,6 @@ export default function App() {
     };
   }, []);
 
-  // Preload hero image + font (max 4s wait so slow networks never hang) and project images
   useEffect(() => {
     const img = new Image();
     img.src = HERO_IMG;
@@ -737,7 +730,6 @@ export default function App() {
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [ready]);
 
-  // Scroll is locked until the intro finishes (mouse wheel, touch and keyboard)
   useEffect(() => {
     if (unlocked) return;
     const stop = (e) => e.preventDefault();
@@ -757,7 +749,6 @@ export default function App() {
     };
   }, [unlocked]);
 
-  /* ---- styles ---- */
   const wordBase = {
     position: 'absolute',
     margin: 0,
@@ -885,7 +876,6 @@ export default function App() {
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,.4), rgba(0,0,0,.05), rgba(0,0,0,.5))' }} />
           </motion.div>
 
-          {/* PROPERTY (the only h1 on the page) */}
           <motion.h1
             aria-label="Property Gallery"
             initial={{ opacity: 0, top: '54%', left: `${startLeft}vw`, x: '0%', y: '-50%', rotate: -3 }}
@@ -932,14 +922,12 @@ export default function App() {
           </motion.div>
         </motion.div>
 
-        {/* dark overlay while the next page slides in */}
         <motion.div style={{ position: 'absolute', inset: 0, background: '#000', opacity: introDim, pointerEvents: 'none', zIndex: 5 }} />
       </div>
 
       {/* ============ STATEMENT + ABOUT ============ */}
       <section ref={stmtRef} style={{ position: 'relative', zIndex: 1, height: V(isMobile ? 280 : 300), background: BG }}>
         <div style={{ position: 'sticky', top: 0, height: V(100), overflow: 'hidden', background: BG }}>
-          {/* statement text */}
           <motion.div
             style={{
               position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center',
@@ -964,7 +952,6 @@ export default function App() {
             </div>
           </motion.div>
 
-          {/* About the founder */}
           <motion.div
             style={{
               position: 'absolute', inset: 0, zIndex: 40, y: panelY, willChange: 'transform',
@@ -974,7 +961,6 @@ export default function App() {
             }}
           >
             {isMobile ? (
-              /* ---- phone layout: heading, short text, round icons, big phone below ---- */
               <div
                 style={{
                   position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
@@ -1012,7 +998,6 @@ export default function App() {
                 </div>
               </div>
             ) : (
-              /* ---- desktop layout ---- */
               <div
                 style={{
                   position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: '1.2fr 0.8fr',
@@ -1057,7 +1042,6 @@ export default function App() {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 0 : '4vw', alignItems: 'start', maxWidth: 1400, margin: '0 auto' }}>
-          {/* image: sticky on top on phones, sticky on the right on desktop */}
           <div
             style={{
               order: isMobile ? 0 : 1,
@@ -1092,7 +1076,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* cards */}
           <div
             style={{
               order: isMobile ? 1 : 0,

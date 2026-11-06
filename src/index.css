@@ -1,16 +1,57 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-*, *::before, *::after { box-sizing: border-box; }
 
-html, body {
+:root {
+  --vh: 1vh;
+  --bg-color: #0e1201;
+  --cream-color: #fbefca;
+  --gold-color: #f4d35e;
+  --gold-dark: #c9971c;
+  --ink-color: #14161c;
+}
+
+@supports (height: 1svh) {
+  :root {
+    --vh: 1svh;
+  }
+}
+
+/* Base Resets & Smooth Scrolling */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+body {
   margin: 0;
   padding: 0;
   width: 100%;
   display: block;
   place-items: unset;
-  background: #000;
-  overflow-x: clip; 
+  background: var(--bg-color);
+  color: var(--cream-color);
+  font-family: Inter, "Helvetica Neue", Arial, sans-serif;
+  overflow-x: clip;
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 #root {
@@ -22,3 +63,30 @@ html, body {
   text-align: initial;
   display: block;
 }
+
+img {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* Custom Interactive Hover Effects */
+.social-link {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.social-link:hover {
+  opacity: 0.85;
+  transform: translateX(4px);
+}
+
+/* Performance Utilities for Framer Motion & GPU Acceleration */
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+.will-change-transform {
+  will-change: transform, opacity;
+}
+    
