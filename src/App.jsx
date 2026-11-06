@@ -396,7 +396,7 @@ function Phone({ small, progress }) {
           <div
             style={{
               position: 'absolute', left: '10%', right: '-8%', bottom: '-3%', height: '7%',
-              borderRadius: '50%', background: '  rgba(206, 212, 231, 0.45)', filter: 'blur(16px)', pointerEvents: 'none',
+              borderRadius: '50%', background: 'rgba(206, 212, 231, 0.45)', filter: 'blur(16px)', pointerEvents: 'none',
               transform: 'translateZ(-30px)',
             }}
           />
