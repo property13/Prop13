@@ -62,7 +62,8 @@ const MAPS_URL = 'https://maps.app.goo.gl/LFTdNsrsJKLbcfP4A';
 const inOut = [0.76, 0, 0.24, 1];
 const outExpo = [0.16, 1, 0.3, 1];
 const outSoft = [0.22, 1, 0.36, 1];
-const SPRING = { stiffness: 120, damping: 28, mass: 0.3 };
+// Stiffer spring = panel/header follow the scroll more tightly (less lag)
+const SPRING = { stiffness: 220, damping: 34, mass: 0.25 };
 
 const FADE_DELAY = 0.4;
 const SPLIT_DUR = 0.8;
@@ -252,10 +253,10 @@ function StatusBar() {
 const PHONE_RADIUS = '17% / 7.9%';
 const PHONE_TITANIUM = 'linear-gradient(145deg, #f6b378 0%, #d2692a 20%, #8f3f12 46%, #de7630 74%, #fbc08a 100%)';
 
-const PHONE_TURN_DEG = 30; 
-const IG_DELAY = 0.1;      
-const YT_DELAY = 0.7;      
-const BADGE_DUR = 1.8;     
+const PHONE_TURN_DEG = 30;
+const IG_DELAY = 0.1;
+const YT_DELAY = 0.7;
+const BADGE_DUR = 1.8;
 
 function CountUp({ to, run, suffix = '' }) {
   const mv = useMotionValue(0);
@@ -327,6 +328,11 @@ function Badge({ icon, label, to, suffix, caption, show, small, from, delay = 0,
   );
 }
 
+// Phone animation ranges (matched to the faster statement/panel timeline)
+const PH_IN = 0.42;
+const PH_OUT = 0.62;
+const PH_SHOW_ON = 0.55;
+
 function Phone({ small, progress }) {
   const [i, setI] = useState(0);
   const [show, setShow] = useState(false);
@@ -338,15 +344,15 @@ function Phone({ small, progress }) {
 
   useEffect(() => {
     const unsub = progress.on('change', (v) =>
-      setShow((prev) => (v > 0.72 ? true : v < 0.6 ? false : prev))
+      setShow((prev) => (v > PH_SHOW_ON ? true : v < PH_IN ? false : prev))
     );
     return unsub;
   }, [progress]);
 
   const deg = PHONE_TURN_DEG * (small ? 0.75 : 1);
-  const rotY = useTransform(progress, [0.6, 0.82], [-deg, 0]);
-  const rotX = useTransform(progress, [0.6, 0.82], [deg * 0.18, 0]);
-  const turnScale = useTransform(progress, [0.6, 0.82], [0.93, 1]);
+  const rotY = useTransform(progress, [PH_IN, PH_OUT], [-deg, 0]);
+  const rotX = useTransform(progress, [PH_IN, PH_OUT], [deg * 0.18, 0]);
+  const turnScale = useTransform(progress, [PH_IN, PH_OUT], [0.93, 1]);
 
   const sideBtn = (side, top, height) => ({
     position: 'absolute', [side]: '-0.28em', top, height, width: '0.34em',
@@ -363,14 +369,14 @@ function Phone({ small, progress }) {
       transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
       style={{ position: 'relative', justifySelf: 'center' }}
     >
-      {/* Instagram Badge: Shifted upper and sliding in from right to left (from: 150) */}
+      {/* Instagram Badge */}
       <Badge
         icon="ig" label="Instagram" to={169} suffix="k" caption="Followers"
         show={show} small={small} from={small ? -70 : -150} delay={IG_DELAY}
         style={{ top: small ? '6%' : '8%', left: 'calc(100% - 40px)', zIndex: 3 }}
       />
 
-      {/* YouTube Badge: Bottom-left sliding from left to right */}
+      {/* YouTube Badge */}
       <Badge
         icon="yt" label="YouTube" to={128} suffix="k+" caption="Subscribers"
         show={show} small={small} from={small ? -60 : -120} delay={YT_DELAY}
@@ -461,7 +467,14 @@ function Phone({ small, progress }) {
 function RevealWord({ children, progress, range, first }) {
   const o = useTransform(progress, range, [0.22, 1]);
   return (
-    <motion.span style={{ opacity: o, display: 'inline-block', marginLeft: first ? 0 : '0.28em' }}>
+    <motion.span
+      style={{
+        opacity: o,
+        display: 'inline-block',
+        marginLeft: first ? 0 : '0.28em',
+        willChange: 'opacity',
+      }}
+    >
       {children}
     </motion.span>
   );
@@ -648,18 +661,8 @@ export default function App() {
   const projectsRef = useRef(null);
   const footerRef = useRef(null);
 
-  // Custom Scroll Speed Multiplier Hook (2.2x faster scrolling)
-  useEffect(() => {
-    const handleWheel = (e) => {
-      if (e.ctrlKey) return;
-      window.scrollBy({
-        top: e.deltaY * 2.2,
-        behavior: 'auto'
-      });
-    };
-    window.addEventListener('wheel', handleWheel, { passive: true });
-    return () => window.removeEventListener('wheel', handleWheel);
-  }, []);
+  // NOTE: the custom wheel speed-multiplier hook was removed on purpose.
+  // It fought native scrolling + the spring and caused the laggy feel.
 
   const fs = isMobile ? FONT_VW_MOBILE : FONT_VW;
   const startLeft = isMobile ? 50 - 4.572 * FONT_VW_MOBILE : START_LEFT;
@@ -689,17 +692,20 @@ export default function App() {
 
   const { scrollYProgress: stmtRaw } = useScroll({ target: stmtRef, offset: ['start start', 'end end'] });
   const sp = useSpring(stmtRaw, SPRING);
-  const panelY = useTransform(sp, [0.58, 0.85], ['100%', '0%']);
-  const radH = useTransform(sp, [0.58, 0.74, 0.85], [50, 6, 0]);
-  const radV = useTransform(sp, [0.58, 0.74, 0.85], [70, 8, 0]);
-  const panelRadius = useMotionTemplate`${radH}% ${radV}%`;
-  const stmtOpacity = useTransform(sp, [0.58, 0.85], [1, 0.25]);
-  const stmtScale = useTransform(sp, [0.58, 0.85], [1, 0.94]);
-  const glass = useTransform(sp, [0.72, 0.84], [0, 1]);
 
+  // About panel timeline (compressed to match the shorter section)
+  const panelY = useTransform(sp, [0.36, 0.62], ['100%', '0%']);
+  const radH = useTransform(sp, [0.36, 0.5, 0.62], [50, 6, 0]);
+  const radV = useTransform(sp, [0.36, 0.5, 0.62], [70, 8, 0]);
+  const panelRadius = useMotionTemplate`${radH}% ${radV}%`;
+  const stmtOpacity = useTransform(sp, [0.36, 0.62], [1, 0.25]);
+  const stmtScale = useTransform(sp, [0.36, 0.62], [1, 0.94]);
+  const glass = useTransform(sp, [0.5, 0.6], [0, 1]);
+
+  // Faster word reveal: all words finish by ~0.26 of the section scroll
   const rest = STATEMENT_REST.split(' ');
   const total = rest.length + 1;
-  const range = (i) => [(i / total) * 0.28, (i / total) * 0.28 + 0.08];
+  const range = (i) => [(i / total) * 0.2, (i / total) * 0.2 + 0.06];
 
   useEffect(() => {
     if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
@@ -783,16 +789,6 @@ export default function App() {
 
   return (
     <>
-      <style>{`
-        :root { --vh: 1vh; }
-        @supports (height: 1svh) { :root { --vh: 1svh; } }
-        html { scrollbar-width: none; -ms-overflow-style: none; -webkit-text-size-adjust: 100%; }
-        html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; width: 0; height: 0; }
-        body { overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; }
-        img { -webkit-user-drag: none; }
-        .social-link:hover { opacity: .75; transform: translateX(4px); transition: all .2s ease; }
-      `}</style>
-
       {/* ============ HEADER ============ */}
       <header
         style={{
@@ -926,7 +922,7 @@ export default function App() {
       </div>
 
       {/* ============ STATEMENT + ABOUT ============ */}
-      <section ref={stmtRef} style={{ position: 'relative', zIndex: 1, height: V(isMobile ? 280 : 300), background: BG }}>
+      <section ref={stmtRef} style={{ position: 'relative', zIndex: 1, height: V(isMobile ? 230 : 240), background: BG }}>
         <div style={{ position: 'sticky', top: 0, height: V(100), overflow: 'hidden', background: BG }}>
           <motion.div
             style={{
@@ -942,11 +938,11 @@ export default function App() {
               }}
             >
               <div>
-                <RevealWord progress={sp} range={range(0)} first>{STATEMENT_FIRST}</RevealWord>
+                <RevealWord progress={stmtRaw} range={range(0)} first>{STATEMENT_FIRST}</RevealWord>
               </div>
               <div style={{ textAlign: 'right', maxWidth: isMobile ? '100%' : '68vw', marginLeft: 'auto' }}>
                 {rest.map((w, i) => (
-                  <RevealWord key={i} progress={sp} range={range(i + 1)}>{w}</RevealWord>
+                  <RevealWord key={i} progress={stmtRaw} range={range(i + 1)}>{w}</RevealWord>
                 ))}
               </div>
             </div>
