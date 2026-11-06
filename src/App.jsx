@@ -379,7 +379,7 @@ function Phone({ small, progress }) {
       {/* YouTube Badge */}
       <Badge
         icon="yt" label="YouTube" to={128} suffix="k+" caption="Subscribers"
-        show={show} small={small} from={small ? -60 : -120} delay={YT_DELAY}
+        show={show} small={small} from={small ? -60 : 150} delay={YT_DELAY}
         style={{ bottom: small ? '14%' : '18%', right: 'calc(100% - 40px)', zIndex: 3 }}
       />
 
