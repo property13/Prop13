@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useId } from 'react';
 import {
   motion,
   AnimatePresence,
@@ -6,13 +6,13 @@ import {
   useTransform,
   useSpring,
   useMotionTemplate,
+  useMotionValue,
+  animate as runAnimation,
 } from 'framer-motion';
 
-/* ================= 1. CONSTANTS & ASSETS ================= */
+/* ================= 1. CONSTANTS ================= */
 const HERO_IMG = '/pic1.png';
 const LOGO = '/logo.png';
-
-// Images extension updated to .png as requested
 const SIG_IMG = '/Signature.png';
 const ALI_IMG = '/Alibaug.png';
 const DEL_IMG = '/Delhi.png';
@@ -29,6 +29,9 @@ const sans = 'Inter, "Helvetica Neue", Arial, sans-serif';
 const mont = '"Montserrat", Inter, "Helvetica Neue", Arial, sans-serif';
 const script = '"Kaushan Script", "Brush Script MT", cursive';
 
+// "svh" based height helper (fixes the phone address-bar jump). V(100) = full screen height
+const V = (n) => `calc(var(--vh) * ${n})`;
+
 const STATEMENT_FIRST = 'Real estate';
 const STATEMENT_REST =
   'Across India and Dubai. Developments, destinations and opportunities worth exploring, across markets that continue to evolve';
@@ -42,53 +45,83 @@ const YOUTUBE_URL = 'https://www.youtube.com/@PropertyGalleryVlogs';
 const ABOUT_TEXT =
   "Add your founder story here. Share why you started Property Gallery, what you believe about real estate, and how you help buyers find the right home. Keep it to a few short lines so it stays easy to read.";
 
+const WA_URL = `https://wa.me/${WHATSAPP.replace(/[^0-9]/g, '')}`;
+
+// One list used by About (links) and Footer (icons)
+const CONTACTS = [
+  { icon: 'ig', name: 'Instagram', label: INSTAGRAM, short: INSTAGRAM, href: `https://instagram.com/${INSTAGRAM}` },
+  { icon: 'in', name: 'LinkedIn', label: LINKEDIN, short: 'LinkedIn', href: `https://${LINKEDIN}` },
+  { icon: 'wa', name: 'WhatsApp', label: WHATSAPP, short: WHATSAPP, href: WA_URL },
+  { icon: 'yt', name: 'YouTube', label: YOUTUBE, short: YOUTUBE, href: YOUTUBE_URL },
+  { icon: 'em', name: 'Email', label: EMAIL, short: EMAIL, href: `mailto:${EMAIL}` },
+];
+
+const FOOTER_DISCLAIMER =
+  'Images and project details are for illustration only and may change without notice. Please confirm availability and registration details with us before booking.';
+// const RERA_LINE = 'ABCD1234';
+const FOOTER_ADDRESS = 'M4/32, Mushedpur, DLF Phase 2, Sector 25, Gurugram, Shahpur, Haryana 122002';
+const MAPS_URL = 'https://maps.app.goo.gl/LFTdNsrsJKLbcfP4A';
+/* ---- animation settings ---- */
 const inOut = [0.76, 0, 0.24, 1];
 const outExpo = [0.16, 1, 0.3, 1];
 const outSoft = [0.22, 1, 0.36, 1];
+const SPRING = { stiffness: 120, damping: 28, mass: 0.3 };
 
 const FADE_DELAY = 0.4;
 const SPLIT_DUR = 0.8;
 const VERT_DUR = 1.1;
-const IMG_DELAY = 0.30;
+const IMG_DELAY = 0.3;
 const IMG_DUR = 2.0;
 const IMG_ZOOM_DUR = 2.6;
 const UNLOCK_AFTER = 3.6;
 
-const FONT_VW = 7;
-const START_LEFT = 18.1;
+// Hero words
+const FONT_VW = 7; // desktop word size
+const FONT_VW_MOBILE = 9.4; // phone word size
+const START_LEFT = 18.1; // desktop (tuned by eye)
 const START_RIGHT = 53.8;
 const NAV_FONT = 17;
 const NAV_GAP = 28;
 
-const PILL = 'inset(39% 37.5% 39% 37.5% round 200px)';
-const MID = 'inset(3% 1.5% 3% 1.5% round 28px)';
+const PILL_D = 'inset(39% 37.5% 39% 37.5% round 200px)';
+const MID_D = 'inset(3% 1.5% 3% 1.5% round 28px)';
+const PILL_M = 'inset(40% 22% 40% 22% round 120px)';
+const MID_M = 'inset(2% 3% 2% 3% round 24px)';
 const FULL = 'inset(0% 0% 0% 0% round 0px)';
 
-/* ================= 2. HELPER HOOKS & SUB-COMPONENTS ================= */
+/* ================= 2. HELPERS & SMALL COMPONENTS ================= */
 
 function useIsMobile() {
-  const [m, setM] = useState(typeof window !== 'undefined' && window.innerWidth < 800);
+  const query = '(max-width: 799px)';
+  const [m, setM] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches);
   useEffect(() => {
-    const f = () => setM(window.innerWidth < 800);
-    window.addEventListener('resize', f);
-    return () => window.removeEventListener('resize', f);
+    const mq = window.matchMedia(query);
+    const f = () => setM(mq.matches);
+    f();
+    if (mq.addEventListener) mq.addEventListener('change', f);
+    else mq.addListener(f);
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener('change', f);
+      else mq.removeListener(f);
+    };
   }, []);
   return m;
 }
 
 function Icon({ name, size = 34 }) {
+  const uid = useId().replace(/:/g, '');
   const s = { width: size, height: size, flex: 'none', display: 'block' };
   if (name === 'ig')
     return (
       <svg viewBox="0 0 24 24" style={s}>
         <defs>
-          <linearGradient id="igg" x1="0" y1="1" x2="1" y2="0">
+          <linearGradient id={`igg${uid}`} x1="0" y1="1" x2="1" y2="0">
             <stop offset="0" stopColor="#feda75" />
             <stop offset=".5" stopColor="#d62976" />
             <stop offset="1" stopColor="#4f5bd5" />
           </linearGradient>
         </defs>
-        <rect x="2" y="2" width="20" height="20" rx="6" fill="url(#igg)" />
+        <rect x="2" y="2" width="20" height="20" rx="6" fill={`url(#igg${uid})`} />
         <circle cx="12" cy="12" r="4.2" fill="none" stroke="#fff" strokeWidth="1.8" />
         <circle cx="17.2" cy="6.8" r="1.2" fill="#fff" />
       </svg>
@@ -122,6 +155,7 @@ function Icon({ name, size = 34 }) {
   );
 }
 
+/* ---------- phone mockup ---------- */
 const fill = { position: 'absolute', inset: 0 };
 
 function ProfileScreen() {
@@ -132,11 +166,11 @@ function ProfileScreen() {
     backgroundPosition: pos,
   });
   return (
-    <div style={{ ...fill, background: '#000', color: '#fff', fontFamily: mont, padding: '3.6em 0.9em 0.9em', fontSize: '1em' }}>
+    <div style={{ ...fill, background: '#000', color: '#fff', fontFamily: mont, padding: '3.6em 0.9em 0.9em' }}>
       <div style={{ fontWeight: 700, fontSize: '1.05em', marginBottom: '0.9em' }}>{INSTAGRAM} ▾</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1em' }}>
         <div style={{ width: '4.6em', height: '4.6em', borderRadius: '50%', padding: 2, background: 'linear-gradient(45deg,#feda75,#d62976,#4f5bd5)' }}>
-          <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#111 url(' + LOGO + ') center/60% no-repeat', border: '2px solid #000' }} />
+          <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: `#111 url(${LOGO}) center/60% no-repeat`, border: '2px solid #000' }} />
         </div>
         <div style={{ display: 'flex', flex: 1, justifyContent: 'space-around', textAlign: 'center', fontSize: '0.9em' }}>
           {[['609', 'posts'], ['169k', 'followers'], ['188', 'following']].map(([n, l]) => (
@@ -154,8 +188,8 @@ function ProfileScreen() {
         ))}
       </div>
       <div style={{ display: 'flex', gap: '0.8em', margin: '1em 0 0.8em' }}>
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} style={{ width: '3.4em', height: '3.4em', borderRadius: '50%', border: '1.5px solid #555', backgroundImage: `url(${HERO_IMG})`, backgroundSize: '300%', backgroundPosition: ['20% 30%', '70% 30%', '30% 80%', '80% 80%'][i] }} />
+        {['20% 30%', '70% 30%', '30% 80%', '80% 80%'].map((p) => (
+          <div key={p} style={{ width: '3.4em', height: '3.4em', borderRadius: '50%', border: '1.5px solid #555', backgroundImage: `url(${HERO_IMG})`, backgroundSize: '300%', backgroundPosition: p }} />
         ))}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 2 }}>
@@ -194,7 +228,6 @@ function ReelScreen() {
   );
 }
 
-/* ---------- iPhone status bar (time + signal/wifi/battery) ---------- */
 function StatusBar() {
   return (
     <div
@@ -213,11 +246,6 @@ function StatusBar() {
           <rect x="10" y="3" width="3" height="9" rx="1" fill="#fff" />
           <rect x="15" y="0" width="3" height="12" rx="1" fill="#fff" />
         </svg>
-        <svg viewBox="0 0 16 12" style={{ width: '1.3em', height: '1em' }}>
-          <path d="M8 11.2l1.9-2.1a2.7 2.7 0 00-3.8 0L8 11.2z" fill="#fff" />
-          <path d="M3.6 6.9a6.2 6.2 0 018.8 0l1.1-1.2a7.8 7.8 0 00-11 0l1.1 1.2z" fill="#fff" />
-          <path d="M.6 3.9a10.4 10.4 0 0114.8 0L16 3.3a11.9 11.9 0 00-16 0l.6.6z" fill="#fff" opacity=".9" />
-        </svg>
         <svg viewBox="0 0 27 12" style={{ width: '2.1em', height: '1em' }}>
           <rect x="0.5" y="0.5" width="22" height="11" rx="3.2" fill="none" stroke="#fff" opacity=".55" />
           <rect x="2" y="2" width="19" height="8" rx="2" fill="#fff" />
@@ -228,167 +256,216 @@ function StatusBar() {
   );
 }
 
-/* ---------- phone constants (module level: minified build me safe) ---------- */
-const PHONE_RADIUS = '17% / 7.9%'; // iPhone jaisa squircle corner
-const PHONE_TITANIUM =
-  'linear-gradient(145deg, #f6b378 0%, #d2692a 20%, #8f3f12 46%, #de7630 74%, #fbc08a 100%)';
-const PHONE_DEPTH = [0, 1, 2, 3, 4, 5, 6, 7];
+const PHONE_RADIUS = '17% / 7.9%';
+const PHONE_TITANIUM = 'linear-gradient(145deg, #f6b378 0%, #d2692a 20%, #8f3f12 46%, #de7630 74%, #fbc08a 100%)';
 
-/* ---------- iPhone Pro style phone: titanium frame, slight side angle, glass reflection ---------- */
-function Phone({ small }) {
+/* ---------- premium phone + social badges ---------- */
+const PHONE_TURN_DEG = 30; // 3D turn when the About page arrives (0 = off)
+const IG_DELAY = 0.1;      // Instagram badge start delay (seconds)
+const YT_DELAY = 0.7;      // YouTube badge starts a bit later
+const BADGE_DUR = 1.8;     // bigger = slower
+
+function CountUp({ to, run, suffix = '' }) {
+  const mv = useMotionValue(0);
+  const text = useTransform(mv, (v) => `${Math.round(v)}${suffix}`);
+  useEffect(() => {
+    if (!run) {
+      mv.set(0);
+      return undefined;
+    }
+    const controls = runAnimation(mv, to, { duration: 2.2, ease: outExpo, delay: 0.5 });
+    return () => controls.stop();
+  }, [run, to, mv]);
+  return <motion.span>{text}</motion.span>;
+}
+
+function Badge({ icon, label, to, suffix, caption, show, small, from, delay = 0, style }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: from }}
+      animate={show ? { opacity: 1, x: 0 } : { opacity: 0, x: from }}
+      transition={{ duration: show ? BADGE_DUR : 0.5, delay: show ? delay : 0, ease: outExpo }}
+      style={{ position: 'absolute', pointerEvents: 'none', ...style }}
+    >
+      <motion.div
+        animate={show ? { y: [0, -4, 0] } : { y: 0 }}
+        transition={
+          show
+            ? { duration: 5, repeat: Infinity, ease: 'easeInOut', delay: delay + 2 }
+            : { duration: 0.3 }
+        }
+        style={{
+          position: 'relative',
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          gap: small ? 7 : 12,
+          padding: small ? '7px 11px 7px 8px' : '11px 18px 11px 12px',
+          borderRadius: small ? 13 : 18,
+          color: '#fff',
+          fontFamily: mont,
+          whiteSpace: 'nowrap',
+          background: 'linear-gradient(145deg, rgba(34,37,46,.97), rgba(14,16,21,.97))',
+          border: '1px solid rgba(244,211,94,.38)',
+          boxShadow:
+            '0 18px 40px rgba(10,12,18,.38), 0 0 0 4px rgba(244,211,94,.06), inset 0 1px 0 rgba(255,255,255,.1)',
+        }}
+      >
+        {/* gold sheen sweeping across the card */}
+        <motion.div
+          animate={show ? { x: ['-130%', '330%'] } : { x: '-130%' }}
+          transition={{ duration: 2.2, ease: inOut, repeat: Infinity, repeatDelay: 4.5, delay: delay + 2.4 }}
+          style={{
+            position: 'absolute', top: '-30%', bottom: '-30%', left: 0, width: '40%', rotate: 14, pointerEvents: 'none',
+            background: 'linear-gradient(100deg, rgba(244,211,94,0), rgba(244,211,94,.22), rgba(244,211,94,0))',
+          }}
+        />
+        <div
+          style={{
+            width: small ? 30 : 42, height: small ? 30 : 42, borderRadius: '50%', flex: 'none',
+            display: 'grid', placeItems: 'center',
+            background: 'rgba(255,255,255,.06)', border: '1px solid rgba(244,211,94,.28)',
+          }}
+        >
+          <Icon name={icon} size={small ? 18 : 24} />
+        </div>
+        <div style={{ lineHeight: 1.25, position: 'relative' }}>
+          {!small && (
+            <div style={{ fontSize: 10, opacity: 0.65, textTransform: 'uppercase', letterSpacing: '0.16em' }}>{label}</div>
+          )}
+          <div style={{ fontSize: small ? 12 : 16, fontWeight: 700, color: GOLD }}>
+            <CountUp to={to} run={show} suffix={suffix} />
+            {!small && <span style={{ fontSize: 11, fontWeight: 500, color: '#fff', opacity: 0.78, marginLeft: 6 }}>{caption}</span>}
+          </div>
+          {small && <div style={{ fontSize: 8, opacity: 0.75 }}>{caption}</div>}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function Phone({ small, progress }) {
   const [i, setI] = useState(0);
+  const [show, setShow] = useState(false);
+
   useEffect(() => {
     const t = setInterval(() => setI((v) => (v + 1) % 2), 3300);
     return () => clearInterval(t);
   }, []);
 
-  // Side angle: values yahan se kam/zyada kar sakte ho
-  const tilt = small
-    ? 'perspective(1200px) rotateY(-10deg) rotateX(3deg)'
-    : 'perspective(1600px) rotateY(-16deg) rotateX(5deg) rotateZ(1deg)';
+  // badges appear when the About page has arrived, and hide again if you scroll back up
+  useEffect(() => {
+    const unsub = progress.on('change', (v) =>
+      setShow((prev) => (v > 0.72 ? true : v < 0.6 ? false : prev))
+    );
+    return unsub;
+  }, [progress]);
 
+  // 3D turn: phone rotates from the side to the front as the page arrives
+  const deg = PHONE_TURN_DEG * (small ? 0.75 : 1);
+  const rotY = useTransform(progress, [0.6, 0.82], [-deg, 0]);
+  const rotX = useTransform(progress, [0.6, 0.82], [deg * 0.18, 0]);
+  const turnScale = useTransform(progress, [0.6, 0.82], [0.93, 1]);
 
   const sideBtn = (side, top, height) => ({
-    position: 'absolute',
-    [side]: '-0.28em',
-    top,
-    height,
-    width: '0.34em',
-    borderRadius: '0.2em',
-    background: PHONE_TITANIUM,
-    transform: 'translateZ(-3px)',
+    position: 'absolute', [side]: '-0.28em', top, height, width: '0.34em',
+    borderRadius: '0.2em', background: PHONE_TITANIUM,
   });
+
+  const height = small
+    ? 'clamp(170px, calc(var(--vh) * 100 - 350px), 400px)'
+    : `clamp(300px, ${V(70)}, 660px)`;
 
   return (
     <motion.div
       animate={{ y: [0, -8, 0] }}
       transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
-      style={{ justifySelf: 'center', transformStyle: 'preserve-3d' }}
+      style={{ position: 'relative', justifySelf: 'center' }}
     >
-      <div
+      {/* Instagram: slides out from behind the phone to the right (top-right) */}
+      <Badge
+        icon="ig" label="Instagram" to={169} suffix="k" caption="Followers"
+        show={show} small={small} from={small ? -70 : -150} delay={IG_DELAY}
+        style={{ top: small ? '12%' : '16%', left: 'calc(100% - 10px)', zIndex: 1 }}
+      />
+
+      {/* YouTube: slides in from the left and stays at the bottom-left */}
+      <Badge
+        icon="yt" label="YouTube" to={128} suffix="k+" caption="Subscribers"
+        show={show} small={small} from={small ? -60 : -120} delay={YT_DELAY}
+        style={{ bottom: small ? '14%' : '18%', right: 'calc(100% - 10px)', zIndex: 3 }}
+      />
+
+      <motion.div
         style={{
-          position: 'relative',
-          height: small ? 'clamp(250px, 36vh, 340px)' : 'clamp(300px, 70vh, 660px)',
-          aspectRatio: '9 / 19.3',
-          fontSize: small ? 8 : 'clamp(8px, 1.5vh, 13px)',
-          transform: tilt,
-          transformStyle: 'preserve-3d',
+          position: 'relative', zIndex: 2, transformStyle: 'preserve-3d',
+          transformPerspective: 1400, rotateY: rotY, rotateX: rotX, scale: turnScale,
         }}
       >
-        {/* ground shadow */}
         <div
           style={{
-            position: 'absolute', left: '10%', right: '-8%', bottom: '-3%', height: '7%',
-            borderRadius: '50%', background: 'rgba(20,22,28,.5)', filter: 'blur(18px)',
-            transform: 'translateZ(-40px)', pointerEvents: 'none',
-          }}
-        />
-
-        {/* body thickness (side edge) */}
-        {PHONE_DEPTH.map((k) => (
-          <div
-            key={k}
-            style={{
-              position: 'absolute', inset: 0, borderRadius: PHONE_RADIUS,
-              background: k % 2 ? '#7a3510' : '#9a4817',
-              transform: `translateZ(${-(k + 1) * 1.2}px)`,
-            }}
-          />
-        ))}
-
-        {/* side buttons: left = action + volume, right = power + camera control */}
-        <div style={sideBtn('left', '13%', '3.2%')} />
-        <div style={sideBtn('left', '19%', '6.5%')} />
-        <div style={sideBtn('left', '27%', '6.5%')} />
-        <div style={sideBtn('right', '22%', '10.5%')} />
-        <div style={sideBtn('right', '60%', '7.5%')} />
-
-        {/* titanium frame */}
-        <div
-          style={{
-            position: 'absolute', inset: 0, boxSizing: 'border-box', borderRadius: PHONE_RADIUS,
-            background: PHONE_TITANIUM, padding: '0.5em',
+            '--ph': height,
+            position: 'relative',
+            height: 'var(--ph)',
+            aspectRatio: '9 / 19.3',
+            fontSize: 'calc(var(--ph) * 0.0205)',
+            transformStyle: 'preserve-3d',
           }}
         >
-          {/* black bezel */}
           <div
             style={{
-              width: '100%', height: '100%', boxSizing: 'border-box', borderRadius: '16.2% / 7.5%',
-              background: '#000', padding: '0.3em', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.07)',
-            }}
-          >
-            {/* screen */}
-            <div
-              style={{
-                position: 'relative', width: '100%', height: '100%', borderRadius: '15% / 6.9%',
-                overflow: 'hidden', background: '#000', isolation: 'isolate',
-              }}
-            >
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 28 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -28 }}
-                  transition={{ duration: 0.55, ease: outSoft }}
-                  style={fill}
-                >
-                  {i === 0 ? <ProfileScreen /> : <ReelScreen />}
-                </motion.div>
-              </AnimatePresence>
-
-              <StatusBar />
-
-              {/* Dynamic Island */}
-              <div
-                style={{
-                  position: 'absolute', top: '0.85em', left: '50%', transform: 'translateX(-50%)',
-                  width: '31%', height: '2.05em', background: '#000', borderRadius: 999, zIndex: 5,
-                }}
-              />
-
-              {/* home indicator */}
-              <div
-                style={{
-                  position: 'absolute', bottom: '0.55em', left: '50%', transform: 'translateX(-50%)',
-                  width: '34%', height: '0.36em', borderRadius: 999, background: 'rgba(255,255,255,.85)',
-                  zIndex: 4, pointerEvents: 'none',
-                }}
-              />
-
-              {/* glass reflection (static) */}
-              <div
-                style={{
-                  position: 'absolute', inset: 0, zIndex: 6, pointerEvents: 'none',
-                  background:
-                    'linear-gradient(118deg, rgba(255,255,255,.22) 0%, rgba(255,255,255,.08) 20%, rgba(255,255,255,0) 38%, rgba(255,255,255,0) 72%, rgba(255,255,255,.06) 100%)',
-                }}
-              />
-
-              {/* glass reflection (slides across every few seconds) */}
-              <motion.div
-                animate={{ x: ['-140%', '340%'] }}
-                transition={{ duration: 2.4, ease: inOut, repeat: Infinity, repeatDelay: 3.6 }}
-                style={{
-                  position: 'absolute', top: '-20%', bottom: '-20%', left: 0, width: '42%',
-                  rotate: 14, zIndex: 7, pointerEvents: 'none',
-                  background:
-                    'linear-gradient(100deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.2) 50%, rgba(255,255,255,0) 100%)',
-                }}
-              />
-            </div>
-          </div>
-
-          {/* frame highlight (metal shine on the edge) */}
-          <div
-            style={{
-              position: 'absolute', inset: 0, borderRadius: PHONE_RADIUS, pointerEvents: 'none',
-              boxShadow:
-                'inset 0 0 0 0.07em rgba(255,255,255,.4), inset 0 0 0.5em rgba(255,255,255,.14), inset 0.2em 0.2em 0.5em rgba(255,255,255,.18)',
+              position: 'absolute', left: '10%', right: '-8%', bottom: '-3%', height: '7%',
+              borderRadius: '50%', background: 'rgba(20,22,28,.45)', filter: 'blur(16px)', pointerEvents: 'none',
+              transform: 'translateZ(-30px)',
             }}
           />
+
+          {/* phone thickness (visible while it turns) */}
+          {[1, 2, 3, 4, 5, 6].map((k) => (
+            <div
+              key={k}
+              style={{
+                position: 'absolute', inset: 0, borderRadius: PHONE_RADIUS,
+                background: k % 2 ? '#7a3510' : '#9a4817',
+                transform: `translateZ(${-k * 1.4}px)`,
+              }}
+            />
+          ))}
+
+          <div style={sideBtn('left', '13%', '3.2%')} />
+          <div style={sideBtn('left', '19%', '6.5%')} />
+          <div style={sideBtn('left', '27%', '6.5%')} />
+          <div style={sideBtn('right', '22%', '10.5%')} />
+          <div style={sideBtn('right', '60%', '7.5%')} />
+
+          <div style={{ position: 'absolute', inset: 0, boxSizing: 'border-box', borderRadius: PHONE_RADIUS, background: PHONE_TITANIUM, padding: '0.5em' }}>
+            <div style={{ width: '100%', height: '100%', boxSizing: 'border-box', borderRadius: '16.2% / 7.5%', background: '#000', padding: '0.3em', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.07)' }}>
+              <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: '15% / 6.9%', overflow: 'hidden', background: '#000', isolation: 'isolate' }}>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 28 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -28 }}
+                    transition={{ duration: 0.55, ease: outSoft }}
+                    style={fill}
+                  >
+                    {i === 0 ? <ProfileScreen /> : <ReelScreen />}
+                  </motion.div>
+                </AnimatePresence>
+
+                <StatusBar />
+
+                {/* dynamic island */}
+                <div style={{ position: 'absolute', top: '0.85em', left: '50%', transform: 'translateX(-50%)', width: '31%', height: '2.05em', background: '#000', borderRadius: 999, zIndex: 5 }} />
+                {/* home indicator */}
+                <div style={{ position: 'absolute', bottom: '0.55em', left: '50%', transform: 'translateX(-50%)', width: '34%', height: '0.36em', borderRadius: 999, background: 'rgba(255,255,255,.85)', zIndex: 4, pointerEvents: 'none' }} />
+              </div>
+            </div>
+            <div style={{ position: 'absolute', inset: 0, borderRadius: PHONE_RADIUS, pointerEvents: 'none', boxShadow: 'inset 0 0 0 0.07em rgba(255,255,255,.4), inset 0 0 0.5em rgba(255,255,255,.14), inset 0.2em 0.2em 0.5em rgba(255,255,255,.18)' }} />
+          </div>
         </div>
-      </div>
+      </motion.div>
     </motion.div>
   );
 }
@@ -402,16 +479,7 @@ function RevealWord({ children, progress, range, first }) {
   );
 }
 
-function Rise({ style, children }) {
-  return <div style={{ minWidth: 0, ...style }}>{children}</div>;
-}
-
-/* ================= FOOTER ================= */
-const FOOTER_DISCLAIMER =
-  'Images and project details are for illustration only and may change without notice. Please confirm availability and registration details with us before booking.';
-const RERA_LINE = 'ABCD1234';      
-const FOOTER_ADDRESS = 'Dlf Phase 2';  
-
+/* ---------- footer ---------- */
 function GoldLine() {
   return (
     <motion.div
@@ -429,80 +497,30 @@ function GoldLine() {
 
 function Footer({ isMobile, footerRef, onProjects, onAbout }) {
   const year = new Date().getFullYear();
-  const wa = `https://wa.me/${WHATSAPP.replace(/[^0-9]/g, '')}`;
 
   const up = (delay = 0) => ({
     initial: { opacity: 0, y: 30 },
     whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true, amount: 0.25 },
+    viewport: { once: true, amount: 0.2 },
     transition: { duration: 0.8, delay, ease: outSoft },
   });
 
-  const head = {
-    fontFamily: serif,
-    color: GOLD,
-    fontSize: 15,
-    letterSpacing: '0.22em',
-    textTransform: 'uppercase',
-    margin: '0 0 16px',
-    fontWeight: 400,
-  };
-  const linkStyle = {
-    display: 'block',
-    color: CREAM,
-    opacity: 0.85,
-    fontFamily: sans,
-    fontSize: 15,
-    lineHeight: 2.1,
-    textDecoration: 'none',
-    cursor: 'pointer',
-    wordBreak: 'break-word',
-  };
-
-  const socials = [
-    ['ig', 'https://instagram.com/propertygallery13', 'Instagram'],
-    ['in', `https://${LINKEDIN}`, 'LinkedIn'],
-    ['wa', wa, 'WhatsApp'],
-    ['yt', YOUTUBE_URL, 'YouTube'],
-    ['em', `mailto:${EMAIL}`, 'Email'],
-  ];
+  const head = { fontFamily: serif, color: GOLD, fontSize: 15, letterSpacing: '0.22em', textTransform: 'uppercase', margin: '0 0 16px', fontWeight: 400 };
+  const linkStyle = { display: 'block', color: CREAM, opacity: 0.85, fontFamily: sans, fontSize: 15, lineHeight: 2.1, textDecoration: 'none', cursor: 'pointer', wordBreak: 'break-word' };
+  const hover = { x: isMobile ? 0 : 6, color: GOLD };
 
   return (
     <footer
       ref={footerRef}
       style={{
-        position: 'relative',
-        zIndex: 10,
+        position: 'relative', zIndex: 10, color: CREAM, overflow: 'hidden', padding: '0 6vw 28px',
         background: `linear-gradient(180deg, ${BG} 0%, #070a00 100%)`,
-        color: CREAM,
-        overflow: 'hidden',
-        padding: '0 6vw 28px',
       }}
     >
-      {/* subtle royal dotted pattern */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          pointerEvents: 'none',
-          backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(244,211,94,.08) 1px, transparent 0)',
-          backgroundSize: '26px 26px',
-        }}
-      />
-      {/* glowing gold top edge */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 2,
-          background: `linear-gradient(90deg, transparent, ${GOLD_DARK}, ${GOLD}, ${GOLD_DARK}, transparent)`,
-        }}
-      />
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(244,211,94,.08) 1px, transparent 0)', backgroundSize: '26px 26px' }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${GOLD_DARK}, ${GOLD}, ${GOLD_DARK}, transparent)` }} />
 
       <div style={{ position: 'relative', maxWidth: 1280, margin: '0 auto' }}>
-        {/* ---- Columns ---- */}
         <div
           style={{
             display: 'grid',
@@ -516,70 +534,55 @@ function Footer({ isMobile, footerRef, onProjects, onAbout }) {
             <img
               src={LOGO}
               alt="Property Gallery"
-              style={{
-                height: isMobile ? 56 : 68,
-                width: 'auto',
-                display: 'block',
-                margin: isMobile ? '0 auto' : 0,
-                mixBlendMode: 'screen',
-              }}
+              style={{ height: isMobile ? 56 : 68, width: 'auto', display: 'block', margin: isMobile ? '0 auto' : 0, mixBlendMode: 'screen' }}
             />
-            <div style={{ fontFamily: serif, letterSpacing: '0.18em', fontSize: 17, marginTop: 14, color: CREAM }}>
-              PROPERTY GALLERY
-            </div>
-            <p
-              style={{
-                fontFamily: sans,
-                fontSize: 14.5,
-                lineHeight: 1.8,
-                opacity: 0.75,
-                margin: '10px 0 0',
-                maxWidth: 340,
-                marginLeft: isMobile ? 'auto' : 0,
-                marginRight: isMobile ? 'auto' : 0,
-              }}
-            >
+            <div style={{ fontFamily: serif, letterSpacing: '0.18em', fontSize: 17, marginTop: 14 }}>PROPERTY GALLERY</div>
+            <p style={{ fontFamily: sans, fontSize: 14.5, lineHeight: 1.8, opacity: 0.75, margin: '10px auto 0', maxWidth: 340, marginLeft: isMobile ? 'auto' : 0 }}>
               Curated real estate across India and Dubai. Developments, destinations and opportunities worth exploring.
             </p>
           </motion.div>
 
           <motion.div {...up(0.08)}>
             <h4 style={head}>✦ Explore</h4>
-            <motion.a role="button" onClick={onProjects} whileHover={{ x: isMobile ? 0 : 6, color: GOLD }} style={linkStyle}>Projects</motion.a>
-            <motion.a role="button" onClick={onAbout} whileHover={{ x: isMobile ? 0 : 6, color: GOLD }} style={linkStyle}>About the founder</motion.a>
-            <motion.a href={YOUTUBE_URL} target="_blank" rel="noopener noreferrer" whileHover={{ x: isMobile ? 0 : 6, color: GOLD }} style={linkStyle}>Vlogs</motion.a>
+            <motion.a role="button" onClick={onProjects} whileHover={hover} style={linkStyle}>Projects</motion.a>
+            <motion.a role="button" onClick={onAbout} whileHover={hover} style={linkStyle}>About the founder</motion.a>
+            <motion.a href={YOUTUBE_URL} target="_blank" rel="noopener noreferrer" whileHover={hover} style={linkStyle}>Vlogs</motion.a>
           </motion.div>
 
           <motion.div {...up(0.16)}>
             <h4 style={head}>✦ Get in touch</h4>
-            <motion.a href={wa} target="_blank" rel="noopener noreferrer" whileHover={{ x: isMobile ? 0 : 6, color: GOLD }} style={linkStyle}>{WHATSAPP}</motion.a>
-            <motion.a href={`mailto:${EMAIL}`} whileHover={{ x: isMobile ? 0 : 6, color: GOLD }} style={linkStyle}>{EMAIL}</motion.a>
-            {FOOTER_ADDRESS && <div style={{ ...linkStyle, cursor: 'default' }}>{FOOTER_ADDRESS}</div>}
-          </motion.div>
+            <motion.a href={WA_URL} target="_blank" rel="noopener noreferrer" whileHover={hover} style={linkStyle}>{WHATSAPP}</motion.a>
+            <motion.a href={`mailto:${EMAIL}`} whileHover={hover} style={linkStyle}>{EMAIL}</motion.a>
+{FOOTER_ADDRESS && (
+  <motion.a
+    href={MAPS_URL}
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="Open office location in Google Maps"
+    whileHover={hover}
+    style={linkStyle}
+  >
+    {FOOTER_ADDRESS}
+  </motion.a>
+)}          </motion.div>
 
           <motion.div {...up(0.24)}>
             <h4 style={head}>✦ Follow us</h4>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: isMobile ? 'center' : 'flex-start' }}>
-              {socials.map(([n, href, label]) => (
+              {CONTACTS.map((c) => (
                 <motion.a
-                  key={n}
-                  href={href}
-                  {...(href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                  aria-label={label}
+                  key={c.icon}
+                  href={c.href}
+                  {...(c.href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                  aria-label={c.name}
                   whileHover={{ y: -4, rotate: -6, scale: 1.08 }}
                   whileTap={{ scale: 0.95 }}
                   style={{
-                    width: 46,
-                    height: 46,
-                    borderRadius: '50%',
-                    display: 'grid',
-                    placeItems: 'center',
-                    border: `1.5px solid ${GOLD_DARK}`,
-                    background: 'rgba(244,211,94,.06)',
-                    boxShadow: '0 0 0 4px rgba(244,211,94,.05)',
+                    width: 46, height: 46, borderRadius: '50%', display: 'grid', placeItems: 'center',
+                    border: `1.5px solid ${GOLD_DARK}`, background: 'rgba(244,211,94,.06)', boxShadow: '0 0 0 4px rgba(244,211,94,.05)',
                   }}
                 >
-                  <Icon name={n} size={24} />
+                  <Icon name={c.icon} size={24} />
                 </motion.a>
               ))}
             </div>
@@ -588,131 +591,142 @@ function Footer({ isMobile, footerRef, onProjects, onAbout }) {
 
         <GoldLine />
 
-        {/* ---- Bottom bar ---- */}
         <div
           style={{
-            display: 'flex',
-            flexDirection: isMobile ? 'column' : 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 16,
-            padding: '24px 0 8px',
-            fontFamily: sans,
-            fontSize: 13.5,
+            display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center',
+            justifyContent: 'space-between', gap: 16, padding: '24px 0 8px', fontFamily: sans, fontSize: 13.5,
           }}
         >
           <span style={{ opacity: 0.7 }}>© {year} Property Gallery. All rights reserved.</span>
-
-         
-
           <motion.button
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             aria-label="Back to top"
             whileHover={{ y: -3 }}
             whileTap={{ scale: 0.94 }}
             style={{
-              width: 44,
-              height: 44,
-              borderRadius: '50%',
-              border: `1.5px solid ${GOLD_DARK}`,
-              background: 'rgba(244,211,94,.08)',
-              color: GOLD,
-              cursor: 'pointer',
-              display: 'grid',
-              placeItems: 'center',
-              fontSize: 18,
+              width: 44, height: 44, borderRadius: '50%', border: `1.5px solid ${GOLD_DARK}`,
+              background: 'rgba(244,211,94,.08)', color: GOLD, cursor: 'pointer', display: 'grid', placeItems: 'center', fontSize: 18,
             }}
           >
-            <motion.span animate={{ y: [0, -3, 0] }} transition={{ duration: 2.0 , repeat: Infinity, ease: 'easeInOut' }}>
-              ↑
-            </motion.span>
+            <motion.span animate={{ y: [0, -3, 0] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}>↑</motion.span>
           </motion.button>
         </div>
 
-        <p
-          style={{
-            fontFamily: sans,
-            fontSize: 12,
-            lineHeight: 1.7,
-            opacity: 0.45,
-            textAlign: 'center',
-            maxWidth: 760,
-            margin: '10px auto 0',
-          }}
-        >
+        <p style={{ fontFamily: sans, fontSize: 12, lineHeight: 1.7, opacity: 0.45, textAlign: 'center', maxWidth: 760, margin: '10px auto 0' }}>
           {FOOTER_DISCLAIMER}
-          {RERA_LINE ? ` ${RERA_LINE}` : ''}
+          {/* {RERA_LINE ? ` ${RERA_LINE}` : ''} */}
         </p>
       </div>
     </footer>
   );
 }
 
-/* ================= 3. MAIN APP COMPONENT ================= */
+/* ================= 3. MAIN APP ================= */
+
+const PROJECTS = [
+  {
+    title: 'Signature Global',
+    subtitle: 'Jhajjar & NCR Residential Floors',
+    desc: 'State-of-the-art residential floor developments, open green landscapes, and modern lifestyle amenities tailored for contemporary families in prime NCR sectors.',
+    image: SIG_IMG,
+  },
+  {
+    title: 'Alibaug Estates',
+    subtitle: 'Luxury Convention & Resort Living',
+    desc: 'A sprawling convention centre spread across 1,50,000 sq. ft. equipped with exotic resort-style pools, sunken bars, outdoor/indoor sports arenas, yoga studios, and themed spas.',
+    image: ALI_IMG,
+  },
+  {
+    title: 'Delhi Skyline',
+    subtitle: 'Metropolitan Architectural Masterpieces',
+    desc: 'High-rise architectural masterpieces featuring striking geometric design, elite urban convenience, panoramic views, and premium connectivity in the heart of the capital.',
+    image: DEL_IMG,
+  },
+  {
+    title: 'DLF Luxury Apartments',
+    subtitle: 'Andheri West, Mumbai · Under Construction',
+    desc: 'Sprawling luxury residences featuring 3 & 4 BHK layouts (1,126 - 2,534 Sq. Ft.), exclusive clubhouses with swimming pools, gymnasiums, and 80% dedicated open green spaces.',
+    image: MUM_IMG,
+  },
+];
 
 export default function App() {
   const isMobile = useIsMobile();
   const [stage, setStage] = useState(0);
   const [ready, setReady] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
-
-  const [activeProjectsIndex, setActiveProjectsIndex] = useState(0);
+  const [activeIdx, setActiveIdx] = useState(0);
 
   const stmtRef = useRef(null);
   const projectsRef = useRef(null);
   const footerRef = useRef(null);
 
+  /* ---- hero numbers (desktop uses your tuned values, phone is calculated) ---- */
+  const fs = isMobile ? FONT_VW_MOBILE : FONT_VW;
+  const startLeft = isMobile ? 50 - 4.572 * FONT_VW_MOBILE : START_LEFT;
+  const startRight = isMobile ? startLeft + 5.104 * FONT_VW_MOBILE : START_RIGHT;
+  const edge = isMobile ? 5 : 3.8;
+  const topEnd = isMobile ? '10.5%' : '4%';
+  const pill = isMobile ? PILL_M : PILL_D;
+  const mid = isMobile ? MID_M : MID_D;
+
+  /* ---- scroll helpers ---- */
   const goProjects = () => projectsRef.current?.scrollIntoView({ behavior: 'smooth' });
   const goFooter = () => footerRef.current?.scrollIntoView({ behavior: 'smooth' });
   const goAbout = () => {
     const el = stmtRef.current;
     if (!el) return;
+    const stageH = el.firstElementChild?.offsetHeight || window.innerHeight;
     const top = el.getBoundingClientRect().top + window.scrollY;
-    window.scrollTo({ top: top + (el.offsetHeight - window.innerHeight) * 0.9, behavior: 'smooth' });
+    window.scrollTo({ top: top + (el.offsetHeight - stageH) * 0.9, behavior: 'smooth' });
   };
 
+  /* ---- scroll animations ---- */
+  // 1) statement page entering over the hero
   const { scrollYProgress: enterRaw } = useScroll({ target: stmtRef, offset: ['start end', 'start start'] });
-  const ep = useSpring(enterRaw, { stiffness: 110, damping: 26, mass: 0.4 });
+  const ep = useSpring(enterRaw, SPRING);
   const introScale = useTransform(ep, [0, 1], [1, 0.92]);
-  const introY = useTransform(ep, [0, 1], ['0vh', '-6vh']);
-  const introDim = useTransform(ep, [0, 1], [1, 0.35]);
-  const introFilter = useMotionTemplate`brightness(${introDim})`;
-  const hintOpacity = useTransform(ep, [0, 0.15], [1, 0]);
+  const introY = useTransform(ep, [0, 1], ['0%', '-6%']);
+  const introDim = useTransform(ep, [0, 1], [0, 0.65]); // dark overlay (cheaper than filter)
   const logoOpacity = useTransform(ep, [0.55, 0.95], [0, 1]);
   const logoY = useTransform(ep, [0.55, 0.95], [-12, 0]);
 
+  // 2) inside the pinned stage: words light up, then About panel rises
   const { scrollYProgress: stmtRaw } = useScroll({ target: stmtRef, offset: ['start start', 'end end'] });
-  const sp = useSpring(stmtRaw, { stiffness: 120, damping: 28, mass: 0.3 });
-  const panelY = useTransform(sp, [0.58, 0.85], ['100vh', '0vh']);
+  const sp = useSpring(stmtRaw, SPRING);
+  const panelY = useTransform(sp, [0.58, 0.85], ['100%', '0%']);
   const radH = useTransform(sp, [0.58, 0.74, 0.85], [50, 6, 0]);
   const radV = useTransform(sp, [0.58, 0.74, 0.85], [70, 8, 0]);
-  const panelRadius = useMotionTemplate`${radH}% ${radV}vh`;
+  const panelRadius = useMotionTemplate`${radH}% ${radV}%`;
   const stmtOpacity = useTransform(sp, [0.58, 0.85], [1, 0.25]);
   const stmtScale = useTransform(sp, [0.58, 0.85], [1, 0.94]);
   const glass = useTransform(sp, [0.72, 0.84], [0, 1]);
 
   const rest = STATEMENT_REST.split(' ');
   const total = rest.length + 1;
-  const range = (i) => [(i / total) * 0.46, (i / total) * 0.46 + 0.12];
+  const range = (i) => [(i / total) * 0.28, (i / total) * 0.28 + 0.08];
 
+  /* ---- setup ---- */
   useEffect(() => {
     if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
     window.scrollTo(0, 0);
     document.documentElement.style.overflowX = 'clip';
     document.body.style.overflowX = 'clip';
-    document.body.style.margin = '0';
     return () => {
       document.documentElement.style.overflowX = '';
       document.body.style.overflowX = '';
     };
   }, []);
 
+  // Preload hero image + font (max 4s wait so slow networks never hang) and project images
   useEffect(() => {
     const img = new Image();
     img.src = HERO_IMG;
     const imgP = img.decode ? img.decode() : Promise.resolve();
     const fontP = document.fonts ? document.fonts.load('400 100px Marcellus') : Promise.resolve();
-    Promise.all([imgP, fontP]).catch(() => {}).then(() => setReady(true));
+    const timeout = new Promise((r) => setTimeout(r, 4000));
+    Promise.race([Promise.all([imgP, fontP]).catch(() => {}), timeout]).then(() => setReady(true));
+    PROJECTS.forEach((p) => { const im = new Image(); im.src = p.image; });
   }, []);
 
   useEffect(() => {
@@ -723,6 +737,7 @@ export default function App() {
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [ready]);
 
+  // Scroll is locked until the intro finishes (mouse wheel, touch and keyboard)
   useEffect(() => {
     if (unlocked) return;
     const stop = (e) => e.preventDefault();
@@ -742,12 +757,13 @@ export default function App() {
     };
   }, [unlocked]);
 
+  /* ---- styles ---- */
   const wordBase = {
     position: 'absolute',
     margin: 0,
     fontFamily: serif,
     fontWeight: 400,
-    fontSize: `${FONT_VW}vw`,
+    fontSize: `${fs}vw`,
     lineHeight: 1,
     color: CREAM,
     WebkitTextStroke: `0.022em ${CREAM}`,
@@ -768,56 +784,25 @@ export default function App() {
       : { top: { duration: VERT_DUR, ease: inOut }, y: { duration: VERT_DUR, ease: inOut } };
 
   const link = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 'clamp(10px, 1vw, 16px)',
-    fontSize: isMobile ? 13 : 'clamp(14px, min(1.2vw, 2.4vh), 19px)',
-    fontWeight: 600,
-    color: INK,
-    lineHeight: 1.25,
-    minWidth: 0,
-    wordBreak: 'break-word',
-    textDecoration: 'none',
-    cursor: 'pointer',
+    display: 'flex', alignItems: 'center', gap: 'clamp(10px, 1vw, 16px)',
+    fontSize: 'clamp(14px, min(1.2vw, 2.4vh), 19px)', fontWeight: 600, color: INK,
+    lineHeight: 1.25, minWidth: 0, wordBreak: 'break-word', textDecoration: 'none', cursor: 'pointer',
   };
-  const iconSize = isMobile ? 28 : 'clamp(32px, min(2.6vw, 5vh), 44px)';
-
-  const projectsLocations = [
-    {
-      title: 'Signature Global',
-      subtitle: 'Jhajjar & NCR Residential Floors',
-      desc: 'State-of-the-art residential floor developments, open green landscapes, and modern lifestyle amenities tailored for contemporary families in prime NCR sectors.',
-      image: SIG_IMG,
-    },
-    {
-      title: 'Alibaug Estates',
-      subtitle: 'Luxury Convention & Resort Living',
-      desc: 'A sprawling convention centre spread across 1,50,000 sq. ft. equipped with exotic resort-style pools, sunken bars, outdoor/indoor sports arenas, yoga studios, and themed spas.',
-      image: ALI_IMG,
-    },
-    {
-      title: 'Delhi Skyline',
-      subtitle: 'Metropolitan Architectural Masterpieces',
-      desc: 'High-rise architectural masterpieces featuring striking geometric design, elite urban convenience, panoramic views, and premium connectivity in the heart of the capital.',
-      image: DEL_IMG,
-    },
-    {
-      title: 'DLF Luxury Apartments',
-      subtitle: 'Andheri West, Mumbai · Under Construction',
-      desc: 'Sprawling luxury residences featuring 3 & 4 BHK layouts (1,126 - 2,534 Sq. Ft.), exclusive clubhouses with swimming pools, gymnasiums, and 80% dedicated open green spaces.',
-      image: MUM_IMG,
-    }
-  ];
+  const iconSize = 'clamp(32px, min(2.6vw, 5vh), 44px)';
 
   return (
     <>
       <style>{`
-        html { scrollbar-width: none; -ms-overflow-style: none; }
+        :root { --vh: 1vh; }
+        @supports (height: 1svh) { :root { --vh: 1svh; } }
+        html { scrollbar-width: none; -ms-overflow-style: none; -webkit-text-size-adjust: 100%; }
         html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; width: 0; height: 0; }
-        .social-link:hover { opacity: 0.75; transform: translateX(4px); transition: all 0.2s ease; }
+        body { overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; }
+        img { -webkit-user-drag: none; }
+        .social-link:hover { opacity: .75; transform: translateX(4px); transition: all .2s ease; }
       `}</style>
 
-      {/* Header Navigation */}
+      {/* ============ HEADER ============ */}
       <header
         style={{
           position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
@@ -830,20 +815,18 @@ export default function App() {
         <motion.div
           style={{
             position: 'absolute', inset: 0, zIndex: -1, opacity: glass,
-            background: 'rgba(40,42,48,.45)',
-            backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
+            background: 'rgba(40,42,48,.5)',
+            backdropFilter: `blur(${isMobile ? 8 : 14}px)`,
+            WebkitBackdropFilter: `blur(${isMobile ? 8 : 14}px)`,
           }}
         />
         <motion.div style={{ opacity: logoOpacity, y: logoY, display: 'flex', alignItems: 'center' }}>
-          <motion.img
+          <img
             src={LOGO}
             alt="Property Gallery"
             style={{
-              height: isMobile ? 42 : 'clamp(52px, 4.8vw, 80px)',
-              width: 'auto',
-              display: 'block',
-              objectFit: 'contain',
-              filter: 'drop-shadow(0 1px 3px rgba(0,0,0,.45))',
+              height: isMobile ? 42 : 'clamp(52px, 4.8vw, 80px)', width: 'auto', display: 'block',
+              objectFit: 'contain', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,.45))',
             }}
           />
         </motion.div>
@@ -853,38 +836,33 @@ export default function App() {
           animate={stage >= 2 ? { opacity: 1, y: 0 } : { opacity: 0, y: -10 }}
           transition={{ duration: 0.7, delay: 1.3 }}
           style={{
-            display: 'flex', alignItems: 'center', gap: isMobile ? 14 : NAV_GAP,
+            display: 'flex', alignItems: 'center', gap: isMobile ? 12 : NAV_GAP,
             fontFamily: sans, fontSize: isMobile ? 13 : NAV_FONT, fontWeight: 500,
             color: '#fff', pointerEvents: 'auto',
           }}
         >
-          <span onClick={goProjects} style={{ cursor: 'pointer' }}>
-            Projects
-          </span>
-
+          <span onClick={goProjects} style={{ cursor: 'pointer' }}>Projects</span>
           <span onClick={goAbout} style={{ cursor: 'pointer' }}>About</span>
-
-          <motion.span
+          <span
             onClick={goFooter}
             style={{ background: CREAM, color: '#000', padding: isMobile ? '7px 12px' : '10px 20px', borderRadius: 6, fontWeight: 500, cursor: 'pointer' }}
           >
             Contact↗
-          </motion.span>
+          </span>
         </motion.nav>
       </header>
 
-      {/* Hero Section & Cinematic Split Intro */}
-      <div style={{ position: 'sticky', top: 0, height: '100vh', zIndex: 0, overflow: 'hidden', background: BG }}>
+      {/* ============ HERO INTRO ============ */}
+      <div style={{ position: 'sticky', top: 0, height: V(100), zIndex: 0, overflow: 'hidden', background: BG }}>
         <motion.div
           style={{
             position: 'absolute', inset: 0, background: BG,
-            scale: introScale, y: introY, filter: introFilter,
-            transformOrigin: '50% 100%',
+            scale: introScale, y: introY, transformOrigin: '50% 100%', willChange: 'transform',
           }}
         >
           <motion.div
-            initial={{ opacity: 0, clipPath: PILL }}
-            animate={stage >= 2 ? { opacity: 1, clipPath: [PILL, MID, FULL] } : { opacity: 0, clipPath: PILL }}
+            initial={{ opacity: 0, clipPath: pill }}
+            animate={stage >= 2 ? { opacity: 1, clipPath: [pill, mid, FULL] } : { opacity: 0, clipPath: pill }}
             transition={
               stage >= 2
                 ? {
@@ -898,6 +876,7 @@ export default function App() {
             <motion.img
               src={HERO_IMG}
               alt="Luxury property"
+              decoding="async"
               initial={{ scale: 1.25 }}
               animate={{ scale: stage >= 2 ? 1 : 1.25 }}
               transition={{ duration: IMG_ZOOM_DUR, delay: stage >= 2 ? IMG_DELAY : 0, ease: outExpo }}
@@ -906,13 +885,15 @@ export default function App() {
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,.4), rgba(0,0,0,.05), rgba(0,0,0,.5))' }} />
           </motion.div>
 
+          {/* PROPERTY (the only h1 on the page) */}
           <motion.h1
-            initial={{ opacity: 0, top: '54vh', left: `${START_LEFT}vw`, x: '0%', y: '-50%', rotate: -3 }}
+            aria-label="Property Gallery"
+            initial={{ opacity: 0, top: '54%', left: `${startLeft}vw`, x: '0%', y: '-50%', rotate: -3 }}
             animate={{
               opacity: ready ? 1 : 0,
               rotate: ready ? 0 : -3,
-              left: stage >= 1 ? '3.8vw' : `${START_LEFT}vw`,
-              top: !ready ? '54vh' : stage >= 2 ? '4vh' : '50vh',
+              left: stage >= 1 ? `${edge}vw` : `${startLeft}vw`,
+              top: !ready ? '54%' : stage >= 2 ? topEnd : '50%',
               y: stage >= 2 ? '0%' : '-50%',
             }}
             transition={wordTransition}
@@ -921,47 +902,57 @@ export default function App() {
             PROPERTY
           </motion.h1>
 
-          <motion.h1
-            initial={{ opacity: 0, top: '54vh', left: `${START_RIGHT}vw`, x: '0%', y: '-50%', rotate: 3 }}
+          <motion.div
+            aria-hidden="true"
+            initial={{ opacity: 0, top: '54%', left: `${startRight}vw`, x: '0%', y: '-50%', rotate: 3 }}
             animate={{
               opacity: ready ? 1 : 0,
               rotate: ready ? 0 : 3,
-              left: stage >= 1 ? '96.2vw' : `${START_RIGHT}vw`,
+              left: stage >= 1 ? `${100 - edge}vw` : `${startRight}vw`,
               x: stage >= 1 ? '-100%' : '0%',
-              top: !ready ? '54vh' : stage >= 2 ? '96vh' : '50vh',
+              top: !ready ? '54%' : stage >= 2 ? '96%' : '50%',
               y: stage >= 2 ? '-100%' : '-50%',
             }}
             transition={wordTransition}
             style={wordBase}
           >
             GALLERY
-          </motion.h1>
+          </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={stage >= 2 ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
             transition={{ duration: 0.8, delay: 2.2 }}
             style={{
-              position: 'absolute', left: '3.8vw', bottom: '5vh', zIndex: 30,
-              maxWidth: 220, fontFamily: sans, fontSize: 13, lineHeight: 1.35, color: '#fff',
+              position: 'absolute', left: `${edge}vw`, bottom: isMobile ? '12%' : '5%', zIndex: 30,
+              maxWidth: isMobile ? '62vw' : 220, fontFamily: sans, fontSize: 13, lineHeight: 1.35, color: '#fff',
             }}
           >
             Luxury Real Estate Experience, curated properties for modern living.
           </motion.div>
         </motion.div>
+
+        {/* dark overlay while the next page slides in */}
+        <motion.div style={{ position: 'absolute', inset: 0, background: '#000', opacity: introDim, pointerEvents: 'none', zIndex: 5 }} />
       </div>
 
-      {/* Statement & About Section with Fixed Mailto and .png Paths */}
-      <section ref={stmtRef} style={{ position: 'relative', zIndex: 1, height: isMobile ? '280vh' : '300vh', background: BG }}>
-        <div style={{ position: 'sticky', top: 0, height: '100vh', overflow: 'hidden', background: BG }}>
+      {/* ============ STATEMENT + ABOUT ============ */}
+      <section ref={stmtRef} style={{ position: 'relative', zIndex: 1, height: V(isMobile ? 280 : 300), background: BG }}>
+        <div style={{ position: 'sticky', top: 0, height: V(100), overflow: 'hidden', background: BG }}>
+          {/* statement text */}
           <motion.div
             style={{
-              position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-              justifyContent: 'center', padding: isMobile ? '12vh 6vw 8vh' : '8vh 6vw',
+              position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center',
+              padding: isMobile ? `${V(12)} 6vw ${V(8)}` : `${V(8)} 6vw`,
               color: CREAM, fontFamily: sans, opacity: stmtOpacity, scale: stmtScale,
             }}
           >
-            <div style={{ fontSize: isMobile ? 'clamp(26px, 8vw, 44px)' : 'clamp(26px, min(6.2vw, 11.5vh), 110px)', lineHeight: 1.12, letterSpacing: '-0.025em', fontWeight: 400 }}>
+            <div
+              style={{
+                fontSize: isMobile ? 'clamp(26px, 8vw, 44px)' : 'clamp(26px, min(6.2vw, 11.5vh), 110px)',
+                lineHeight: 1.12, letterSpacing: '-0.025em', fontWeight: 400,
+              }}
+            >
               <div>
                 <RevealWord progress={sp} range={range(0)} first>{STATEMENT_FIRST}</RevealWord>
               </div>
@@ -973,147 +964,179 @@ export default function App() {
             </div>
           </motion.div>
 
+          {/* About the founder */}
           <motion.div
             style={{
-              position: 'absolute', inset: 0, zIndex: 40, y: panelY,
+              position: 'absolute', inset: 0, zIndex: 40, y: panelY, willChange: 'transform',
               borderTopLeftRadius: panelRadius, borderTopRightRadius: panelRadius,
               background: 'linear-gradient(160deg, #ffffff 0%, #f6f7fa 100%)',
               borderTop: '1px solid rgba(0,0,0,.08)', overflow: 'hidden', color: INK, fontFamily: mont,
             }}
           >
-            <motion.div
-              style={{
-                position: 'absolute', inset: 0, display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : '1.2fr 0.8fr',
-                alignItems: 'center', gap: isMobile ? '2vh' : '3vw',
-                padding: isMobile ? '11vh 6vw 3vh' : '11vh 6vw 4vh 7vw',
-              }}
-            >
-              <div style={{ minWidth: 0 }}>
-                <Rise progress={sp} from={0.66}>
-                  <div style={{ fontWeight: 800, color: INK, fontSize: isMobile ? 26 : 'clamp(28px, min(4vw, 7.5vh), 62px)', letterSpacing: '0.02em', lineHeight: 1 }}>ABOUT</div>
-                  <div style={{ fontFamily: script, color: GOLD_DARK, fontSize: isMobile ? 40 : 'clamp(44px, min(6.6vw, 12vh), 100px)', lineHeight: 1.05, marginTop: '0.1em' }}>the founder</div>
-                </Rise>
-                <Rise progress={sp} from={0.70}>
-                  <p style={{ margin: isMobile ? '1.6vh 0 0' : '2.6vh 0 0', maxWidth: 640, fontSize: isMobile ? 12.5 : 'clamp(13px, min(1.25vw, 2.6vh), 20px)', fontWeight: 500, lineHeight: 1.75, color: 'rgba(20,22,28,.82)', textAlign: 'left' }}>
-                    {ABOUT_TEXT}
-                  </p>
-                </Rise>
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr', gap: isMobile ? '1.4vh 12px' : 'clamp(10px, 2vh, 20px)', marginTop: isMobile ? '2.4vh' : '3.4vh', maxWidth: 640 }}>
-
-                  {/* Instagram Link */}
-                  <Rise progress={sp} from={0.740} y={30}>
-                    <a href="https://instagram.com/propertygallery13" target="_blank" rel="noopener noreferrer" className="social-link" style={link}>
-                      <Icon name="ig" size={iconSize} /><span>{INSTAGRAM}</span>
+            {isMobile ? (
+              /* ---- phone layout: heading, short text, round icons, big phone below ---- */
+              <div
+                style={{
+                  position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+                  padding: `max(76px, ${V(11)}) 6vw ${V(3)}`,
+                }}
+              >
+                <div style={{ fontWeight: 800, fontSize: 26, letterSpacing: '0.02em', lineHeight: 1 }}>ABOUT</div>
+                <div style={{ fontFamily: script, color: GOLD_DARK, fontSize: 40, lineHeight: 1.05, marginTop: '0.1em' }}>the founder</div>
+                <p
+                  style={{
+                    margin: '10px 0 0', fontSize: 12.5, fontWeight: 500, lineHeight: 1.7, color: 'rgba(20,22,28,.82)',
+                    display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                  }}
+                >
+                  {ABOUT_TEXT}
+                </p>
+                <div style={{ display: 'flex', gap: 12, marginTop: 14 }}>
+                  {CONTACTS.map((c) => (
+                    <a
+                      key={c.icon}
+                      href={c.href}
+                      {...(c.href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                      aria-label={c.name}
+                      style={{
+                        width: 42, height: 42, borderRadius: '50%', background: '#fff', display: 'grid', placeItems: 'center',
+                        border: '1px solid rgba(20,22,28,.08)', boxShadow: '0 2px 10px rgba(20,22,28,.12)',
+                      }}
+                    >
+                      <Icon name={c.icon} size={24} />
                     </a>
-                  </Rise>
-
-                  {/* LinkedIn Link */}
-                  <Rise progress={sp} from={0.765} y={30}>
-                    <a href={`https://${LINKEDIN}`} target="_blank" rel="noopener noreferrer" className="social-link" style={link}>
-                      <Icon name="in" size={iconSize} /><span style={{ wordBreak: 'break-all' }}>{LINKEDIN}</span>
-                    </a>
-                  </Rise>
-
-                  {/* WhatsApp Link */}
-                  <Rise progress={sp} from={0.790} y={30}>
-                    <a href={`https://wa.me/${WHATSAPP.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="social-link" style={link}>
-                      <Icon name="wa" size={iconSize} /><span>{WHATSAPP}</span>
-                    </a>
-                  </Rise>
-
-                  {/* YouTube Link */}
-                  <Rise progress={sp} from={0.815} y={30}>
-                    <a href={YOUTUBE_URL} target="_blank" rel="noopener noreferrer" className="social-link" style={link}>
-                      <Icon name="yt" size={iconSize} /><span>{YOUTUBE}</span>
-                    </a>
-                  </Rise>
-
-                  {/* Gmail Link (Fixed mailto) */}
-                  <Rise progress={sp} from={0.840} y={30}>
-                    <a href={`mailto:${EMAIL}`} className="social-link" style={link}>
-                      <Icon name="em" size={iconSize} /><span>{EMAIL}</span>
-                    </a>
-                  </Rise>
-
+                  ))}
+                </div>
+                <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Phone small progress={sp} />
                 </div>
               </div>
-              <Rise progress={sp} from={0.72} y={140} style={{ justifySelf: 'center' }}><Phone small={isMobile} /></Rise>
-            </motion.div>
+            ) : (
+              /* ---- desktop layout ---- */
+              <div
+                style={{
+                  position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: '1.2fr 0.8fr',
+                  alignItems: 'center', gap: '3vw', padding: `${V(11)} 6vw ${V(4)} 7vw`,
+                }}
+              >
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 800, fontSize: 'clamp(28px, min(4vw, 7.5vh), 62px)', letterSpacing: '0.02em', lineHeight: 1 }}>ABOUT</div>
+                  <div style={{ fontFamily: script, color: GOLD_DARK, fontSize: 'clamp(44px, min(6.6vw, 12vh), 100px)', lineHeight: 1.05, marginTop: '0.1em' }}>the founder</div>
+                  <p style={{ margin: '2.6vh 0 0', maxWidth: 640, fontSize: 'clamp(13px, min(1.25vw, 2.6vh), 20px)', fontWeight: 500, lineHeight: 1.75, color: 'rgba(20,22,28,.82)' }}>
+                    {ABOUT_TEXT}
+                  </p>
+                  <div style={{ display: 'grid', gap: 'clamp(10px, 2vh, 20px)', marginTop: '3.4vh', maxWidth: 640 }}>
+                    {CONTACTS.map((c) => (
+                      <a
+                        key={c.icon}
+                        href={c.href}
+                        {...(c.href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                        className="social-link"
+                        style={link}
+                      >
+                        <Icon name={c.icon} size={iconSize} />
+                        <span style={{ wordBreak: 'break-all' }}>{c.label}</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ justifySelf: 'center' }}>
+                  <Phone progress={sp} />
+                </div>
+              </div>
+            )}
           </motion.div>
         </div>
       </section>
 
-      {/* Our Projects Section */}
-      <section ref={projectsRef} style={{ position: 'relative', zIndex: 10, background: BG, color: CREAM, padding: '10vh 4vw' }}>
-        <div style={{ textAlign: 'center', marginBottom: '8vh' }}>
-          <span style={{ fontSize: '17px', letterSpacing: '0.3em', textTransform: 'uppercase', color: GOLD }}>Curated Portfolio</span>
-          <h2 style={{ fontFamily: serif, fontSize: isMobile ? '32px' : '52px', marginTop: '1vh' }}>Our Projects</h2>
+      {/* ============ OUR PROJECTS ============ */}
+      <section ref={projectsRef} style={{ position: 'relative', zIndex: 10, background: BG, color: CREAM, padding: isMobile ? '9vh 5vw' : '10vh 4vw' }}>
+        <div style={{ textAlign: 'center', marginBottom: isMobile ? '5vh' : '8vh' }}>
+          <span style={{ fontSize: isMobile ? 13 : 17, letterSpacing: '0.3em', textTransform: 'uppercase', color: GOLD }}>Curated Portfolio</span>
+          <h2 style={{ fontFamily: serif, fontSize: isMobile ? 32 : 52, margin: '1vh 0 0', fontWeight: 400 }}>Our Projects</h2>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '4vw', alignItems: 'start', maxWidth: '1400px', margin: '0 auto' }}>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '40vh', paddingBottom: '20vh' }}>
-            {projectsLocations.map((loc, idx) => (
-              <motion.div
-                key={idx}
-                onViewportEnter={() => setActiveProjectsIndex(idx)}
-                viewport={{ margin: '-40% 0px -40% 0px' }}
-                style={{
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  padding: isMobile ? '24px' : '40px',
-                  borderRadius: '16px',
-                  backdropFilter: 'blur(10px)'
-                }}
-              >
-                <span style={{ color: GOLD, fontSize: '12px', letterSpacing: '0.2em', textTransform: 'uppercase' }}>0{idx + 1} — Destination</span>
-                <h3 style={{ fontFamily: serif, fontSize: isMobile ? '26px' : '38px', margin: '10px 0 6px', color: '#fff' }}>{loc.title}</h3>
-                <h4 style={{ fontSize: '14px', opacity: 0.7, fontWeight: 400, marginBottom: '20px' }}>{loc.subtitle}</h4>
-                <p style={{ fontFamily: sans, fontSize: isMobile ? '14px' : '16px', lineHeight: 1.8, opacity: 0.85, margin: 0 }}>
-                  {loc.desc}
-                </p>
-                <div style={{ marginTop: '24px' }}>
-                  <button
-                    onClick={() => alert(`Inquiring for ${loc.title}`)}
-                    style={{
-                      background: CREAM, color: '#000', padding: '10px 24px',
-                      borderRadius: '6px', fontWeight: 600, border: 'none', cursor: 'pointer',
-                      fontSize: '13px', letterSpacing: '0.05em'
-                    }}
-                  >
-                    Explore Location ↗
-                  </button>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          <div style={{ position: 'sticky', top: '15vh', height: isMobile ? '350px' : '75vh', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ flex: 1, borderRadius: '20px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.15)', position: 'relative', background: '#000' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 0 : '4vw', alignItems: 'start', maxWidth: 1400, margin: '0 auto' }}>
+          {/* image: sticky on top on phones, sticky on the right on desktop */}
+          <div
+            style={{
+              order: isMobile ? 0 : 1,
+              position: 'sticky',
+              top: isMobile ? 80 : '15vh',
+              zIndex: isMobile ? 5 : 'auto',
+              height: isMobile ? V(34) : '75vh',
+              background: isMobile ? BG : 'transparent',
+              paddingBottom: isMobile ? 12 : 0,
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <div style={{ flex: 1, borderRadius: isMobile ? 16 : 20, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.15)', position: 'relative', background: '#000' }}>
               <AnimatePresence mode="wait">
                 <motion.img
-                  key={activeProjectsIndex}
-                  src={projectsLocations[activeProjectsIndex].image}
-                  alt={projectsLocations[activeProjectsIndex].title}
+                  key={activeIdx}
+                  src={PROJECTS[activeIdx].image}
+                  alt={PROJECTS[activeIdx].title}
+                  decoding="async"
                   initial={{ opacity: 0, scale: 1.05 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.6, ease: outSoft }}
+                  transition={{ duration: 0.5, ease: outSoft }}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               </AnimatePresence>
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px', background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)' }}>
-                <span style={{ fontSize: '12px', color: GOLD, letterSpacing: '0.15em', textTransform: 'uppercase' }}>Active Destination</span>
-                <h4 style={{ fontFamily: serif, fontSize: '20px', margin: '4px 0 0', color: '#fff' }}>{projectsLocations[activeProjectsIndex].title}</h4>
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: isMobile ? 14 : 20, background: 'linear-gradient(to top, rgba(0,0,0,.8), transparent)' }}>
+                <span style={{ fontSize: 12, color: GOLD, letterSpacing: '0.15em', textTransform: 'uppercase' }}>Active Destination</span>
+                <h4 style={{ fontFamily: serif, fontSize: isMobile ? 17 : 20, margin: '4px 0 0', color: '#fff', fontWeight: 400 }}>{PROJECTS[activeIdx].title}</h4>
               </div>
             </div>
           </div>
 
+          {/* cards */}
+          <div
+            style={{
+              order: isMobile ? 1 : 0,
+              display: 'flex', flexDirection: 'column',
+              gap: isMobile ? V(22) : '40vh',
+              paddingTop: isMobile ? V(8) : 0,
+              paddingBottom: isMobile ? V(30) : '20vh',
+            }}
+          >
+            {PROJECTS.map((loc, idx) => (
+              <motion.div
+                key={loc.title}
+                onViewportEnter={() => setActiveIdx(idx)}
+                viewport={{ margin: isMobile ? '-45% 0px -35% 0px' : '-40% 0px -40% 0px' }}
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  padding: isMobile ? 22 : 40,
+                  borderRadius: 16,
+                }}
+              >
+                <span style={{ color: GOLD, fontSize: 12, letterSpacing: '0.2em', textTransform: 'uppercase' }}>0{idx + 1} — Destination</span>
+                <h3 style={{ fontFamily: serif, fontSize: isMobile ? 26 : 38, margin: '10px 0 6px', color: '#fff', fontWeight: 400 }}>{loc.title}</h3>
+                <h4 style={{ fontSize: 14, opacity: 0.7, fontWeight: 400, margin: '0 0 20px' }}>{loc.subtitle}</h4>
+                <p style={{ fontFamily: sans, fontSize: isMobile ? 14 : 16, lineHeight: 1.8, opacity: 0.85, margin: 0 }}>{loc.desc}</p>
+                <div style={{ marginTop: 24 }}>
+                  <a
+                    href={`${WA_URL}?text=${encodeURIComponent(`Hi, I'm interested in ${loc.title}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'inline-block', background: CREAM, color: '#000', padding: '11px 24px', borderRadius: 6,
+                      fontWeight: 600, fontSize: 13, letterSpacing: '0.05em', textDecoration: 'none',
+                    }}
+                  >
+                    Explore Location ↗
+                  </a>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Royal Footer */}
       <Footer isMobile={isMobile} footerRef={footerRef} onProjects={goProjects} onAbout={goAbout} />
     </>
   );
