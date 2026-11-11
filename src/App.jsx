@@ -12,6 +12,7 @@ import {
 
 /* ================= 1. CONSTANTS ================= */
 const HERO_IMG = '/pic1.png';
+const HERO_VIDEO = '/public/Website-Landscape.mp4';
 const LOGO = '/logo.png';
 const EXP_IMG = '/Signature.png';
 const ALI_IMG = '/Alibaug.png';
@@ -516,42 +517,20 @@ const STACK = {
   tiltDeg: 5,             // degrees an older card rotates per card stacked on top (0 = none)
 };
 
-/* ================= STACKED STICKY CARDS (Skiper-style, pure framer-motion + inline styles) =================
-   Cards stick one over another; the ones underneath shrink and tilt a little.
-   One shared scroll progress (0 -> 1) for the whole stack drives every card. */
+/* ================= STACKED STICKY CARDS =================
+   Images stack, shrink and tilt as you scroll.
+   The text is NOT inside the cards: it lives in one fixed (sticky) block on the right
+   that never moves. When the active image changes, the text just blurs out and the
+   new text blurs in. */
 function StackCard({ sec, i, n, progress, isMobile }) {
   const isLast = i === n - 1;
   const depth = n - 1 - i; // how many cards will cover this one
   const start = n > 1 ? i / (n - 1) : 0;
-  const seg = n > 1 ? 1 / (n - 1) : 1;
 
-  // image card: shrinks + tilts as newer cards cover it (last card stays at scale 1 / 0deg)
   const inRange = isLast ? [0, 1] : [start, 1];
   const scale = useTransform(progress, inRange, isLast ? [1, 1] : [1, 1 - depth * STACK.shrink]);
   const rotate = useTransform(progress, inRange, isLast ? [0, 0] : [0, depth * STACK.tiltDeg]);
   const counterRotate = useTransform(rotate, (v) => -v);
-
-  // text: fades in as its card arrives, fades out as the next card arrives
-  const xs = [];
-  const ys = [];
-  if (n === 1) {
-    xs.push(0, 1);
-    ys.push(1, 1);
-  } else {
-    if (i > 0) {
-      xs.push((i - 0.5) * seg, i * seg);
-      ys.push(0, 1);
-    } else {
-      xs.push(0);
-      ys.push(1);
-    }
-    if (!isLast) {
-      xs.push(i * seg + 0.6 * seg);
-      ys.push(0);
-    }
-  }
-  const textOpacity = useTransform(progress, xs, ys);
-  const textEvents = useTransform(textOpacity, (v) => (v > 0.5 ? 'auto' : 'none'));
 
   return (
     <div
@@ -567,24 +546,14 @@ function StackCard({ sec, i, n, progress, isMobile }) {
         paddingTop: `calc(${V(isMobile ? STACK.topVhMobile : STACK.topVh)} + ${i * STACK.peekPx}px)`,
       }}
     >
-      <div
-        style={{
-          width: '100%',
-          maxWidth: STACK.maxWidth,
-          display: 'flex',
-          flexDirection: isMobile ? 'column' : 'row',
-          alignItems: isMobile ? 'stretch' : 'center',
-          gap: isMobile ? STACK.textGapMobile : STACK.textGap,
-        }}
-      >
-        {/* ---- image card (stacks, shrinks, tilts) ---- */}
+      <div style={{ width: '100%', maxWidth: STACK.maxWidth, display: 'flex' }}>
         <motion.div
           style={{
             scale,
             rotate,
             transformOrigin: '50% 50%',
             willChange: 'transform',
-            flex: isMobile ? '0 0 auto' : `0 0 ${STACK.imageWidthPct}%`,
+            flex: isMobile ? '0 0 100%' : `0 0 ${STACK.imageWidthPct}%`,
             width: isMobile ? '100%' : undefined,
             height: V(isMobile ? STACK.heightVhMobile : STACK.heightVh),
             overflow: 'hidden',
@@ -602,54 +571,103 @@ function StackCard({ sec, i, n, progress, isMobile }) {
             style={{ rotate: counterRotate, width: '100%', height: '100%', objectFit: 'cover', display: 'block', scale: STACK.imageZoom }}
           />
         </motion.div>
+      </div>
+    </div>
+  );
+}
 
-        {/* ---- text (separate, on the right) ---- */}
-        <motion.div
+function StackText({ sections, progress, isMobile }) {
+  const n = sections.length;
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    const update = (v) => setActive(Math.min(n - 1, Math.max(0, Math.round(v * (n - 1)))));
+    update(progress.get());
+    return progress.on('change', update);
+  }, [progress, n]);
+
+  const sec = sections[active];
+
+  return (
+    <div
+      style={{
+        position: 'sticky',
+        top: 0,
+        height: V(100),
+        zIndex: 5,
+        boxSizing: 'border-box',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+        pointerEvents: 'none',
+        paddingTop: V(isMobile ? STACK.topVhMobile : STACK.topVh),
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: STACK.maxWidth,
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? STACK.textGapMobile : STACK.textGap,
+          height: isMobile ? `calc(${V(100)} - ${V(STACK.topVhMobile)})` : V(STACK.heightVh),
+        }}
+      >
+        {/* empty space where the image cards are */}
+        <div
           style={{
-            opacity: textOpacity,
-            pointerEvents: textEvents,
-            flex: 1,
-            minWidth: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            color: CREAM,
+            flex: isMobile ? '0 0 auto' : `0 0 ${STACK.imageWidthPct}%`,
+            height: isMobile ? V(STACK.heightVhMobile) : undefined,
           }}
-        >
-          <span style={{ fontFamily: sans, fontSize: 12, letterSpacing: '0.22em', color: GOLD_DARK }}>
-            {String(i + 1).padStart(2, '0')} / {String(n).padStart(2, '0')}
-          </span>
-          <span style={{ fontFamily: sans, fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', color: GOLD, marginTop: 10 }}>
-            {sec.sub}
-          </span>
-          <h3 style={{ fontFamily: serif, fontWeight: 400, fontSize: isMobile ? STACK.titlePxMobile : STACK.titlePx, margin: '10px 0 0', color: '#fff', lineHeight: 1.15 }}>
-            {sec.title}
-          </h3>
-          <p style={{ fontFamily: sans, fontSize: isMobile ? STACK.bodyPxMobile : STACK.bodyPx, lineHeight: 1.75, opacity: 0.85, margin: '14px 0 0' }}>
-            {sec.text}
-          </p>
-          <div style={{ marginTop: isMobile ? 16 : 26 }}>
-            <a
-              href={WA_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'inline-block',
-                background: CREAM,
-                color: '#000',
-                padding: '11px 24px',
-                borderRadius: 8,
-                fontFamily: sans,
-                fontWeight: 600,
-                fontSize: 13,
-                letterSpacing: '0.05em',
-                textDecoration: 'none',
-              }}
+        />
+
+        {/* fixed text: only blurs when the image changes */}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: isMobile ? 'flex-start' : 'center' }}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={active}
+              initial={{ opacity: 0, filter: 'blur(8px)' }}
+              animate={{ opacity: 1, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, filter: 'blur(8px)' }}
+              transition={{ duration: 0.28, ease: 'easeOut' }}
+              style={{ color: CREAM, pointerEvents: 'auto' }}
             >
-              Enquire Now ↗
-            </a>
-          </div>
-        </motion.div>
+              <span style={{ fontFamily: sans, fontSize: 12, letterSpacing: '0.22em', color: GOLD_DARK }}>
+                {String(active + 1).padStart(2, '0')} / {String(n).padStart(2, '0')}
+              </span>
+              <div style={{ fontFamily: sans, fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', color: GOLD, marginTop: 10 }}>
+                {sec.sub}
+              </div>
+              <h3 style={{ fontFamily: serif, fontWeight: 400, fontSize: isMobile ? STACK.titlePxMobile : STACK.titlePx, margin: '10px 0 0', color: '#fff', lineHeight: 1.15 }}>
+                {sec.title}
+              </h3>
+              <p style={{ fontFamily: sans, fontSize: isMobile ? STACK.bodyPxMobile : STACK.bodyPx, lineHeight: 1.75, opacity: 0.85, margin: '14px 0 0' }}>
+                {sec.text}
+              </p>
+              <div style={{ marginTop: isMobile ? 16 : 26 }}>
+                <a
+                  href={WA_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'inline-block',
+                    background: CREAM,
+                    color: '#000',
+                    padding: '11px 24px',
+                    borderRadius: 8,
+                    fontFamily: sans,
+                    fontWeight: 600,
+                    fontSize: 12,
+                    letterSpacing: '0.05em',
+                    textDecoration: 'none',
+                  }}
+                >
+                  Enquire Now ↗
+                </a>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );
@@ -661,9 +679,12 @@ function StackedCards({ sections, isMobile }) {
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
-      {sections.map((sec, i) => (
-        <StackCard key={i} sec={sec} i={i} n={sections.length} progress={scrollYProgress} isMobile={isMobile} />
-      ))}
+      <StackText sections={sections} progress={scrollYProgress} isMobile={isMobile} />
+      <div style={{ marginTop: `calc(${V(100)} * -1)` }}>
+        {sections.map((sec, i) => (
+          <StackCard key={i} sec={sec} i={i} n={sections.length} progress={scrollYProgress} isMobile={isMobile} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -911,6 +932,7 @@ export default function App() {
   const stmtRef = useRef(null);
   const projectsRef = useRef(null);
   const footerRef = useRef(null);
+  const heroVideoRef = useRef(null);
 
   const fs = isMobile ? FONT_VW_MOBILE : FONT_VW;
   const startLeft = isMobile ? 50 - 4.572 * FONT_VW_MOBILE : START_LEFT;
@@ -979,6 +1001,11 @@ export default function App() {
     Promise.race([Promise.all([imgP, fontP]).catch(() => {}), timeout]).then(() => setReady(true));
     PROJECTS.forEach((p) => { const im = new Image(); im.src = p.image; });
   }, []);
+
+  useEffect(() => {
+    const v = heroVideoRef.current;
+    if (v && stage >= 2) v.play().catch(() => {});
+  }, [stage]);
 
   useEffect(() => {
     if (!ready) return;
@@ -1100,7 +1127,7 @@ export default function App() {
             onClick={goFooter}
             style={{ background: CREAM, color: '#000', padding: isMobile ? '7px 12px' : '10px 20px', borderRadius: 6, fontWeight: 500, cursor: 'pointer' }}
           >
-            Contact↗
+            Contact
           </span>
         </motion.nav>
       </header>
@@ -1165,10 +1192,14 @@ export default function App() {
               }
               style={{ position: 'absolute', inset: 0, zIndex: 0 }}
             >
-              <motion.img
-                src={HERO_IMG}
-                alt="Luxury property"
-                decoding="async"
+              <motion.video
+                ref={heroVideoRef}
+                src={HERO_VIDEO}
+                poster={HERO_IMG}
+                muted
+                loop
+                playsInline
+                preload="auto"
                 initial={{ scale: 1.25 }}
                 animate={{ scale: stage >= 2 ? 1 : 1.25 }}
                 transition={{ duration: IMG_ZOOM_DUR, delay: stage >= 2 ? IMG_DELAY : 0, ease: outExpo }}
