@@ -18,7 +18,8 @@ const ALI_IMG = '/Alibaug.png';
 const DEL_IMG = '/Delhi.png';
 const MUM_IMG = '/Mumbai.png';
 
-const BG = '#0e1201';
+const BG = '#000000';
+const BLACK = '#000000';
 const CREAM = '#fbefca';
 const GOLD = '#f4d35e';
 const GOLD_DARK = '#c9971c';
@@ -514,7 +515,7 @@ function Footer({ isMobile, footerRef, onProjects, onAbout }) {
       ref={footerRef}
       style={{
         position: 'relative', zIndex: 10, color: CREAM, overflow: 'hidden', padding: '0 6vw 28px',
-        background: `linear-gradient(180deg, ${BG} 0%, #070a00 100%)`,
+        background: `linear-gradient(180deg, ${BLACK} 0%, #050505 100%)`,
       }}
     >
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(244,211,94,.08) 1px, transparent 0)', backgroundSize: '26px 26px' }} />
@@ -921,9 +922,9 @@ export default function App() {
         <motion.div style={{ position: 'absolute', inset: 0, background: '#000', opacity: introDim, pointerEvents: 'none', zIndex: 5 }} />
       </div>
 
-      {/* ============ STATEMENT + ABOUT ============ */}
-      <section ref={stmtRef} style={{ position: 'relative', zIndex: 1, height: V(isMobile ? 230 : 240), background: BG }}>
-        <div style={{ position: 'sticky', top: 0, height: V(100), overflow: 'hidden', background: BG }}>
+      {/* ============ STATEMENT + ABOUT (black background) ============ */}
+      <section ref={stmtRef} style={{ position: 'relative', zIndex: 1, height: V(isMobile ? 230 : 240), background: BLACK }}>
+        <div style={{ position: 'sticky', top: 0, height: V(100), overflow: 'hidden', background: BLACK }}>
           <motion.div
             style={{
               position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center',
@@ -1030,8 +1031,8 @@ export default function App() {
         </div>
       </section>
 
-      {/* ============ OUR PROJECTS ============ */}
-      <section ref={projectsRef} style={{ position: 'relative', zIndex: 10, background: BG, color: CREAM, padding: isMobile ? '9vh 5vw' : '10vh 4vw' }}>
+      {/* ============ OUR PROJECTS (black background) ============ */}
+      <section ref={projectsRef} style={{ position: 'relative', zIndex: 10, background: BLACK, color: CREAM, padding: isMobile ? '9vh 5vw' : '10vh 4vw' }}>
         <div style={{ textAlign: 'center', marginBottom: isMobile ? '5vh' : '8vh' }}>
           <span style={{ fontSize: isMobile ? 13 : 17, letterSpacing: '0.3em', textTransform: 'uppercase', color: GOLD }}>Curated Portfolio</span>
           <h2 style={{ fontFamily: serif, fontSize: isMobile ? 32 : 52, margin: '1vh 0 0', fontWeight: 400 }}>Our Projects</h2>
@@ -1045,7 +1046,7 @@ export default function App() {
               top: isMobile ? 80 : '15vh',
               zIndex: isMobile ? 5 : 'auto',
               height: isMobile ? V(34) : '75vh',
-              background: isMobile ? BG : 'transparent',
+              background: isMobile ? BLACK : 'transparent',
               paddingBottom: isMobile ? 12 : 0,
               display: 'flex',
               flexDirection: 'column',
