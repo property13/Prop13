@@ -12,7 +12,7 @@ import {
 
 /* ================= 1. CONSTANTS ================= */
 const HERO_IMG = '/pic1.png';
-const HERO_VIDEO = '/public/Website-Landscape.mp4';
+const HERO_VIDEO = '/Website-Landscape.mp4';
 const LOGO = '/logo.png';
 const EXP_IMG = '/Signature.png';
 const ALI_IMG = '/Alibaug.png';
