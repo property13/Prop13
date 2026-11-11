@@ -13,13 +13,12 @@ import {
 /* ================= 1. CONSTANTS ================= */
 const HERO_IMG = '/pic1.png';
 const LOGO = '/logo.png';
-const SIG_IMG = '/Signature.png';
+const EXP_IMG = '/Signature.png';
 const ALI_IMG = '/Alibaug.png';
 const DEL_IMG = '/Delhi.png';
 const MUM_IMG = '/Mumbai.png';
 
 const BG = '#000000';
-const BLACK = '#000000';
 const CREAM = '#fbefca';
 const GOLD = '#f4d35e';
 const GOLD_DARK = '#c9971c';
@@ -63,7 +62,6 @@ const MAPS_URL = 'https://maps.app.goo.gl/LFTdNsrsJKLbcfP4A';
 const inOut = [0.76, 0, 0.24, 1];
 const outExpo = [0.16, 1, 0.3, 1];
 const outSoft = [0.22, 1, 0.36, 1];
-// Stiffer spring = panel/header follow the scroll more tightly (less lag)
 const SPRING = { stiffness: 220, damping: 34, mass: 0.25 };
 
 const FADE_DELAY = 0.4;
@@ -329,7 +327,6 @@ function Badge({ icon, label, to, suffix, caption, show, small, from, delay = 0,
   );
 }
 
-// Phone animation ranges (matched to the faster statement/panel timeline)
 const PH_IN = 0.42;
 const PH_OUT = 0.62;
 const PH_SHOW_ON = 0.55;
@@ -370,14 +367,11 @@ function Phone({ small, progress }) {
       transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
       style={{ position: 'relative', justifySelf: 'center' }}
     >
-      {/* Instagram Badge */}
       <Badge
         icon="ig" label="Instagram" to={169} suffix="k" caption="Followers"
         show={show} small={small} from={small ? -70 : -150} delay={IG_DELAY}
         style={{ top: small ? '6%' : '8%', left: 'calc(100% - 40px)', zIndex: 3 }}
       />
-
-      {/* YouTube Badge */}
       <Badge
         icon="yt" label="YouTube" to={128} suffix="k+" caption="Subscribers"
         show={show} small={small} from={small ? -60 : 150} delay={YT_DELAY}
@@ -496,6 +490,184 @@ function GoldLine() {
   );
 }
 
+/* ================= STACKED CARDS: SIZE CONTROLS =================
+   Change these numbers to make things bigger / smaller. Nothing else needs editing. */
+const STACK = {
+  // overall layout (image card on the left, text on the right)
+  maxWidth: 1200,         // px: total width of image + text area (desktop)
+  imageWidthPct: 56,      // %: share of that width the image card takes (text gets the rest)
+  textGap: 56,            // px: space between image card and text (desktop)
+  textGapMobile: 22,      // px: space between image and text (mobile, text sits below)
+  // image card
+  heightVh: 72,           // % of screen height: image card height (desktop)
+  heightVhMobile: 42,     // % of screen height: image card height (mobile)
+  topVh: 13,              // % of screen height: gap above the card when it sticks (desktop)
+  topVhMobile: 11,        // same, mobile
+  radius: 28,             // px: corner roundness
+  imageZoom: 1.2,         // image zoom inside the card (keep above 1.1 so tilted corners stay hidden)
+  // text
+  titlePx: 40,            // px: heading size (desktop)
+  titlePxMobile: 24,
+  bodyPx: 16,             // px: paragraph size (desktop)
+  bodyPxMobile: 13.5,
+  // stacking effect
+  peekPx: 0,              // px: how much of each older card peeks above the next one (0 = none)
+  shrink: 0.05,           // how much an older card shrinks per card stacked on top (0 = none)
+  tiltDeg: 5,             // degrees an older card rotates per card stacked on top (0 = none)
+};
+
+/* ================= STACKED STICKY CARDS (Skiper-style, pure framer-motion + inline styles) =================
+   Cards stick one over another; the ones underneath shrink and tilt a little.
+   One shared scroll progress (0 -> 1) for the whole stack drives every card. */
+function StackCard({ sec, i, n, progress, isMobile }) {
+  const isLast = i === n - 1;
+  const depth = n - 1 - i; // how many cards will cover this one
+  const start = n > 1 ? i / (n - 1) : 0;
+  const seg = n > 1 ? 1 / (n - 1) : 1;
+
+  // image card: shrinks + tilts as newer cards cover it (last card stays at scale 1 / 0deg)
+  const inRange = isLast ? [0, 1] : [start, 1];
+  const scale = useTransform(progress, inRange, isLast ? [1, 1] : [1, 1 - depth * STACK.shrink]);
+  const rotate = useTransform(progress, inRange, isLast ? [0, 0] : [0, depth * STACK.tiltDeg]);
+  const counterRotate = useTransform(rotate, (v) => -v);
+
+  // text: fades in as its card arrives, fades out as the next card arrives
+  const xs = [];
+  const ys = [];
+  if (n === 1) {
+    xs.push(0, 1);
+    ys.push(1, 1);
+  } else {
+    if (i > 0) {
+      xs.push((i - 0.5) * seg, i * seg);
+      ys.push(0, 1);
+    } else {
+      xs.push(0);
+      ys.push(1);
+    }
+    if (!isLast) {
+      xs.push(i * seg + 0.6 * seg);
+      ys.push(0);
+    }
+  }
+  const textOpacity = useTransform(progress, xs, ys);
+  const textEvents = useTransform(textOpacity, (v) => (v > 0.5 ? 'auto' : 'none'));
+
+  return (
+    <div
+      style={{
+        position: 'sticky',
+        top: 0,
+        height: V(100),
+        boxSizing: 'border-box',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+        pointerEvents: 'none',
+        paddingTop: `calc(${V(isMobile ? STACK.topVhMobile : STACK.topVh)} + ${i * STACK.peekPx}px)`,
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: STACK.maxWidth,
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          alignItems: isMobile ? 'stretch' : 'center',
+          gap: isMobile ? STACK.textGapMobile : STACK.textGap,
+        }}
+      >
+        {/* ---- image card (stacks, shrinks, tilts) ---- */}
+        <motion.div
+          style={{
+            scale,
+            rotate,
+            transformOrigin: '50% 50%',
+            willChange: 'transform',
+            flex: isMobile ? '0 0 auto' : `0 0 ${STACK.imageWidthPct}%`,
+            width: isMobile ? '100%' : undefined,
+            height: V(isMobile ? STACK.heightVhMobile : STACK.heightVh),
+            overflow: 'hidden',
+            borderRadius: STACK.radius,
+            background: '#000',
+            border: '1px solid rgba(244,211,94,.3)',
+            boxShadow: '0 30px 60px rgba(0,0,0,.45)',
+            boxSizing: 'border-box',
+          }}
+        >
+          <motion.img
+            src={sec.image}
+            alt={sec.title}
+            decoding="async"
+            style={{ rotate: counterRotate, width: '100%', height: '100%', objectFit: 'cover', display: 'block', scale: STACK.imageZoom }}
+          />
+        </motion.div>
+
+        {/* ---- text (separate, on the right) ---- */}
+        <motion.div
+          style={{
+            opacity: textOpacity,
+            pointerEvents: textEvents,
+            flex: 1,
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            color: CREAM,
+          }}
+        >
+          <span style={{ fontFamily: sans, fontSize: 12, letterSpacing: '0.22em', color: GOLD_DARK }}>
+            {String(i + 1).padStart(2, '0')} / {String(n).padStart(2, '0')}
+          </span>
+          <span style={{ fontFamily: sans, fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', color: GOLD, marginTop: 10 }}>
+            {sec.sub}
+          </span>
+          <h3 style={{ fontFamily: serif, fontWeight: 400, fontSize: isMobile ? STACK.titlePxMobile : STACK.titlePx, margin: '10px 0 0', color: '#fff', lineHeight: 1.15 }}>
+            {sec.title}
+          </h3>
+          <p style={{ fontFamily: sans, fontSize: isMobile ? STACK.bodyPxMobile : STACK.bodyPx, lineHeight: 1.75, opacity: 0.85, margin: '14px 0 0' }}>
+            {sec.text}
+          </p>
+          <div style={{ marginTop: isMobile ? 16 : 26 }}>
+            <a
+              href={WA_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-block',
+                background: CREAM,
+                color: '#000',
+                padding: '11px 24px',
+                borderRadius: 8,
+                fontFamily: sans,
+                fontWeight: 600,
+                fontSize: 13,
+                letterSpacing: '0.05em',
+                textDecoration: 'none',
+              }}
+            >
+              Enquire Now ↗
+            </a>
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+function StackedCards({ sections, isMobile }) {
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end end'] });
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      {sections.map((sec, i) => (
+        <StackCard key={i} sec={sec} i={i} n={sections.length} progress={scrollYProgress} isMobile={isMobile} />
+      ))}
+    </div>
+  );
+}
+
 function Footer({ isMobile, footerRef, onProjects, onAbout }) {
   const year = new Date().getFullYear();
 
@@ -515,7 +687,7 @@ function Footer({ isMobile, footerRef, onProjects, onAbout }) {
       ref={footerRef}
       style={{
         position: 'relative', zIndex: 10, color: CREAM, overflow: 'hidden', padding: '0 6vw 28px',
-        background: `linear-gradient(180deg, ${BLACK} 0%, #050505 100%)`,
+        background: `linear-gradient(180deg, ${BG} 0%, #050505 100%)`,
       }}
     >
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(244,211,94,.08) 1px, transparent 0)', backgroundSize: '26px 26px' }} />
@@ -622,32 +794,110 @@ function Footer({ isMobile, footerRef, onProjects, onAbout }) {
   );
 }
 
-/* ================= 3. MAIN APP ================= */
+/* ================= 3. MAIN APP & PROJECTS ================= */
 
 const PROJECTS = [
   {
-    title: 'Signature Global',
-    subtitle: 'Jhajjar & NCR Residential Floors',
-    desc: 'State-of-the-art residential floor developments, open green landscapes, and modern lifestyle amenities tailored for contemporary families in prime NCR sectors.',
-    image: SIG_IMG,
+    id: 'experion',
+    title: 'Experion Emerelle Reserve',
+    subtitle: 'Experion Developers · Sector 88A, Gurgaon',
+    price: '₹3.50 Cr Onwards',
+    specs: '3, 3.5 & 4 BHK Luxury Apartments',
+    desc: 'Premium high-rise living with world-class architecture, expansive green landscapes, and elite connectivity in Sector 88A Gurgaon.',
+    image: EXP_IMG,
+    tag: 'READY TO MOVE',
+    sections: [
+      {
+        title: 'Experion Emerelle Reserve',
+        sub: 'Sector 88A Gurgaon · Luxury Living',
+        text: 'Experience unmatched sophistication with expansive green views, ultra-modern amenities, and bespoke architectural mastery designed for elite lifestyles.',
+        image: '/Experion2.jpg',
+      },
+      {
+        title: 'Grand Architecture',
+        sub: 'Iconic Towers & Facade',
+        text: 'Striking geometric design and high-rise structural brilliance that commands the Sector 88A skyline with effortless elegance.',
+        image: '/Experion 1.jpg',
+      },
+      {
+        title: 'World-Class Amenities',
+        sub: 'Clubhouse, Pools & Wellness',
+        text: 'Equipped with Olympic-length swimming pools, state-of-the-art gymnasiums, sports arenas, and dedicated yoga sanctuaries.',
+        image: EXP_IMG,
+      },
+    ],
   },
   {
+    id: 'alibaug',
     title: 'Alibaug Estates',
-    subtitle: 'Luxury Convention & Resort Living',
-    desc: 'A sprawling convention centre spread across 1,50,000 sq. ft. equipped with exotic resort-style pools, sunken bars, outdoor/indoor sports arenas, yoga studios, and themed spas.',
+    subtitle: 'Resort Living · Alibaug, Maharashtra',
+    price: '₹5.20 Cr Onwards',
+    specs: 'Luxury Villas & Convention Centre',
+    desc: 'A sprawling convention centre spread across 1,50,000 sq. ft. equipped with exotic resort-style pools, sunken bars, and themed spas.',
     image: ALI_IMG,
+    tag: 'READY TO MOVE',
+    sections: [
+      {
+        title: 'Alibaug Estates',
+        sub: 'Coastal Resort Living',
+        text: 'Sprawling convention spaces and private resort villas surrounded by serene coastal greens and bespoke water features.',
+        image: ALI_IMG,
+      },
+      {
+        title: 'Private Lagoon & Pools',
+        sub: 'Exotic Water Features',
+        text: 'Sunken bars, infinity pools, and tropical landscaping crafted to offer a permanent vacation vibe.',
+        image: HERO_IMG,
+      },
+    ],
   },
   {
+    id: 'delhi',
     title: 'Delhi Skyline',
-    subtitle: 'Metropolitan Architectural Masterpieces',
-    desc: 'High-rise architectural masterpieces featuring striking geometric design, elite urban convenience, panoramic views, and premium connectivity in the heart of the capital.',
+    subtitle: 'Metropolitan · Central Delhi NCR',
+    price: '₹4.80 Cr Onwards',
+    specs: 'Penthouses & High-Rise Apartments',
+    desc: 'High-rise architectural masterpieces featuring striking geometric design, elite urban convenience, and panoramic views in the capital.',
     image: DEL_IMG,
+    tag: 'RERA APPROVED',
+    sections: [
+      {
+        title: 'Delhi Skyline',
+        sub: 'Capital Metropolitan Living',
+        text: 'Uncompromised luxury right in the heart of Delhi NCR with seamless connectivity and breathtaking panoramic views.',
+        image: DEL_IMG,
+      },
+      {
+        title: 'Elite Urban Interiors',
+        sub: 'Bespoke Craftsmanship',
+        text: 'Italian marble flooring, designer fittings, and expansive balconies engineered for modern connoisseurs.',
+        image: HERO_IMG,
+      },
+    ],
   },
   {
+    id: 'dlf',
     title: 'DLF Luxury Apartments',
-    subtitle: 'Andheri West, Mumbai · Under Construction',
-    desc: 'Sprawling luxury residences featuring 3 & 4 BHK layouts (1,126 - 2,534 Sq. Ft.), exclusive clubhouses with swimming pools, gymnasiums, and 80% dedicated open green spaces.',
+    subtitle: 'DLF Limited · Andheri West, Mumbai',
+    price: '₹2.90 Cr Onwards',
+    specs: '3 & 4 BHK (1,126 - 2,534 Sq. Ft.)',
+    desc: 'Sprawling luxury residences featuring exclusive clubhouses with swimming pools, gymnasiums, and 80% dedicated open green spaces.',
     image: MUM_IMG,
+    tag: 'UNDER CONSTRUCTION',
+    sections: [
+      {
+        title: 'DLF Luxury Apartments',
+        sub: 'Andheri West, Mumbai',
+        text: 'Sprawling luxury residences offering prime connectivity, elite clubhouses, and 80% dedicated open green spaces in Mumbai.',
+        image: MUM_IMG,
+      },
+      {
+        title: 'Exclusive Clubhouse',
+        sub: 'Recreation & Social Spaces',
+        text: 'A vibrant community hub featuring multi-cuisine dining, indoor sports arenas, and private screening rooms.',
+        image: HERO_IMG,
+      },
+    ],
   },
 ];
 
@@ -656,14 +906,11 @@ export default function App() {
   const [stage, setStage] = useState(0);
   const [ready, setReady] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
-  const [activeIdx, setActiveIdx] = useState(0);
+  const [selectedProject, setSelectedProject] = useState(null);
 
   const stmtRef = useRef(null);
   const projectsRef = useRef(null);
   const footerRef = useRef(null);
-
-  // NOTE: the custom wheel speed-multiplier hook was removed on purpose.
-  // It fought native scrolling + the spring and caused the laggy feel.
 
   const fs = isMobile ? FONT_VW_MOBILE : FONT_VW;
   const startLeft = isMobile ? 50 - 4.572 * FONT_VW_MOBILE : START_LEFT;
@@ -673,14 +920,20 @@ export default function App() {
   const pill = isMobile ? PILL_M : PILL_D;
   const mid = isMobile ? MID_M : MID_D;
 
-  const goProjects = () => projectsRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const goProjects = () => {
+    setSelectedProject(null);
+    setTimeout(() => projectsRef.current?.scrollIntoView({ behavior: 'smooth' }), 80);
+  };
   const goFooter = () => footerRef.current?.scrollIntoView({ behavior: 'smooth' });
   const goAbout = () => {
-    const el = stmtRef.current;
-    if (!el) return;
-    const stageH = el.firstElementChild?.offsetHeight || window.innerHeight;
-    const top = el.getBoundingClientRect().top + window.scrollY;
-    window.scrollTo({ top: top + (el.offsetHeight - stageH) * 0.9, behavior: 'smooth' });
+    setSelectedProject(null);
+    setTimeout(() => {
+      const el = stmtRef.current;
+      if (!el) return;
+      const stageH = el.firstElementChild?.offsetHeight || window.innerHeight;
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({ top: top + (el.offsetHeight - stageH) * 0.9, behavior: 'smooth' });
+    }, 80);
   };
 
   const { scrollYProgress: enterRaw } = useScroll({ target: stmtRef, offset: ['start end', 'start start'] });
@@ -694,7 +947,6 @@ export default function App() {
   const { scrollYProgress: stmtRaw } = useScroll({ target: stmtRef, offset: ['start start', 'end end'] });
   const sp = useSpring(stmtRaw, SPRING);
 
-  // About panel timeline (compressed to match the shorter section)
   const panelY = useTransform(sp, [0.36, 0.62], ['100%', '0%']);
   const radH = useTransform(sp, [0.36, 0.5, 0.62], [50, 6, 0]);
   const radV = useTransform(sp, [0.36, 0.5, 0.62], [70, 8, 0]);
@@ -703,7 +955,6 @@ export default function App() {
   const stmtScale = useTransform(sp, [0.36, 0.62], [1, 0.94]);
   const glass = useTransform(sp, [0.5, 0.6], [0, 1]);
 
-  // Faster word reveal: all words finish by ~0.26 of the section scroll
   const rest = STATEMENT_REST.split(' ');
   const total = rest.length + 1;
   const range = (i) => [(i / total) * 0.2, (i / total) * 0.2 + 0.06];
@@ -738,7 +989,7 @@ export default function App() {
   }, [ready]);
 
   useEffect(() => {
-    if (unlocked) return;
+    if (unlocked || selectedProject) return;
     const stop = (e) => e.preventDefault();
     const keys = (e) => {
       if ([' ', 'PageDown', 'PageUp', 'End', 'Home', 'ArrowDown', 'ArrowUp'].includes(e.key)) e.preventDefault();
@@ -754,7 +1005,15 @@ export default function App() {
       window.removeEventListener('keydown', keys);
       window.removeEventListener('scroll', reset);
     };
-  }, [unlocked]);
+  }, [unlocked, selectedProject]);
+
+  // The landing view stays mounted (just hidden) while a project is open, so the
+  // scroll trackers keep their elements. When it comes back, ask them to re-measure.
+  useEffect(() => {
+    if (selectedProject) return undefined;
+    const id = requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
+    return () => cancelAnimationFrame(id);
+  }, [selectedProject]);
 
   const wordBase = {
     position: 'absolute',
@@ -808,7 +1067,13 @@ export default function App() {
             WebkitBackdropFilter: `blur(${isMobile ? 8 : 14}px)`,
           }}
         />
-        <motion.div style={{ opacity: logoOpacity, y: logoY, display: 'flex', alignItems: 'center' }}>
+        <motion.div
+          style={{ opacity: logoOpacity, y: logoY, display: 'flex', alignItems: 'center', pointerEvents: 'auto', cursor: 'pointer' }}
+          onClick={() => {
+            setSelectedProject(null);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        >
           <img
             src={LOGO}
             alt="Property Gallery"
@@ -821,7 +1086,7 @@ export default function App() {
 
         <motion.nav
           initial={{ opacity: 0, y: -10 }}
-          animate={stage >= 2 ? { opacity: 1, y: 0 } : { opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 1.3 }}
           style={{
             display: 'flex', alignItems: 'center', gap: isMobile ? 12 : NAV_GAP,
@@ -840,282 +1105,319 @@ export default function App() {
         </motion.nav>
       </header>
 
-      {/* ============ HERO INTRO ============ */}
-      <div style={{ position: 'sticky', top: 0, height: V(100), zIndex: 0, overflow: 'hidden', background: BG }}>
-        <motion.div
+      {/* ============ PROJECT DETAIL VIEW (stacked sticky cards) ============ */}
+      {selectedProject && (
+        <div
           style={{
-            position: 'absolute', inset: 0, background: BG,
-            scale: introScale, y: introY, transformOrigin: '50% 100%', willChange: 'transform',
+            background: BG, color: CREAM, minHeight: V(100),
+            paddingTop: isMobile ? 90 : 130, paddingBottom: 100, paddingLeft: '4vw', paddingRight: '4vw',
           }}
         >
-          <motion.div
-            initial={{ opacity: 0, clipPath: pill }}
-            animate={stage >= 2 ? { opacity: 1, clipPath: [pill, mid, FULL] } : { opacity: 0, clipPath: pill }}
-            transition={
-              stage >= 2
-                ? {
-                    opacity: { duration: 0.5, delay: IMG_DELAY },
-                    clipPath: { duration: IMG_DUR, delay: IMG_DELAY, times: [0, 0.5, 1], ease: [outExpo, inOut] },
-                  }
-                : { duration: 0 }
-            }
-            style={{ position: 'absolute', inset: 0, zIndex: 0 }}
-          >
-            <motion.img
-              src={HERO_IMG}
-              alt="Luxury property"
-              decoding="async"
-              initial={{ scale: 1.25 }}
-              animate={{ scale: stage >= 2 ? 1 : 1.25 }}
-              transition={{ duration: IMG_ZOOM_DUR, delay: stage >= 2 ? IMG_DELAY : 0, ease: outExpo }}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
-            />
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,.4), rgba(0,0,0,.05), rgba(0,0,0,.5))' }} />
-          </motion.div>
-
-          <motion.h1
-            aria-label="Property Gallery"
-            initial={{ opacity: 0, top: '54%', left: `${startLeft}vw`, x: '0%', y: '-50%', rotate: -3 }}
-            animate={{
-              opacity: ready ? 1 : 0,
-              rotate: ready ? 0 : -3,
-              left: stage >= 1 ? `${edge}vw` : `${startLeft}vw`,
-              top: !ready ? '54%' : stage >= 2 ? topEnd : '50%',
-              y: stage >= 2 ? '0%' : '-50%',
-            }}
-            transition={wordTransition}
-            style={wordBase}
-          >
-            PROPERTY
-          </motion.h1>
-
-          <motion.div
-            aria-hidden="true"
-            initial={{ opacity: 0, top: '54%', left: `${startRight}vw`, x: '0%', y: '-50%', rotate: 3 }}
-            animate={{
-              opacity: ready ? 1 : 0,
-              rotate: ready ? 0 : 3,
-              left: stage >= 1 ? `${100 - edge}vw` : `${startRight}vw`,
-              x: stage >= 1 ? '-100%' : '0%',
-              top: !ready ? '54%' : stage >= 2 ? '96%' : '50%',
-              y: stage >= 2 ? '-100%' : '-50%',
-            }}
-            transition={wordTransition}
-            style={wordBase}
-          >
-            GALLERY
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={stage >= 2 ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
-            transition={{ duration: 0.8, delay: 2.2 }}
-            style={{
-              position: 'absolute', left: `${edge}vw`, bottom: isMobile ? '12%' : '5%', zIndex: 30,
-              maxWidth: isMobile ? '62vw' : 220, fontFamily: sans, fontSize: 13, lineHeight: 1.35, color: '#fff',
-            }}
-          >
-            Luxury Real Estate Experience, curated properties for modern living.
-          </motion.div>
-        </motion.div>
-
-        <motion.div style={{ position: 'absolute', inset: 0, background: '#000', opacity: introDim, pointerEvents: 'none', zIndex: 5 }} />
-      </div>
-
-      {/* ============ STATEMENT + ABOUT (black background) ============ */}
-      <section ref={stmtRef} style={{ position: 'relative', zIndex: 1, height: V(isMobile ? 230 : 240), background: BLACK }}>
-        <div style={{ position: 'sticky', top: 0, height: V(100), overflow: 'hidden', background: BLACK }}>
-          <motion.div
-            style={{
-              position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center',
-              padding: isMobile ? `${V(12)} 6vw ${V(8)}` : `${V(8)} 6vw`,
-              color: CREAM, fontFamily: sans, opacity: stmtOpacity, scale: stmtScale,
-            }}
-          >
-            <div
+          <div style={{ maxWidth: STACK.maxWidth, margin: '0 auto' }}>
+            <button
+              onClick={goProjects}
               style={{
-                fontSize: isMobile ? 'clamp(26px, 8vw, 44px)' : 'clamp(26px, min(6.2vw, 11.5vh), 110px)',
-                lineHeight: 1.12, letterSpacing: '-0.025em', fontWeight: 400,
+                background: 'rgba(244,211,94,0.1)', border: `1px solid ${GOLD_DARK}`, color: GOLD,
+                padding: '10px 20px', borderRadius: 8, cursor: 'pointer', fontFamily: sans, fontWeight: 600,
+                marginBottom: '4vh', display: 'flex', alignItems: 'center', gap: 8,
               }}
             >
-              <div>
-                <RevealWord progress={stmtRaw} range={range(0)} first>{STATEMENT_FIRST}</RevealWord>
-              </div>
-              <div style={{ textAlign: 'right', maxWidth: isMobile ? '100%' : '68vw', marginLeft: 'auto' }}>
-                {rest.map((w, i) => (
-                  <RevealWord key={i} progress={stmtRaw} range={range(i + 1)}>{w}</RevealWord>
-                ))}
-              </div>
-            </div>
-          </motion.div>
+              ← Back to Projects
+            </button>
 
+            <div style={{ textAlign: 'center', marginBottom: '6vh' }}>
+              <span style={{ fontFamily: sans, fontSize: 12, letterSpacing: '0.25em', textTransform: 'uppercase', color: GOLD }}>
+                {selectedProject.subtitle}
+              </span>
+              <h1 style={{ fontFamily: serif, fontWeight: 400, fontSize: isMobile ? 32 : 52, margin: '10px 0 0', color: '#fff' }}>
+                {selectedProject.title}
+              </h1>
+              <p style={{ fontFamily: sans, fontSize: 14, opacity: 0.8, maxWidth: 640, margin: '14px auto 0', lineHeight: 1.7 }}>
+                {selectedProject.desc}
+              </p>
+            </div>
+
+            <StackedCards sections={selectedProject.sections} isMobile={isMobile} />
+          </div>
+        </div>
+      )}
+
+      {/* ============ MAIN LANDING VIEW (kept mounted, hidden while a project is open) ============ */}
+      <div style={{ display: selectedProject ? 'none' : 'block' }}>
+        {/* ============ HERO INTRO ============ */}
+        <div style={{ position: 'sticky', top: 0, height: V(100), zIndex: 0, overflow: 'hidden', background: BG }}>
           <motion.div
             style={{
-              position: 'absolute', inset: 0, zIndex: 40, y: panelY, willChange: 'transform',
-              borderTopLeftRadius: panelRadius, borderTopRightRadius: panelRadius,
-              background: 'linear-gradient(160deg, #ffffff 0%, #f6f7fa 100%)',
-              borderTop: '1px solid rgba(0,0,0,.08)', overflow: 'hidden', color: INK, fontFamily: mont,
+              position: 'absolute', inset: 0, background: BG,
+              scale: introScale, y: introY, transformOrigin: '50% 100%', willChange: 'transform',
             }}
           >
-            {isMobile ? (
+            <motion.div
+              initial={{ opacity: 0, clipPath: pill }}
+              animate={stage >= 2 ? { opacity: 1, clipPath: [pill, mid, FULL] } : { opacity: 0, clipPath: pill }}
+              transition={
+                stage >= 2
+                  ? {
+                      opacity: { duration: 0.5, delay: IMG_DELAY },
+                      clipPath: { duration: IMG_DUR, delay: IMG_DELAY, times: [0, 0.5, 1], ease: [outExpo, inOut] },
+                    }
+                  : { duration: 0 }
+              }
+              style={{ position: 'absolute', inset: 0, zIndex: 0 }}
+            >
+              <motion.img
+                src={HERO_IMG}
+                alt="Luxury property"
+                decoding="async"
+                initial={{ scale: 1.25 }}
+                animate={{ scale: stage >= 2 ? 1 : 1.25 }}
+                transition={{ duration: IMG_ZOOM_DUR, delay: stage >= 2 ? IMG_DELAY : 0, ease: outExpo }}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
+              />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,.4), rgba(0,0,0,.05), rgba(0,0,0,.5))' }} />
+            </motion.div>
+
+            <motion.h1
+              aria-label="Property Gallery"
+              initial={{ opacity: 0, top: '54%', left: `${startLeft}vw`, x: '0%', y: '-50%', rotate: -3 }}
+              animate={{
+                opacity: ready ? 1 : 0,
+                rotate: ready ? 0 : -3,
+                left: stage >= 1 ? `${edge}vw` : `${startLeft}vw`,
+                top: !ready ? '54%' : stage >= 2 ? topEnd : '50%',
+                y: stage >= 2 ? '0%' : '-50%',
+              }}
+              transition={wordTransition}
+              style={wordBase}
+            >
+              PROPERTY
+            </motion.h1>
+
+            <motion.div
+              aria-hidden="true"
+              initial={{ opacity: 0, top: '54%', left: `${startRight}vw`, x: '0%', y: '-50%', rotate: 3 }}
+              animate={{
+                opacity: ready ? 1 : 0,
+                rotate: ready ? 0 : 3,
+                left: stage >= 1 ? `${100 - edge}vw` : `${startRight}vw`,
+                x: stage >= 1 ? '-100%' : '0%',
+                top: !ready ? '54%' : stage >= 2 ? '96%' : '50%',
+                y: stage >= 2 ? '-100%' : '-50%',
+              }}
+              transition={wordTransition}
+              style={wordBase}
+            >
+              GALLERY
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={stage >= 2 ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
+              transition={{ duration: 0.8, delay: 2.2 }}
+              style={{
+                position: 'absolute', left: `${edge}vw`, bottom: isMobile ? '12%' : '5%', zIndex: 30,
+                maxWidth: isMobile ? '62vw' : 220, fontFamily: sans, fontSize: 13, lineHeight: 1.35, color: '#fff',
+              }}
+            >
+              Luxury Real Estate Experience, curated properties for modern living.
+            </motion.div>
+          </motion.div>
+
+          <motion.div style={{ position: 'absolute', inset: 0, background: '#000', opacity: introDim, pointerEvents: 'none', zIndex: 5 }} />
+        </div>
+
+        {/* ============ STATEMENT + ABOUT ============ */}
+        <section ref={stmtRef} style={{ position: 'relative', zIndex: 1, height: V(isMobile ? 230 : 240), background: BG }}>
+          <div style={{ position: 'sticky', top: 0, height: V(100), overflow: 'hidden', background: BG }}>
+            <motion.div
+              style={{
+                position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                padding: isMobile ? `${V(12)} 6vw ${V(8)}` : `${V(8)} 6vw`,
+                color: CREAM, fontFamily: sans, opacity: stmtOpacity, scale: stmtScale,
+              }}
+            >
               <div
                 style={{
-                  position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-                  padding: `max(76px, ${V(11)}) 6vw ${V(3)}`,
+                  fontSize: isMobile ? 'clamp(26px, 8vw, 44px)' : 'clamp(26px, min(6.2vw, 11.5vh), 110px)',
+                  lineHeight: 1.12, letterSpacing: '-0.025em', fontWeight: 400,
                 }}
               >
-                <div style={{ fontWeight: 800, fontSize: 26, letterSpacing: '0.02em', lineHeight: 1 }}>ABOUT</div>
-                <div style={{ fontFamily: script, color: GOLD_DARK, fontSize: 40, lineHeight: 1.05, marginTop: '0.1em' }}>the founder</div>
-                <p
-                  style={{
-                    margin: '10px 0 0', fontSize: 12.5, fontWeight: 500, lineHeight: 1.7, color: 'rgba(20,22,28,.82)',
-                    display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                  }}
-                >
-                  {ABOUT_TEXT}
-                </p>
-                <div style={{ display: 'flex', gap: 12, marginTop: 14 }}>
-                  {CONTACTS.map((c) => (
-                    <a
-                      key={c.icon}
-                      href={c.href}
-                      {...(c.href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                      aria-label={c.name}
-                      style={{
-                        width: 42, height: 42, borderRadius: '50%', background: '#fff', display: 'grid', placeItems: 'center',
-                        border: '1px solid rgba(20,22,28,.08)', boxShadow: '0 2px 10px rgba(20,22,28,.12)',
-                      }}
-                    >
-                      <Icon name={c.icon} size={24} />
-                    </a>
+                <div>
+                  <RevealWord progress={stmtRaw} range={range(0)} first>{STATEMENT_FIRST}</RevealWord>
+                </div>
+                <div style={{ textAlign: 'right', maxWidth: isMobile ? '100%' : '68vw', marginLeft: 'auto' }}>
+                  {rest.map((w, i) => (
+                    <RevealWord key={i} progress={stmtRaw} range={range(i + 1)}>{w}</RevealWord>
                   ))}
                 </div>
-                <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Phone small progress={sp} />
-                </div>
               </div>
-            ) : (
-              <div
-                style={{
-                  position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: '1.2fr 0.8fr',
-                  alignItems: 'center', gap: '3vw', padding: `${V(11)} 6vw ${V(4)} 7vw`,
-                }}
-              >
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 800, fontSize: 'clamp(28px, min(4vw, 7.5vh), 62px)', letterSpacing: '0.02em', lineHeight: 1 }}>ABOUT</div>
-                  <div style={{ fontFamily: script, color: GOLD_DARK, fontSize: 'clamp(44px, min(6.6vw, 12vh), 100px)', lineHeight: 1.05, marginTop: '0.1em' }}>the founder</div>
-                  <p style={{ margin: '2.6vh 0 0', maxWidth: 640, fontSize: 'clamp(13px, min(1.25vw, 2.6vh), 20px)', fontWeight: 500, lineHeight: 1.75, color: 'rgba(20,22,28,.82)' }}>
+            </motion.div>
+
+            <motion.div
+              style={{
+                position: 'absolute', inset: 0, zIndex: 40, y: panelY, willChange: 'transform',
+                borderTopLeftRadius: panelRadius, borderTopRightRadius: panelRadius,
+                background: 'linear-gradient(160deg, #ffffff 0%, #f6f7fa 100%)',
+                borderTop: '1px solid rgba(0,0,0,.08)', overflow: 'hidden', color: INK, fontFamily: mont,
+              }}
+            >
+              {isMobile ? (
+                <div
+                  style={{
+                    position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+                    padding: `max(76px, ${V(11)}) 6vw ${V(3)}`,
+                  }}
+                >
+                  <div style={{ fontWeight: 800, fontSize: 26, letterSpacing: '0.02em', lineHeight: 1 }}>ABOUT</div>
+                  <div style={{ fontFamily: script, color: GOLD_DARK, fontSize: 40, lineHeight: 1.05, marginTop: '0.1em' }}>the founder</div>
+                  <p
+                    style={{
+                      margin: '10px 0 0', fontSize: 12.5, fontWeight: 500, lineHeight: 1.7, color: 'rgba(20,22,28,.82)',
+                      display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                    }}
+                  >
                     {ABOUT_TEXT}
                   </p>
-                  <div style={{ display: 'grid', gap: 'clamp(10px, 2vh, 20px)', marginTop: '3.4vh', maxWidth: 640 }}>
+                  <div style={{ display: 'flex', gap: 12, marginTop: 14 }}>
                     {CONTACTS.map((c) => (
                       <a
                         key={c.icon}
                         href={c.href}
                         {...(c.href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                        className="social-link"
-                        style={link}
+                        aria-label={c.name}
+                        style={{
+                          width: 42, height: 42, borderRadius: '50%', background: '#fff', display: 'grid', placeItems: 'center',
+                          border: '1px solid rgba(20,22,28,.08)', boxShadow: '0 2px 10px rgba(20,22,28,.12)',
+                        }}
                       >
-                        <Icon name={c.icon} size={iconSize} />
-                        <span style={{ wordBreak: 'break-all' }}>{c.label}</span>
+                        <Icon name={c.icon} size={24} />
                       </a>
                     ))}
                   </div>
+                  <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Phone small progress={sp} />
+                  </div>
                 </div>
-                <div style={{ justifySelf: 'center' }}>
-                  <Phone progress={sp} />
+              ) : (
+                <div
+                  style={{
+                    position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: '1.2fr 0.8fr',
+                    alignItems: 'center', gap: '3vw', padding: `${V(11)} 6vw ${V(4)} 7vw`,
+                  }}
+                >
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 800, fontSize: 'clamp(28px, min(4vw, 7.5vh), 62px)', letterSpacing: '0.02em', lineHeight: 1 }}>ABOUT</div>
+                    <div style={{ fontFamily: script, color: GOLD_DARK, fontSize: 'clamp(44px, min(6.6vw, 12vh), 100px)', lineHeight: 1.05, marginTop: '0.1em' }}>the founder</div>
+                    <p style={{ margin: '2.6vh 0 0', maxWidth: 640, fontSize: 'clamp(13px, min(1.25vw, 2.6vh), 20px)', fontWeight: 500, lineHeight: 1.75, color: 'rgba(20,22,28,.82)' }}>
+                      {ABOUT_TEXT}
+                    </p>
+                    <div style={{ display: 'grid', gap: 'clamp(10px, 2vh, 20px)', marginTop: '3.4vh', maxWidth: 640 }}>
+                      {CONTACTS.map((c) => (
+                        <a
+                          key={c.icon}
+                          href={c.href}
+                          {...(c.href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                          className="social-link"
+                          style={link}
+                        >
+                          <Icon name={c.icon} size={iconSize} />
+                          <span style={{ wordBreak: 'break-all' }}>{c.label}</span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ justifySelf: 'center' }}>
+                    <Phone progress={sp} />
+                  </div>
                 </div>
-              </div>
-            )}
-          </motion.div>
-        </div>
-      </section>
+              )}
+            </motion.div>
+          </div>
+        </section>
 
-      {/* ============ OUR PROJECTS (black background) ============ */}
-      <section ref={projectsRef} style={{ position: 'relative', zIndex: 10, background: BLACK, color: CREAM, padding: isMobile ? '9vh 5vw' : '10vh 4vw' }}>
-        <div style={{ textAlign: 'center', marginBottom: isMobile ? '5vh' : '8vh' }}>
-          <span style={{ fontSize: isMobile ? 13 : 17, letterSpacing: '0.3em', textTransform: 'uppercase', color: GOLD }}>Curated Portfolio</span>
-          <h2 style={{ fontFamily: serif, fontSize: isMobile ? 32 : 52, margin: '1vh 0 0', fontWeight: 400 }}>Our Projects</h2>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 0 : '4vw', alignItems: 'start', maxWidth: 1400, margin: '0 auto' }}>
-          <div
-            style={{
-              order: isMobile ? 0 : 1,
-              position: 'sticky',
-              top: isMobile ? 80 : '15vh',
-              zIndex: isMobile ? 5 : 'auto',
-              height: isMobile ? V(34) : '75vh',
-              background: isMobile ? BLACK : 'transparent',
-              paddingBottom: isMobile ? 12 : 0,
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <div style={{ flex: 1, borderRadius: isMobile ? 16 : 20, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.15)', position: 'relative', background: '#000' }}>
-              <AnimatePresence mode="wait">
-                <motion.img
-                  key={activeIdx}
-                  src={PROJECTS[activeIdx].image}
-                  alt={PROJECTS[activeIdx].title}
-                  decoding="async"
-                  initial={{ opacity: 0, scale: 1.05 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.5, ease: outSoft }}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              </AnimatePresence>
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: isMobile ? 14 : 20, background: 'linear-gradient(to top, rgba(0,0,0,.8), transparent)' }}>
-                <span style={{ fontSize: 12, color: GOLD, letterSpacing: '0.15em', textTransform: 'uppercase' }}>Active Destination</span>
-                <h4 style={{ fontFamily: serif, fontSize: isMobile ? 17 : 20, margin: '4px 0 0', color: '#fff', fontWeight: 400 }}>{PROJECTS[activeIdx].title}</h4>
-              </div>
-            </div>
+        {/* ============ FEATURED PROJECTS (card grid with View Details) ============ */}
+        <section ref={projectsRef} style={{ position: 'relative', zIndex: 10, background: BG, color: CREAM, padding: isMobile ? '9vh 5vw' : '12vh 6vw' }}>
+          <div style={{ textAlign: 'center', marginBottom: isMobile ? '6vh' : '9vh' }}>
+            <span style={{ fontSize: isMobile ? 13 : 16, letterSpacing: '0.3em', textTransform: 'uppercase', color: GOLD }}>Curated Portfolio</span>
+            <h2 style={{ fontFamily: serif, fontSize: isMobile ? 32 : 52, margin: '1.2vh 0 0', fontWeight: 400 }}>Featured Projects</h2>
           </div>
 
           <div
             style={{
-              order: isMobile ? 1 : 0,
-              display: 'flex', flexDirection: 'column',
-              gap: isMobile ? V(22) : '40vh',
-              paddingTop: isMobile ? V(8) : 0,
-              paddingBottom: isMobile ? V(30) : '20vh',
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+              gap: '32px',
+              maxWidth: 1280,
+              margin: '0 auto',
             }}
           >
-            {PROJECTS.map((loc, idx) => (
+            {PROJECTS.map((proj, idx) => (
               <motion.div
-                key={loc.title}
-                onViewportEnter={() => setActiveIdx(idx)}
-                viewport={{ margin: isMobile ? '-45% 0px -35% 0px' : '-40% 0px -40% 0px' }}
+                key={proj.id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.7, delay: idx * 0.15, ease: outSoft }}
                 style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  padding: isMobile ? 22 : 40,
-                  borderRadius: 16,
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '20px',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
                 }}
+                whileHover={{ y: -6, borderColor: 'rgba(244,211,94,0.4)' }}
               >
-                <span style={{ color: GOLD, fontSize: 12, letterSpacing: '0.2em', textTransform: 'uppercase' }}>0{idx + 1} — Destination</span>
-                <h3 style={{ fontFamily: serif, fontSize: isMobile ? 26 : 38, margin: '10px 0 6px', color: '#fff', fontWeight: 400 }}>{loc.title}</h3>
-                <h4 style={{ fontSize: 14, opacity: 0.7, fontWeight: 400, margin: '0 0 20px' }}>{loc.subtitle}</h4>
-                <p style={{ fontFamily: sans, fontSize: isMobile ? 14 : 16, lineHeight: 1.8, opacity: 0.85, margin: 0 }}>{loc.desc}</p>
-                <div style={{ marginTop: 24 }}>
-                  <a
-                    href={`${WA_URL}?text=${encodeURIComponent(`Hi, I'm interested in ${loc.title}`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      display: 'inline-block', background: CREAM, color: '#000', padding: '11px 24px', borderRadius: 6,
-                      fontWeight: 600, fontSize: 13, letterSpacing: '0.05em', textDecoration: 'none',
-                    }}
-                  >
-                    Explore Location ↗
-                  </a>
+                <div style={{ position: 'relative', height: isMobile ? 220 : 280, overflow: 'hidden', background: '#000' }}>
+                  <img
+                    src={proj.image}
+                    alt={proj.title}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(14,18,1,0.9), transparent 50%)' }} />
+
+                  <div style={{ position: 'absolute', top: 16, left: 16, background: CREAM, color: INK, padding: '5px 12px', borderRadius: '20px', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    {proj.tag}
+                  </div>
+
+                  <div style={{ position: 'absolute', bottom: 16, left: 20, right: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                    <div>
+                      <div style={{ fontSize: 11, color: GOLD, letterSpacing: '0.15em', textTransform: 'uppercase' }}>{proj.subtitle}</div>
+                      <h3 style={{ fontFamily: serif, fontSize: isMobile ? 22 : 26, margin: '4px 0 0', color: '#fff', fontWeight: 400 }}>{proj.title}</h3>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ padding: isMobile ? 20 : 28, display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: GOLD, marginBottom: 10 }}>{proj.price}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: CREAM, opacity: 0.9, marginBottom: 12 }}>{proj.specs}</div>
+                    <p style={{ fontFamily: sans, fontSize: 14, lineHeight: 1.7, opacity: 0.75, margin: 0 }}>{proj.desc}</p>
+                  </div>
+
+                  <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <button
+                      onClick={() => {
+                        setSelectedProject(proj);
+                        window.scrollTo({ top: 0, behavior: 'auto' });
+                      }}
+                      style={{
+                        background: 'transparent', color: CREAM, padding: '10px 0', border: 'none',
+                        fontWeight: 600, fontSize: 13, letterSpacing: '0.05em', cursor: 'pointer',
+                        borderBottom: `1px solid ${GOLD}`, display: 'inline-flex', alignItems: 'center', gap: 6,
+                      }}
+                    >
+                      View Details →
+                    </button>
+                    <span style={{ fontSize: 12, opacity: 0.5 }}>RERA Verified</span>
+                  </div>
                 </div>
               </motion.div>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
       <Footer isMobile={isMobile} footerRef={footerRef} onProjects={goProjects} onAbout={goAbout} />
     </>
