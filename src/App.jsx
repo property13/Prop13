@@ -42,8 +42,34 @@ const WHATSAPP = '+91 8851678180';
 const EMAIL = 'info@propertygallery.com';
 const YOUTUBE = 'Property Gallery Vlogs';
 const YOUTUBE_URL = 'https://www.youtube.com/@PropertyGalleryVlogs';
-const ABOUT_TEXT =
-  "Add your founder story here. Share why you started Property Gallery, what you believe about real estate, and how you help buyers find the right home. Keep it to a few short lines so it stays easy to read.";
+/* ================= ABOUT SECTION: EDIT HERE =================
+   Change the text, order of logos and sizes from this one block. Nothing else needs editing. */
+const ABOUT = {
+  // ----- content -----
+  heading: 'ABOUT',
+  text:
+    "Add your founder story here. Share why you started Property Gallery, what you believe about real estate, and how you help buyers find the right home. Keep it to a few short lines so it stays easy to read.",
+  // logos shown at the bottom, in this order. Remove one to hide it.
+  // options: 'ig' (Instagram), 'in' (LinkedIn), 'wa' (WhatsApp), 'yt' (YouTube), 'em' (Email)
+  logos: ['ig', 'in', 'wa', 'yt', 'em'],
+
+  // ----- desktop sizes -----
+  headingSize: 'clamp(38px, min(5.6vw, 10.5vh), 88px)',   // "ABOUT" heading
+  textSize: 'clamp(15px, min(1.7vw, 3.1vh), 27px)',       // paragraph
+  textMaxWidth: 800,                                      // px: paragraph width
+  textGapTop: '2.6vh',                                    // space between heading and paragraph
+  logoSize: 'clamp(48px, min(4.4vw, 8.5vh), 76px)',       // each logo
+  logoGap: 'clamp(50px, 2vw, 32px)',                      // space between logos
+  logoGapTop: '4.5vh',                                    // space between paragraph and logos
+  phoneHeight: 'clamp(340px, calc(var(--vh) * 80), 780px)', // phone size
+  columns: '1.2fr 0.8fr',                                 // left (text) vs right (phone) width
+
+  // ----- mobile sizes -----
+  headingSizeMobile: 26,
+  textSizeMobile: 12.5,
+  textLinesMobile: 4,                                     // max lines of paragraph on mobile
+  logoSizeMobile: 46,
+};
 
 const WA_URL = `https://wa.me/${WHATSAPP.replace(/[^0-9]/g, '')}`;
 
@@ -54,6 +80,14 @@ const CONTACTS = [
   { icon: 'yt', name: 'YouTube', label: YOUTUBE, short: YOUTUBE, href: YOUTUBE_URL },
   { icon: 'em', name: 'Email', label: EMAIL, short: EMAIL, href: `mailto:${EMAIL}` },
 ];
+
+const ICON_IMG = {
+  ig: '/instagram.png',
+  in: '/linkedin.png',
+  wa: '/whatsapp.png',
+  yt: '/youtube.png',
+  em: '/gmail.png',
+};
 
 const FOOTER_DISCLAIMER =
   'Images and project details are for illustration only and may change without notice. Please confirm availability and registration details with us before booking.';
@@ -147,6 +181,27 @@ function Icon({ name, size = 34 }) {
       <rect x="2" y="5" width="20" height="14" rx="4" fill="#ff0000" />
       <path d="M10 9l5 3-5 3z" fill="#fff" />
     </svg>
+  );
+}
+
+function SocialLogo({ c, size }) {
+  return (
+    <motion.a
+      href={c.href}
+      {...(c.href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+      aria-label={c.name}
+      title={c.name}
+      whileHover={{ y: -5, scale: 1.1 }}
+      whileTap={{ scale: 0.95 }}
+      style={{ display: 'block', width: size, height: size, flex: 'none', cursor: 'pointer' }}
+    >
+      <img
+        src={ICON_IMG[c.icon]}
+        alt={c.name}
+        draggable={false}
+        style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+      />
+    </motion.a>
   );
 }
 
@@ -360,7 +415,7 @@ function Phone({ small, progress }) {
 
   const height = small
     ? 'clamp(170px, calc(var(--vh) * 100 - 350px), 400px)'
-    : `clamp(300px, ${V(70)}, 660px)`;
+    : ABOUT.phoneHeight;
 
   return (
     <motion.div
@@ -739,7 +794,7 @@ function Footer({ isMobile, footerRef, onProjects, onAbout }) {
           <motion.div {...up(0.08)}>
             <h4 style={head}>✦ Explore</h4>
             <motion.a role="button" onClick={onProjects} whileHover={hover} style={linkStyle}>Projects</motion.a>
-            <motion.a role="button" onClick={onAbout} whileHover={hover} style={linkStyle}>About the founder</motion.a>
+            <motion.a role="button" onClick={onAbout} whileHover={hover} style={linkStyle}>About</motion.a>
             <motion.a href={YOUTUBE_URL} target="_blank" rel="noopener noreferrer" whileHover={hover} style={linkStyle}>Vlogs</motion.a>
           </motion.div>
 
@@ -933,6 +988,7 @@ export default function App() {
   const projectsRef = useRef(null);
   const footerRef = useRef(null);
   const heroVideoRef = useRef(null);
+  const aboutLogos = ABOUT.logos.map((id) => CONTACTS.find((c) => c.icon === id)).filter(Boolean);
 
   const fs = isMobile ? FONT_VW_MOBILE : FONT_VW;
   const startLeft = isMobile ? 50 - 4.572 * FONT_VW_MOBILE : START_LEFT;
@@ -1299,30 +1355,18 @@ export default function App() {
                     padding: `max(76px, ${V(11)}) 6vw ${V(3)}`,
                   }}
                 >
-                  <div style={{ fontWeight: 800, fontSize: 26, letterSpacing: '0.02em', lineHeight: 1 }}>ABOUT</div>
-                  <div style={{ fontFamily: script, color: GOLD_DARK, fontSize: 40, lineHeight: 1.05, marginTop: '0.1em' }}>the founder</div>
+                  <div style={{ fontWeight: 800, fontSize: ABOUT.headingSizeMobile, letterSpacing: '0.02em', lineHeight: 1 }}>{ABOUT.heading}</div>
                   <p
                     style={{
-                      margin: '10px 0 0', fontSize: 12.5, fontWeight: 500, lineHeight: 1.7, color: 'rgba(20,22,28,.82)',
-                      display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                      margin: '10px 0 0', fontSize: ABOUT.textSizeMobile, fontWeight: 500, lineHeight: 1.7, color: 'rgba(20,22,28,.82)',
+                      display: '-webkit-box', WebkitLineClamp: ABOUT.textLinesMobile, WebkitBoxOrient: 'vertical', overflow: 'hidden',
                     }}
                   >
-                    {ABOUT_TEXT}
+                    {ABOUT.text}
                   </p>
-                  <div style={{ display: 'flex', gap: 12, marginTop: 14 }}>
-                    {CONTACTS.map((c) => (
-                      <a
-                        key={c.icon}
-                        href={c.href}
-                        {...(c.href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                        aria-label={c.name}
-                        style={{
-                          width: 42, height: 42, borderRadius: '50%', background: '#fff', display: 'grid', placeItems: 'center',
-                          border: '1px solid rgba(20,22,28,.08)', boxShadow: '0 2px 10px rgba(20,22,28,.12)',
-                        }}
-                      >
-                        <Icon name={c.icon} size={24} />
-                      </a>
+                  <div style={{ display: 'flex', gap: 16, marginTop: 16 }}>
+                    {aboutLogos.map((c) => (
+                      <SocialLogo key={c.icon} c={c} size={ABOUT.logoSizeMobile} />
                     ))}
                   </div>
                   <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1332,28 +1376,18 @@ export default function App() {
               ) : (
                 <div
                   style={{
-                    position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: '1.2fr 0.8fr',
+                    position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: ABOUT.columns,
                     alignItems: 'center', gap: '3vw', padding: `${V(11)} 6vw ${V(4)} 7vw`,
                   }}
                 >
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: 800, fontSize: 'clamp(28px, min(4vw, 7.5vh), 62px)', letterSpacing: '0.02em', lineHeight: 1 }}>ABOUT</div>
-                    <div style={{ fontFamily: script, color: GOLD_DARK, fontSize: 'clamp(44px, min(6.6vw, 12vh), 100px)', lineHeight: 1.05, marginTop: '0.1em' }}>the founder</div>
-                    <p style={{ margin: '2.6vh 0 0', maxWidth: 640, fontSize: 'clamp(13px, min(1.25vw, 2.6vh), 20px)', fontWeight: 500, lineHeight: 1.75, color: 'rgba(20,22,28,.82)' }}>
-                      {ABOUT_TEXT}
+                    <div style={{ fontWeight: 800, fontSize: ABOUT.headingSize, letterSpacing: '0.02em', lineHeight: 1 }}>{ABOUT.heading}</div>
+                    <p style={{ margin: `${ABOUT.textGapTop} 0 0`, maxWidth: ABOUT.textMaxWidth, fontSize: ABOUT.textSize, fontWeight: 500, lineHeight: 1.75, color: 'rgba(20,22,28,.82)' }}>
+                      {ABOUT.text}
                     </p>
-                    <div style={{ display: 'grid', gap: 'clamp(10px, 2vh, 20px)', marginTop: '3.4vh', maxWidth: 640 }}>
-                      {CONTACTS.map((c) => (
-                        <a
-                          key={c.icon}
-                          href={c.href}
-                          {...(c.href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                          className="social-link"
-                          style={link}
-                        >
-                          <Icon name={c.icon} size={iconSize} />
-                          <span style={{ wordBreak: 'break-all' }}>{c.label}</span>
-                        </a>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: ABOUT.logoGap, marginTop: ABOUT.logoGapTop }}>
+                      {aboutLogos.map((c) => (
+                        <SocialLogo key={c.icon} c={c} size={ABOUT.logoSize} />
                       ))}
                     </div>
                   </div>
