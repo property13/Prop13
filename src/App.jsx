@@ -108,8 +108,12 @@ const UNLOCK_AFTER = 3.6;
 
 const STMT_VH = 340;
 const STMT_BASE_VH = 140;
-const STMT_A = STMT_BASE_VH / (STMT_VH - 100);
 const STMT_ZOOM_END = 0.94;
+
+/* ===== DESKTOP ONLY: the phone turns sideways (landscape) and THEN zooms in =====
+   Mobile is not affected: there the phone stays vertical, exactly like before. */
+const TURN_VH = 45;    // how much scrolling the sideways turn takes (bigger = slower turn). 0 = no turn at all
+const TURN_DEG = -90;  // how far it turns. -90 = turns to the left, 90 = turns to the right
 
 const FONT_VW = 6.3;
 const FONT_VW_MOBILE = 6.4;
@@ -283,14 +287,15 @@ function ReelScreen() {
   );
 }
 
-function StatusBar() {
+function StatusBar({ o }) {
   return (
-    <div
+    <motion.div
       style={{
         position: 'absolute', top: '1.25em', left: 0, right: 0, padding: '0 9%',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         color: '#fff', fontFamily: sans, fontSize: '0.95em', fontWeight: 600,
         zIndex: 4, pointerEvents: 'none', textShadow: '0 0 6px rgba(0,0,0,.35)',
+        opacity: o,
       }}
     >
       <span>9:41</span>
@@ -307,7 +312,7 @@ function StatusBar() {
           <rect x="24" y="4" width="2" height="4" rx="1" fill="#fff" opacity=".6" />
         </svg>
       </span>
-    </div>
+    </motion.div>
   );
 }
 
@@ -399,12 +404,18 @@ const PH_SHOW_ON = 0.55;
 const PH_SLICES = 14;
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
 
-function Phone({ small, progress, zoom }) {
+// shape of the phone screen: height / width (used to lay the landscape picture sideways inside it)
+const LAND_R = (19.3 - 0.633) / (9 - 0.633);
+
+function Phone({ small, progress, zoom, turn }) {
   const [i, setI] = useState(0);
   const [show, setShow] = useState(false);
   const [zooming, setZooming] = useState(false);
   const [flat, setFlat] = useState(false);
   const wrapRef = useRef(null);
+
+  // desktop only: the phone ends up sideways, so the zoom has to fill the screen sideways
+  const turned = !small && TURN_VH > 0;
 
   const mx = useMotionValue(0);
   const my = useMotionValue(0);
@@ -431,11 +442,14 @@ function Phone({ small, progress, zoom }) {
     return unsub;
   }, [progress]);
 
+  // "zooming" = the phone has started turning OR zooming (stops the floating bob, locks the screen)
   useEffect(() => {
-    const update = (v) => setZooming(v > 0.01);
-    update(zoom.get());
-    return zoom.on('change', update);
-  }, [zoom]);
+    const update = () => setZooming(zoom.get() > 0.01 || turn.get() > 0.01);
+    update();
+    const u1 = zoom.on('change', update);
+    const u2 = turn.on('change', update);
+    return () => { u1(); u2(); };
+  }, [zoom, turn]);
 
   useEffect(() => {
     const update = (v) => setFlat(v > 0.3);
@@ -472,7 +486,11 @@ function Phone({ small, progress, zoom }) {
       const sh = h - 1.6 * em;
       dxMV.set(op.offsetWidth / 2 - (el.offsetLeft + w / 2));
       dyMV.set(op.offsetHeight / 2 - (el.offsetTop + h / 2));
-      sMV.set(Math.max(op.offsetWidth / sw, op.offsetHeight / sh) * 1.25);
+      // vertical phone: screen is sw wide x sh tall. Sideways phone: sh wide x sw tall.
+      const fillScale = turned
+        ? Math.max(op.offsetWidth / sh, op.offsetHeight / sw)
+        : Math.max(op.offsetWidth / sw, op.offsetHeight / sh);
+      sMV.set(fillScale * 1.25);
     };
     measure();
     let ro;
@@ -486,16 +504,28 @@ function Phone({ small, progress, zoom }) {
       if (ro) ro.disconnect();
       window.removeEventListener('resize', measure);
     };
-  }, [small, dxMV, dyMV, sMV]);
+  }, [small, turned, dxMV, dyMV, sMV]);
 
   const deg = PHONE_TURN_DEG * (small ? 0.75 : 1);
   const scrollRotY = useTransform(progress, [PH_IN, PH_OUT], [-deg, 0]);
   const scrollRotX = useTransform(progress, [PH_IN, PH_OUT], [deg * 0.18, 0]);
   const turnScale = useTransform(progress, [PH_IN, PH_OUT], [0.93, 1]);
 
-  const calm = useTransform(zoom, [0, 0.25], [1, 0]);
+  // mouse tilt calms down as soon as the phone starts turning or zooming
+  const calm = useTransform([zoom, turn], ([z, t]) =>
+    Math.max(0, 1 - Math.max(clamp01(z / 0.25), clamp01(t / 0.2)))
+  );
   const rotY = useTransform([scrollRotY, smx, calm], ([a, b, c]) => (a + b * 9) * c);
   const rotX = useTransform([scrollRotX, smy, calm], ([a, b, c]) => (a - b * 6) * c);
+
+  // sideways turn (smooth start and end)
+  const turnRot = useTransform(turn, (t) => {
+    const c = clamp01(t);
+    return TURN_DEG * c * c * (3 - 2 * c);
+  });
+  // landscape picture on the screen fades in while the phone turns
+  const landO = useTransform(turn, [0.45, 0.8], [0, 1]);
+  const statusO = useTransform(landO, (v) => 1 - v);
 
   const ease = useTransform(zoom, (z) => {
     const c = clamp01(z);
@@ -505,7 +535,10 @@ function Phone({ small, progress, zoom }) {
   const zy = useTransform([ease, dyMV], ([e, d]) => e * d);
   const zs = useTransform([zoom, sMV], ([z, s]) => Math.pow(s, clamp01(z)));
 
-  const fadeOut = useTransform(zoom, [0, 0.2], [1, 0]);
+  // badges, glow and floor shadow disappear while the phone turns / zooms
+  const fadeOut = useTransform([zoom, turn], ([z, t]) =>
+    1 - Math.max(clamp01(z / 0.2), clamp01(t / 0.35))
+  );
   const sceneO = useTransform(zoom, [0.4, 0.8], [0, 1]);
 
   const lightAngle = useTransform(rotY, (v) => 118 - v * 2.4);
@@ -581,7 +614,7 @@ function Phone({ small, progress, zoom }) {
         <motion.div
           style={{
             position: 'relative', zIndex: 2, transformStyle: flat ? 'flat' : 'preserve-3d',
-            transformPerspective: 1400, rotateY: rotY, rotateX: rotX, scale: turnScale,
+            transformPerspective: 1400, rotate: turnRot, rotateY: rotY, rotateX: rotX, scale: turnScale,
           }}
         >
           <div
@@ -648,11 +681,31 @@ function Phone({ small, progress, zoom }) {
                     </motion.div>
                   </AnimatePresence>
 
+                  {/* DESKTOP: landscape picture. It is laid sideways inside the screen, so once the
+                      phone has turned it looks upright. Fades in while the phone turns. */}
+                  {turned && (
+                    <motion.div
+                      style={{
+                        position: 'absolute', top: '50%', left: '50%',
+                        width: `${LAND_R * 100}%`, height: `${100 / LAND_R}%`,
+                        x: '-50%', y: '-50%', rotate: 90,
+                        opacity: landO, zIndex: 2, overflow: 'hidden', background: '#000', pointerEvents: 'none',
+                      }}
+                    >
+                      <div style={{ ...fill, backgroundImage: `url(${HERO_IMG})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                      <div style={{ ...fill, background: 'linear-gradient(to bottom, rgba(0,0,0,.25), transparent 35%, transparent 60%, rgba(0,0,0,.65))' }} />
+                      <div style={{ position: 'absolute', left: '4%', bottom: '8%', fontFamily: mont, color: '#fff', lineHeight: 1.35 }}>
+                        <div style={{ fontWeight: 700, fontSize: '1.5em' }}>@{INSTAGRAM}</div>
+                        <div style={{ opacity: 0.9, fontSize: '1.15em' }}>Luxury homes tour · Delhi NCR</div>
+                      </div>
+                    </motion.div>
+                  )}
+
                   <motion.div
                     style={{ ...fill, zIndex: 3, opacity: sceneO, background: '#000', pointerEvents: 'none' }}
                   />
 
-                  <StatusBar />
+                  <StatusBar o={statusO} />
 
                   <div
                     style={{
@@ -1264,6 +1317,12 @@ export default function App() {
   const pill = isMobile ? PILL_M : PILL_D;
   const mid = isMobile ? MID_M : MID_D;
 
+  // scroll length of the About section. Desktop gets extra scroll for the sideways turn; mobile stays as before.
+  const turnVh = isMobile ? 0 : TURN_VH;
+  const stmtVh = STMT_VH + turnVh;
+  const stmtA = STMT_BASE_VH / (stmtVh - 100);
+  const turnA = (STMT_BASE_VH + turnVh) / (stmtVh - 100);
+
   const goProjects = () => {
     setSelectedProject(null);
     setTimeout(() => projectsRef.current?.scrollIntoView({ behavior: 'smooth' }), 80);
@@ -1276,7 +1335,7 @@ export default function App() {
       if (!el) return;
       const stageH = el.firstElementChild?.offsetHeight || window.innerHeight;
       const top = el.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({ top: top + (el.offsetHeight - stageH) * STMT_A * 0.9, behavior: 'smooth' });
+      window.scrollTo({ top: top + (el.offsetHeight - stageH) * stmtA * 0.9, behavior: 'smooth' });
     }, 80);
   };
 
@@ -1289,12 +1348,19 @@ export default function App() {
   const logoY = useTransform(ep, [0.55, 0.95], [-12, 0]);
 
   const { scrollYProgress: stmtRaw } = useScroll({ target: stmtRef, offset: ['start start', 'end end'] });
-  const stmtOld = useTransform(stmtRaw, [0, STMT_A], [0, 1]);
+  const stmtOld = useTransform(stmtRaw, [0, stmtA], [0, 1]);
   const sp = useSpring(stmtOld, SPRING);
-  const zoomRaw = useTransform(stmtRaw, [STMT_A, STMT_ZOOM_END], [0, 1]);
+
+  // 1) phone turns sideways (desktop only; on mobile this stays 0)
+  const turnRaw = useTransform(stmtRaw, [stmtA, Math.max(turnA, stmtA + 0.0001)], [0, turnVh > 0 ? 1 : 0]);
+  const turn = useSpring(turnRaw, { stiffness: 100, damping: 25, mass: 0.5 });
+  // 2) then it zooms in
+  const zoomRaw = useTransform(stmtRaw, [turnA, STMT_ZOOM_END], [0, 1]);
   const zoom = useSpring(zoomRaw, { stiffness: 100, damping: 25, mass: 0.5 });
-  const aboutFade = useTransform(zoom, [0, 0.25], [1, 0]);
-  const aboutShift = useTransform(zoom, [0, 0.35], [0, -50]);
+
+  // About text leaves as soon as the phone starts turning (desktop) or zooming (mobile)
+  const aboutFade = useTransform([turn, zoom], ([t, z]) => 1 - clamp01(Math.max(t / 0.5, z / 0.25)));
+  const aboutShift = useTransform([turn, zoom], ([t, z]) => -50 * clamp01(Math.max(t / 0.7, z / 0.35)));
 
   const panelY = useTransform(sp, [0.36, 0.62], ['100%', '0%']);
   const radH = useTransform(sp, [0.36, 0.5, 0.62], [50, 6, 0]);
@@ -1710,7 +1776,7 @@ export default function App() {
           <motion.div style={{ position: 'absolute', inset: 0, background: '#000', opacity: introDim, pointerEvents: 'none', zIndex: 5 }} />
         </div>
 
-        <section ref={stmtRef} style={{ position: 'relative', zIndex: 1, height: V(STMT_VH), background: BG }}>
+        <section ref={stmtRef} style={{ position: 'relative', zIndex: 1, height: V(stmtVh), background: BG }}>
           <div style={{ position: 'sticky', top: 0, height: V(100), overflow: 'hidden', background: BG }}>
             <motion.div
               style={{
@@ -1769,7 +1835,7 @@ export default function App() {
                     </div>
                   </motion.div>
                   <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '2vh' }}>
-                    <Phone small progress={sp} zoom={zoom} />
+                    <Phone small progress={sp} zoom={zoom} turn={turn} />
                   </div>
                 </div>
               ) : (
@@ -1791,7 +1857,7 @@ export default function App() {
                     </div>
                   </motion.div>
                   <div style={{ justifySelf: 'center' }}>
-                    <Phone progress={sp} zoom={zoom} />
+                    <Phone progress={sp} zoom={zoom} turn={turn} />
                   </div>
                 </div>
               )}
