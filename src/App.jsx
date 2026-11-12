@@ -788,7 +788,7 @@ function PortalScene({ zoom, isMobile, onExplore }) {
           fontSize: isMobile ? 10.5 : 12, textTransform: 'uppercase', marginTop: 14,
         }}
       >
-        Delhi NCR · Mumbai · Dubai
+        Delhi NCR · Mumbai · Goa · Noida · Alibaug · Nagpur · Ahmedabad · Dubai
       </motion.div>
 
       <motion.button
