@@ -19,6 +19,13 @@ const ALI_IMG = '/Alibaug.png';
 const DEL_IMG = '/Delhi.png';
 const MUM_IMG = '/Mumbai.png';
 
+/* Optional hero files (generate with ffmpeg, put them in /public, then set the flag to true):
+   public/hero-poster.jpg        -> first frame of the video
+   public/Website-Portrait.mp4   -> 9:16 crop of the video for phones */
+const USE_EXTRA_HERO_FILES = false;
+const HERO_POSTER = USE_EXTRA_HERO_FILES ? '/hero-poster.jpg' : HERO_IMG;
+const HERO_VIDEO_MOBILE = USE_EXTRA_HERO_FILES ? '/Website-Portrait.mp4' : HERO_VIDEO;
+
 const BG = '#000000';
 const CREAM = '#fbefca';
 const GOLD = '#f4d35e';
@@ -42,33 +49,25 @@ const WHATSAPP = '+91 8851678180';
 const EMAIL = 'info@propertygallery.com';
 const YOUTUBE = 'Property Gallery Vlogs';
 const YOUTUBE_URL = 'https://www.youtube.com/@PropertyGalleryVlogs';
-/* ================= ABOUT SECTION: EDIT HERE =================
-   Change the text, order of logos and sizes from this one block. Nothing else needs editing. */
+
 const ABOUT = {
-  // ----- content -----
   heading: 'ABOUT',
   text:
     "Add your founder story here. Share why you started Property Gallery, what you believe about real estate, and how you help buyers find the right home. Keep it to a few short lines so it stays easy to read.",
-  // logos shown at the bottom, in this order. Remove one to hide it.
-  // options: 'ig' (Instagram), 'in' (LinkedIn), 'wa' (WhatsApp), 'yt' (YouTube), 'em' (Email)
   logos: ['ig', 'in', 'wa', 'yt', 'em'],
-
-  // ----- desktop sizes -----
-  headingSize: 'clamp(38px, min(5.6vw, 10.5vh), 88px)',   // "ABOUT" heading
-  textSize: 'clamp(15px, min(1.7vw, 3.1vh), 27px)',       // paragraph
-  textMaxWidth: 800,                                      // px: paragraph width
-  textGapTop: '2.6vh',                                    // space between heading and paragraph
-  logoSize: 'clamp(48px, min(4.4vw, 8.5vh), 76px)',       // each logo
-  logoGap: 'clamp(50px, 2vw, 32px)',                      // space between logos
-  logoGapTop: '4.5vh',                                    // space between paragraph and logos
-  phoneHeight: 'clamp(340px, calc(var(--vh) * 80), 780px)', // phone size
-  columns: '1.2fr 0.8fr',                                 // left (text) vs right (phone) width
-
-  // ----- mobile sizes -----
+  headingSize: 'clamp(38px, min(5.6vw, 10.5vh), 88px)',
+  textSize: 'clamp(15px, min(1.7vw, 3.1vh), 27px)',
+  textMaxWidth: 800,
+  textGapTop: '2.6vh',
+  logoSize: 'clamp(48px, min(4.4vw, 8.5vh), 76px)',
+  logoGap: 'clamp(50px, 2vw, 32px)',
+  logoGapTop: '4.5vh',
+  phoneHeight: 'clamp(340px, calc(var(--vh) * 80), 780px)',
+  columns: '1.2fr 0.8fr',
   headingSizeMobile: 26,
   textSizeMobile: 12.5,
-  textLinesMobile: 4,                                     // max lines of paragraph on mobile
-  logoSizeMobile: 46,
+  textLinesMobile: 4,
+  logoSizeMobile: 25,
 };
 
 const WA_URL = `https://wa.me/${WHATSAPP.replace(/[^0-9]/g, '')}`;
@@ -94,6 +93,9 @@ const FOOTER_DISCLAIMER =
 const FOOTER_ADDRESS = 'M4/32, Mushedpur, DLF Phase 2, Sector 25, Gurugram, Shahpur, Haryana 122002';
 const MAPS_URL = 'https://maps.app.goo.gl/LFTdNsrsJKLbcfP4A';
 
+const FOOTER_RING = true;
+const FOOTER_LOGO = 26;
+
 const inOut = [0.76, 0, 0.24, 1];
 const outExpo = [0.16, 1, 0.3, 1];
 const outSoft = [0.22, 1, 0.36, 1];
@@ -107,11 +109,20 @@ const IMG_DUR = 2.0;
 const IMG_ZOOM_DUR = 2.6;
 const UNLOCK_AFTER = 3.6;
 
-const FONT_VW = 7;
-const FONT_VW_MOBILE = 9.4;
-const START_LEFT = 18.1;
-const START_RIGHT = 53.8;
-const NAV_FONT = 17;
+/* About section scroll length: first STMT_BASE_VH is the original timeline, the rest is the portal zoom into the phone */
+const STMT_VH = 340;
+const STMT_BASE_VH = 140;
+const STMT_A = STMT_BASE_VH / (STMT_VH - 100);
+/* portal zoom finishes at this scroll progress, the last bit of scroll just HOLDS the clear logo scene (1 = no hold) */
+const STMT_ZOOM_END = 0.94;
+
+const FONT_VW = 6.3;
+const FONT_VW_MOBILE = 6.4;
+const START_LEFT = 12.1;
+const START_RIGHT = 55.5;
+const START_LEFT_MOBILE = 12.0;
+const START_RIGHT_MOBILE = 83.0;
+const NAV_FONT = 12;
 const NAV_GAP = 28;
 
 const PILL_D = 'inset(39% 37.5% 39% 37.5% round 200px)';
@@ -306,7 +317,10 @@ function StatusBar() {
 }
 
 const PHONE_RADIUS = '17% / 7.9%';
-const PHONE_TITANIUM = 'linear-gradient(145deg, #f6b378 0%, #d2692a 20%, #8f3f12 46%, #de7630 74%, #fbc08a 100%)';
+const PHONE_TITANIUM =
+  'linear-gradient(135deg, #ffd9b5 0%, #f0a366 10%, #d2692a 24%, #8f3f12 42%, #5e2608 52%, #b4561b 66%, #ea9552 84%, #ffdcc0 100%)';
+const PHONE_BRUSHED =
+  'repeating-linear-gradient(90deg, rgba(255,255,255,.07) 0, rgba(255,255,255,.07) 1px, rgba(0,0,0,.07) 1px, rgba(0,0,0,.07) 2px)';
 
 const PHONE_TURN_DEG = 30;
 const IG_DELAY = 0.1;
@@ -387,14 +401,36 @@ const PH_IN = 0.42;
 const PH_OUT = 0.62;
 const PH_SHOW_ON = 0.55;
 
-function Phone({ small, progress }) {
+const PH_SLICES = 14;
+const clamp01 = (v) => Math.min(1, Math.max(0, v));
+
+function Phone({ small, progress, zoom }) {
   const [i, setI] = useState(0);
   const [show, setShow] = useState(false);
+  const [zooming, setZooming] = useState(false);
+  const [flat, setFlat] = useState(false);
+  const wrapRef = useRef(null);
 
+  /* mouse position (-1..1) drives a live 3D tilt on desktop */
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const smx = useSpring(mx, { stiffness: 70, damping: 16, mass: 0.7 });
+  const smy = useSpring(my, { stiffness: 70, damping: 16, mass: 0.7 });
+
+  /* portal zoom geometry (measured from layout, so it works on every screen size) */
+  const dxMV = useMotionValue(0);
+  const dyMV = useMotionValue(0);
+  const sMV = useMotionValue(1);
+
+  /* screen cycles between profile and reel; locks on the reel while zooming */
   useEffect(() => {
+    if (zooming) {
+      setI(1);
+      return undefined;
+    }
     const t = setInterval(() => setI((v) => (v + 1) % 2), 3300);
     return () => clearInterval(t);
-  }, []);
+  }, [zooming]);
 
   useEffect(() => {
     const unsub = progress.on('change', (v) =>
@@ -403,14 +439,109 @@ function Phone({ small, progress }) {
     return unsub;
   }, [progress]);
 
+  useEffect(() => {
+    const update = (v) => setZooming(v > 0.01);
+    update(zoom.get());
+    return zoom.on('change', update);
+  }, [zoom]);
+
+  /* once the phone is straight (zoom > 0.3) drop the 3D layers: a flat layer re-renders sharp while it scales */
+  useEffect(() => {
+    const update = (v) => setFlat(v > 0.3);
+    update(zoom.get());
+    return zoom.on('change', update);
+  }, [zoom]);
+
+  useEffect(() => {
+    if (small) return undefined;
+    const move = (e) => {
+      mx.set((e.clientX / window.innerWidth) * 2 - 1);
+      my.set((e.clientY / window.innerHeight) * 2 - 1);
+    };
+    const leave = () => { mx.set(0); my.set(0); };
+    window.addEventListener('pointermove', move);
+    document.addEventListener('pointerleave', leave);
+    return () => {
+      window.removeEventListener('pointermove', move);
+      document.removeEventListener('pointerleave', leave);
+    };
+  }, [small, mx, my]);
+
+  /* how far to move + how much to scale so the phone SCREEN fills the whole stage */
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return undefined;
+    const measure = () => {
+      const op = el.offsetParent;
+      if (!op) return;
+      const w = el.offsetWidth;
+      const h = el.offsetHeight;
+      if (!w || !h) return;
+      const em = h * 0.0205;
+      const sw = w - 1.6 * em;
+      const sh = h - 1.6 * em;
+      dxMV.set(op.offsetWidth / 2 - (el.offsetLeft + w / 2));
+      dyMV.set(op.offsetHeight / 2 - (el.offsetTop + h / 2));
+      sMV.set(Math.max(op.offsetWidth / sw, op.offsetHeight / sh) * 1.25);
+    };
+    measure();
+    let ro;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(measure);
+      ro.observe(el);
+      if (el.offsetParent) ro.observe(el.offsetParent);
+    }
+    window.addEventListener('resize', measure);
+    return () => {
+      if (ro) ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [small, dxMV, dyMV, sMV]);
+
   const deg = PHONE_TURN_DEG * (small ? 0.75 : 1);
-  const rotY = useTransform(progress, [PH_IN, PH_OUT], [-deg, 0]);
-  const rotX = useTransform(progress, [PH_IN, PH_OUT], [deg * 0.18, 0]);
+  const scrollRotY = useTransform(progress, [PH_IN, PH_OUT], [-deg, 0]);
+  const scrollRotX = useTransform(progress, [PH_IN, PH_OUT], [deg * 0.18, 0]);
   const turnScale = useTransform(progress, [PH_IN, PH_OUT], [0.93, 1]);
 
+  /* the phone straightens up as the camera pushes in */
+  const calm = useTransform(zoom, [0, 0.25], [1, 0]);
+  const rotY = useTransform([scrollRotY, smx, calm], ([a, b, c]) => (a + b * 9) * c);
+  const rotX = useTransform([scrollRotX, smy, calm], ([a, b, c]) => (a - b * 6) * c);
+
+  /* zoom transforms: slide the phone to the stage center while scaling up exponentially */
+  const ease = useTransform(zoom, (z) => {
+    const c = clamp01(z);
+    return c * c * (3 - 2 * c);
+  });
+  const zx = useTransform([ease, dxMV], ([e, d]) => e * d);
+  const zy = useTransform([ease, dyMV], ([e, d]) => e * d);
+  const zs = useTransform([zoom, sMV], ([z, s]) => Math.pow(s, clamp01(z)));
+
+  const fadeOut = useTransform(zoom, [0, 0.2], [1, 0]);
+  /* the zoomed-in photo is only low-res pixels, so the screen fades to plain black EARLY.
+     The sharp logo is drawn by <PortalScene> (outside the scaled phone), never inside it. */
+  const sceneO = useTransform(zoom, [0.4, 0.8], [0, 1]);
+
+  /* light moves across the glass and the metal as the phone turns */
+  const lightAngle = useTransform(rotY, (v) => 118 - v * 2.4);
+  const glare = useMotionTemplate`linear-gradient(${lightAngle}deg, rgba(255,255,255,.34) 0%, rgba(255,255,255,.1) 16%, rgba(255,255,255,0) 38%, rgba(255,255,255,0) 72%, rgba(255,255,255,.07) 100%)`;
+  const rimAngle = useTransform(rotY, (v) => 135 - v * 3);
+  const frameBg = useMotionTemplate`linear-gradient(${rimAngle}deg, #ffd9b5 0%, #f0a366 10%, #d2692a 24%, #8f3f12 42%, #5e2608 52%, #b4561b 66%, #ea9552 84%, #ffdcc0 100%)`;
+  const shadowX = useTransform(rotY, (v) => v * -0.9);
+
   const sideBtn = (side, top, height) => ({
-    position: 'absolute', [side]: '-0.28em', top, height, width: '0.34em',
-    borderRadius: '0.2em', background: PHONE_TITANIUM,
+    position: 'absolute',
+    [side]: '-0.3em',
+    top,
+    height,
+    width: '0.4em',
+    borderRadius: '0.2em',
+    background:
+      side === 'left'
+        ? 'linear-gradient(90deg, #7a3510, #e08a4a 45%, #fbc08a 60%, #8f3f12)'
+        : 'linear-gradient(90deg, #8f3f12, #fbc08a 40%, #e08a4a 55%, #7a3510)',
+    boxShadow: '0 0.1em 0.25em rgba(0,0,0,.35)',
+    transform: 'translateZ(-0.6em)',
   });
 
   const height = small
@@ -418,99 +549,259 @@ function Phone({ small, progress }) {
     : ABOUT.phoneHeight;
 
   return (
-    <motion.div
-      animate={{ y: [0, -8, 0] }}
-      transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
-      style={{ position: 'relative', justifySelf: 'center' }}
-    >
-      <Badge
-        icon="ig" label="Instagram" to={169} suffix="k" caption="Followers"
-        show={show} small={small} from={small ? -70 : -150} delay={IG_DELAY}
-        style={{ top: small ? '6%' : '8%', left: 'calc(100% - 40px)', zIndex: 3 }}
-      />
-      <Badge
-        icon="yt" label="YouTube" to={128} suffix="k+" caption="Subscribers"
-        show={show} small={small} from={small ? -60 : 150} delay={YT_DELAY}
-        style={{ bottom: small ? '14%' : '18%', right: 'calc(100% - 40px)', zIndex: 3 }}
-      />
-
+    <motion.div ref={wrapRef} style={{ position: 'relative', x: zx, y: zy, scale: zs }}>
       <motion.div
-        style={{
-          position: 'relative', zIndex: 2, transformStyle: 'preserve-3d',
-          transformPerspective: 1400, rotateY: rotY, rotateX: rotX, scale: turnScale,
-        }}
+        animate={zooming ? { y: 0 } : { y: [0, -8, 0] }}
+        transition={zooming ? { duration: 0.4 } : { duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
+        style={{ position: 'relative', justifySelf: 'center' }}
       >
-        <div
+        {/* warm light bloom + floor shadows (fade out once the zoom starts) */}
+        <motion.div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: fadeOut }}>
+          <div
+            style={{
+              position: 'absolute', inset: '-22% -48%', pointerEvents: 'none',
+              background: 'radial-gradient(closest-side, rgba(240,150,80,.22), rgba(240,150,80,0) 70%)',
+            }}
+          />
+          <motion.div
+            animate={{ scaleX: [1, 0.9, 1], opacity: [0.9, 0.65, 0.9] }}
+            transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
+            style={{
+              position: 'absolute', left: '6%', right: '-6%', bottom: '-6%', height: '8%', x: shadowX,
+              borderRadius: '50%', background: 'rgba(40, 24, 12, 0.32)', filter: 'blur(22px)', pointerEvents: 'none',
+            }}
+          />
+          <motion.div
+            animate={{ scaleX: [1, 0.94, 1] }}
+            transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
+            style={{
+              position: 'absolute', left: '16%', right: '4%', bottom: '-3.5%', height: '3%', x: shadowX,
+              borderRadius: '50%', background: 'rgba(20, 10, 4, 0.45)', filter: 'blur(8px)', pointerEvents: 'none',
+            }}
+          />
+        </motion.div>
+
+        <motion.div style={{ position: 'absolute', inset: 0, zIndex: 3, pointerEvents: 'none', opacity: fadeOut }}>
+          <Badge
+            icon="ig" label="Instagram" to={169} suffix="k" caption="Followers"
+            show={show} small={small} from={small ? -70 : -150} delay={IG_DELAY}
+            style={{ top: small ? '6%' : '8%', left: 'calc(100% - 40px)', zIndex: 3 }}
+          />
+          <Badge
+            icon="yt" label="YouTube" to={128} suffix="k+" caption="Subscribers"
+            show={show} small={small} from={small ? -60 : 150} delay={YT_DELAY}
+            style={{ bottom: small ? '14%' : '18%', right: 'calc(100% - 40px)', zIndex: 3 }}
+          />
+        </motion.div>
+
+        <motion.div
           style={{
-            '--ph': height,
-            position: 'relative',
-            height: 'var(--ph)',
-            aspectRatio: '9 / 19.3',
-            fontSize: 'calc(var(--ph) * 0.0205)',
-            transformStyle: 'preserve-3d',
+            position: 'relative', zIndex: 2, transformStyle: flat ? 'flat' : 'preserve-3d',
+            transformPerspective: 1400, rotateY: rotY, rotateX: rotX, scale: turnScale,
           }}
         >
           <div
             style={{
-              position: 'absolute', left: '10%', right: '-8%', bottom: '-3%', height: '7%',
-              borderRadius: '50%', background: 'rgba(206, 212, 231, 0.45)', filter: 'blur(16px)', pointerEvents: 'none',
-              transform: 'translateZ(-30px)',
+              '--ph': height,
+              position: 'relative',
+              height: 'var(--ph)',
+              aspectRatio: '9 / 19.3',
+              fontSize: 'calc(var(--ph) * 0.0205)',
+              transformStyle: flat ? 'flat' : 'preserve-3d',
             }}
-          />
-
-          {[1, 2, 3, 4, 5, 6].map((k) => (
-            <div
-              key={k}
-              style={{
-                position: 'absolute', inset: 0, borderRadius: PHONE_RADIUS,
-                background: k % 2 ? '#7a3510' : '#9a4817',
-                transform: `translateZ(${-k * 1.4}px)`,
-              }}
-            />
-          ))}
-
-          <div style={sideBtn('left', '13%', '3.2%')} />
-          <div style={sideBtn('left', '19%', '6.5%')} />
-          <div style={sideBtn('left', '27%', '6.5%')} />
-          <div style={sideBtn('right', '22%', '10.5%')} />
-          <div style={sideBtn('right', '60%', '7.5%')} />
-
-          <div style={{ position: 'absolute', inset: 0, boxSizing: 'border-box', borderRadius: PHONE_RADIUS, background: PHONE_TITANIUM, padding: '0.5em' }}>
-            <div style={{ width: '100%', height: '100%', boxSizing: 'border-box', borderRadius: '16.2% / 7.5%', background: '#000', padding: '0.3em', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.07)' }}>
-              <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: '15% / 6.9%', overflow: 'hidden', background: '#000', isolation: 'isolate' }}>
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 28 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -28 }}
-                    transition={{ duration: 0.55, ease: outSoft }}
-                    style={fill}
-                  >
-                    {i === 0 ? <ProfileScreen /> : <ReelScreen />}
-                  </motion.div>
-                </AnimatePresence>
-
-                <StatusBar />
-
-                <div style={{ position: 'absolute', top: '0.85em', left: '50%', transform: 'translateX(-50%)', width: '31%', height: '2.05em', background: '#000', borderRadius: 999, zIndex: 5 }} />
-                <div style={{ position: 'absolute', bottom: '0.55em', left: '50%', transform: 'translateX(-50%)', width: '34%', height: '0.36em', borderRadius: 999, background: 'rgba(255,255,255,.85)', zIndex: 4, pointerEvents: 'none' }} />
-                <div style={{ position: 'absolute', inset: 0, zIndex: 6, pointerEvents: 'none', background: 'linear-gradient(118deg, rgba(255,255,255,.22) 0%, rgba(255,255,255,.08) 20%, rgba(255,255,255,0) 38%, rgba(255,255,255,0) 72%, rgba(255,255,255,.06) 100%)' }} />
-                <motion.div
-                  animate={{ x: ['-140%', '340%'] }}
-                  transition={{ duration: 2.4, ease: inOut, repeat: Infinity, repeatDelay: 3.6 }}
+          >
+            {/* machined titanium thickness: 14 slices, lighter at the front, darker at the back (not needed once flat) */}
+            {!flat &&
+              Array.from({ length: PH_SLICES }, (_, k) => (
+                <div
+                  key={k}
                   style={{
-                    position: 'absolute', top: '-20%', bottom: '-20%', left: 0, width: '42%', rotate: 14,
-                    zIndex: 7, pointerEvents: 'none',
-                    background: 'linear-gradient(100deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.2) 50%, rgba(255,255,255,0) 100%)',
+                    position: 'absolute', inset: 0, borderRadius: PHONE_RADIUS,
+                    background: `hsl(22, 70%, ${54 - k * 2.2}%)`,
+                    transform: `translateZ(${-(k + 1) * 0.19}em)`,
+                    boxShadow: k % 2 ? 'none' : 'inset 0 0 0 0.05em rgba(255,214,176,.28)',
                   }}
                 />
+              ))}
+
+            <div style={sideBtn('left', '13%', '3.2%')} />
+            <div style={sideBtn('left', '19%', '6.5%')} />
+            <div style={sideBtn('left', '27%', '6.5%')} />
+            <div style={sideBtn('right', '22%', '10.5%')} />
+            <div style={sideBtn('right', '60%', '7.5%')} />
+
+            {/* front frame */}
+            <motion.div
+              style={{
+                position: 'absolute', inset: 0, boxSizing: 'border-box', borderRadius: PHONE_RADIUS,
+                background: frameBg, padding: '0.5em',
+                boxShadow: '0 0.6em 1.4em rgba(60,24,6,.28)',
+              }}
+            >
+              {/* brushed metal grain */}
+              <div
+                style={{
+                  position: 'absolute', inset: 0, borderRadius: PHONE_RADIUS, pointerEvents: 'none',
+                  background: PHONE_BRUSHED, mixBlendMode: 'overlay', opacity: 0.7,
+                }}
+              />
+
+              <div
+                style={{
+                  position: 'relative', width: '100%', height: '100%', boxSizing: 'border-box',
+                  borderRadius: '16.2% / 7.5%', background: '#000', padding: '0.3em',
+                  boxShadow: '0 0 0 0.05em rgba(0,0,0,.65), inset 0 0 0 1px rgba(255,255,255,.07)',
+                }}
+              >
+                <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: '15% / 6.9%', overflow: 'hidden', background: '#000', isolation: 'isolate' }}>
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 28 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -28 }}
+                      transition={{ duration: 0.55, ease: outSoft }}
+                      style={fill}
+                    >
+                      {i === 0 ? <ProfileScreen /> : <ReelScreen />}
+                    </motion.div>
+                  </AnimatePresence>
+
+                  {/* screen fades to plain black while the camera pushes in */}
+                  <motion.div
+                    style={{ ...fill, zIndex: 3, opacity: sceneO, background: '#000', pointerEvents: 'none' }}
+                  />
+
+                  <StatusBar />
+
+                  {/* dynamic island with camera lens */}
+                  <div
+                    style={{
+                      position: 'absolute', top: '0.85em', left: '50%', transform: 'translateX(-50%)',
+                      width: '31%', height: '2.05em', background: '#000', borderRadius: 999, zIndex: 5,
+                      boxShadow: 'inset 0 0 0.35em rgba(255,255,255,.07)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: 'absolute', right: '11%', top: '50%', transform: 'translateY(-50%)',
+                        width: '0.95em', height: '0.95em', borderRadius: '50%',
+                        background: 'radial-gradient(circle at 35% 35%, #3d4f78 0%, #10131c 45%, #04050a 100%)',
+                        boxShadow: '0 0 0 0.1em #0a0b10, inset 0 0 0.12em rgba(120,160,255,.35)',
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ position: 'absolute', bottom: '0.55em', left: '50%', transform: 'translateX(-50%)', width: '34%', height: '0.36em', borderRadius: 999, background: 'rgba(255,255,255,.85)', zIndex: 4, pointerEvents: 'none' }} />
+
+                  {/* glass: live reflection + vignette + sweep */}
+                  <motion.div style={{ position: 'absolute', inset: 0, zIndex: 6, pointerEvents: 'none', background: glare }} />
+                  <div style={{ position: 'absolute', inset: 0, zIndex: 6, pointerEvents: 'none', background: 'radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 62%, rgba(0,0,0,.28) 100%)' }} />
+                  <motion.div
+                    animate={{ x: ['-140%', '340%'] }}
+                    transition={{ duration: 2.4, ease: inOut, repeat: Infinity, repeatDelay: 3.6 }}
+                    style={{
+                      position: 'absolute', top: '-20%', bottom: '-20%', left: 0, width: '42%', rotate: 14,
+                      zIndex: 7, pointerEvents: 'none',
+                      background: 'linear-gradient(100deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.2) 50%, rgba(255,255,255,0) 100%)',
+                    }}
+                  />
+                </div>
               </div>
-            </div>
-            <div style={{ position: 'absolute', inset: 0, borderRadius: PHONE_RADIUS, pointerEvents: 'none', boxShadow: 'inset 0 0 0 0.07em rgba(255,255,255,.4), inset 0 0 0.5em rgba(255,255,255,.14), inset 0.2em 0.2em 0.5em rgba(255,255,255,.18)' }} />
+
+              {/* polished chamfer: bright top-left edge, dark bottom-right edge */}
+              <div
+                style={{
+                  position: 'absolute', inset: 0, borderRadius: PHONE_RADIUS, pointerEvents: 'none',
+                  boxShadow:
+                    'inset 0 0 0 0.07em rgba(255,236,214,.6), inset 0.18em 0.22em 0.5em rgba(255,255,255,.3), inset -0.2em -0.25em 0.5em rgba(70,26,4,.45), inset 0 0 0.6em rgba(255,255,255,.12)',
+                }}
+              />
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
       </motion.div>
+    </motion.div>
+  );
+}
+
+/* ================= PORTAL SCENE =================
+   The sharp "arrival" screen after the zoom. It lives at stage level (NOT inside the scaled phone),
+   so the logo is drawn at its real pixel size and is never enlarged -> always crisp.
+   The logo is also capped to its own pixel width (natural width / devicePixelRatio), so a small
+   logo.png shows smaller but sharp instead of big but blurry. */
+function PortalScene({ zoom, isMobile, onExplore }) {
+  const [nat, setNat] = useState(0);
+  const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+
+  const o = useTransform(zoom, [0.68, 0.92], [0, 1]);
+  const logoS = useTransform(zoom, [0.7, 1], [0.94, 1]); // stays <= 1, so it is never upscaled
+  const lineS = useTransform(zoom, [0.8, 1], [0, 1]);
+  const textO = useTransform(zoom, [0.86, 1], [0, 1]);
+  const ctaO = useTransform(zoom, [0.93, 1], [0, 1]);
+  const events = useTransform(zoom, (z) => (z > 0.92 ? 'auto' : 'none'));
+
+  const want = isMobile ? '46vw' : '20vw';
+  const logoW = nat
+    ? `min(${want}, ${V(32)}, ${Math.floor(nat / dpr)}px)`
+    : `min(${want}, ${V(32)})`;
+
+  return (
+    <motion.div
+      style={{
+        position: 'absolute', inset: 0, zIndex: 50, opacity: o, pointerEvents: events,
+        background: 'radial-gradient(ellipse at 50% 40%, #171b0b 0%, #060704 52%, #000 100%)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        textAlign: 'center', padding: '0 6vw',
+      }}
+    >
+      <motion.img
+        src={LOGO}
+        alt="Property Gallery"
+        draggable={false}
+        onLoad={(e) => setNat(e.currentTarget.naturalWidth)}
+        style={{
+          scale: logoS, width: logoW, height: 'auto', display: 'block',
+          filter: 'drop-shadow(0 0 1.4em rgba(244,211,94,.2))',
+        }}
+      />
+
+      <motion.div
+        style={{
+          scaleX: lineS, width: 'min(320px, 56vw)', height: 1, margin: `${V(4)} 0 ${V(3)}`,
+          background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)`,
+        }}
+      />
+
+      <motion.div
+        style={{
+          opacity: textO, fontFamily: serif, color: CREAM, letterSpacing: '0.42em', paddingLeft: '0.42em',
+          fontSize: isMobile ? 14 : 'clamp(15px, 1.5vw, 22px)', textTransform: 'uppercase',
+        }}
+      >
+        Property Gallery
+      </motion.div>
+
+      <motion.div
+        style={{
+          opacity: textO, fontFamily: sans, color: GOLD, letterSpacing: '0.3em', paddingLeft: '0.3em',
+          fontSize: isMobile ? 10.5 : 12, textTransform: 'uppercase', marginTop: 14,
+        }}
+      >
+        Delhi NCR · Mumbai · Dubai
+      </motion.div>
+
+      <motion.button
+        type="button"
+        onClick={onExplore}
+        style={{
+          opacity: ctaO, marginTop: V(6), cursor: 'pointer', background: 'rgba(0,0,0,0)',
+          border: `1px solid ${GOLD_DARK}`, color: CREAM, fontFamily: sans, fontWeight: 500,
+          fontSize: 13, letterSpacing: '0.12em', padding: '13px 28px', borderRadius: 999,
+        }}
+      >
+        Explore Featured Projects ↓
+      </motion.button>
     </motion.div>
   );
 }
@@ -546,40 +837,29 @@ function GoldLine() {
   );
 }
 
-/* ================= STACKED CARDS: SIZE CONTROLS =================
-   Change these numbers to make things bigger / smaller. Nothing else needs editing. */
 const STACK = {
-  // overall layout (image card on the left, text on the right)
-  maxWidth: 1200,         // px: total width of image + text area (desktop)
-  imageWidthPct: 56,      // %: share of that width the image card takes (text gets the rest)
-  textGap: 56,            // px: space between image card and text (desktop)
-  textGapMobile: 22,      // px: space between image and text (mobile, text sits below)
-  // image card
-  heightVh: 72,           // % of screen height: image card height (desktop)
-  heightVhMobile: 42,     // % of screen height: image card height (mobile)
-  topVh: 13,              // % of screen height: gap above the card when it sticks (desktop)
-  topVhMobile: 11,        // same, mobile
-  radius: 28,             // px: corner roundness
-  imageZoom: 1.2,         // image zoom inside the card (keep above 1.1 so tilted corners stay hidden)
-  // text
-  titlePx: 40,            // px: heading size (desktop)
+  maxWidth: 1200,
+  imageWidthPct: 56,
+  textGap: 56,
+  textGapMobile: 22,
+  heightVh: 72,
+  heightVhMobile: 42,
+  topVh: 13,
+  topVhMobile: 11,
+  radius: 28,
+  imageZoom: 1.2,
+  titlePx: 40,
   titlePxMobile: 24,
-  bodyPx: 16,             // px: paragraph size (desktop)
+  bodyPx: 16,
   bodyPxMobile: 13.5,
-  // stacking effect
-  peekPx: 0,              // px: how much of each older card peeks above the next one (0 = none)
-  shrink: 0.05,           // how much an older card shrinks per card stacked on top (0 = none)
-  tiltDeg: 5,             // degrees an older card rotates per card stacked on top (0 = none)
+  peekPx: 0,
+  shrink: 0.05,
+  tiltDeg: 5,
 };
 
-/* ================= STACKED STICKY CARDS =================
-   Images stack, shrink and tilt as you scroll.
-   The text is NOT inside the cards: it lives in one fixed (sticky) block on the right
-   that never moves. When the active image changes, the text just blurs out and the
-   new text blurs in. */
 function StackCard({ sec, i, n, progress, isMobile }) {
   const isLast = i === n - 1;
-  const depth = n - 1 - i; // how many cards will cover this one
+  const depth = n - 1 - i;
   const start = n > 1 ? i / (n - 1) : 0;
 
   const inRange = isLast ? [0, 1] : [start, 1];
@@ -649,7 +929,6 @@ function StackText({ sections, progress, isMobile }) {
         position: 'sticky',
         top: 0,
         height: V(100),
-        zIndex: 5,
         boxSizing: 'border-box',
         display: 'flex',
         justifyContent: 'center',
@@ -668,7 +947,6 @@ function StackText({ sections, progress, isMobile }) {
           height: isMobile ? `calc(${V(100)} - ${V(STACK.topVhMobile)})` : V(STACK.heightVh),
         }}
       >
-        {/* empty space where the image cards are */}
         <div
           style={{
             flex: isMobile ? '0 0 auto' : `0 0 ${STACK.imageWidthPct}%`,
@@ -676,7 +954,6 @@ function StackText({ sections, progress, isMobile }) {
           }}
         />
 
-        {/* fixed text: only blurs when the image changes */}
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: isMobile ? 'flex-start' : 'center' }}>
           <AnimatePresence mode="wait">
             <motion.div
@@ -758,6 +1035,15 @@ function Footer({ isMobile, footerRef, onProjects, onAbout }) {
   const linkStyle = { display: 'block', color: CREAM, opacity: 0.85, fontFamily: sans, fontSize: 15, lineHeight: 2.1, textDecoration: 'none', cursor: 'pointer', wordBreak: 'break-word' };
   const hover = { x: isMobile ? 0 : 6, color: GOLD };
 
+  const logoBox = FOOTER_RING
+    ? {
+        width: 46, height: 46, borderRadius: '50%', display: 'grid', placeItems: 'center',
+        border: `1.5px solid ${GOLD_DARK}`, background: 'rgba(244,211,94,.06)', boxShadow: '0 0 0 4px rgba(244,211,94,.05)',
+      }
+    : {
+        width: FOOTER_LOGO + 8, height: FOOTER_LOGO + 8, display: 'grid', placeItems: 'center',
+      };
+
   return (
     <footer
       ref={footerRef}
@@ -818,21 +1104,24 @@ function Footer({ isMobile, footerRef, onProjects, onAbout }) {
 
           <motion.div {...up(0.24)}>
             <h4 style={head}>✦ Follow us</h4>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: isMobile ? 'center' : 'flex-start' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: FOOTER_RING ? 12 : 16, justifyContent: isMobile ? 'center' : 'flex-start' }}>
               {CONTACTS.map((c) => (
                 <motion.a
                   key={c.icon}
                   href={c.href}
                   {...(c.href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                   aria-label={c.name}
-                  whileHover={{ y: -4, rotate: -6, scale: 1.08 }}
+                  title={c.name}
+                  whileHover={{ y: -4, rotate: FOOTER_RING ? -6 : 0, scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
-                  style={{
-                    width: 46, height: 46, borderRadius: '50%', display: 'grid', placeItems: 'center',
-                    border: `1.5px solid ${GOLD_DARK}`, background: 'rgba(244,211,94,.06)', boxShadow: '0 0 0 4px rgba(244,211,94,.05)',
-                  }}
+                  style={logoBox}
                 >
-                  <Icon name={c.icon} size={24} />
+                  <img
+                    src={ICON_IMG[c.icon]}
+                    alt={c.name}
+                    draggable={false}
+                    style={{ width: FOOTER_LOGO, height: FOOTER_LOGO, objectFit: 'contain', display: 'block' }}
+                  />
                 </motion.a>
               ))}
             </div>
@@ -855,7 +1144,7 @@ function Footer({ isMobile, footerRef, onProjects, onAbout }) {
             whileTap={{ scale: 0.94 }}
             style={{
               width: 44, height: 44, borderRadius: '50%', border: `1.5px solid ${GOLD_DARK}`,
-              background: 'rgba(244,211,94,.08)', color: GOLD, cursor: 'pointer', display: 'grid', placeItems: 'center', fontSize: 18,
+              background: 'rgba(0,0,0,0)', color: GOLD, cursor: 'pointer', display: 'grid', placeItems: 'center', fontSize: 18,
             }}
           >
             <motion.span animate={{ y: [0, -3, 0] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}>↑</motion.span>
@@ -869,8 +1158,6 @@ function Footer({ isMobile, footerRef, onProjects, onAbout }) {
     </footer>
   );
 }
-
-/* ================= 3. MAIN APP & PROJECTS ================= */
 
 const PROJECTS = [
   {
@@ -893,7 +1180,7 @@ const PROJECTS = [
         title: 'Grand Architecture',
         sub: 'Iconic Towers & Facade',
         text: 'Striking geometric design and high-rise structural brilliance that commands the Sector 88A skyline with effortless elegance.',
-        image: '/Experion 1.jpg',
+        image: '/Experion1.jpg',
       },
       {
         title: 'World-Class Amenities',
@@ -988,11 +1275,18 @@ export default function App() {
   const projectsRef = useRef(null);
   const footerRef = useRef(null);
   const heroVideoRef = useRef(null);
+  const propRef = useRef(null);
+  const galRef = useRef(null);
+  const [startPos, setStartPos] = useState(null);
   const aboutLogos = ABOUT.logos.map((id) => CONTACTS.find((c) => c.icon === id)).filter(Boolean);
 
   const fs = isMobile ? FONT_VW_MOBILE : FONT_VW;
-  const startLeft = isMobile ? 50 - 4.572 * FONT_VW_MOBILE : START_LEFT;
-  const startRight = isMobile ? startLeft + 5.104 * FONT_VW_MOBILE : START_RIGHT;
+  const startLeft = startPos
+    ? startPos.left
+    : isMobile ? 50 - 4.572 * FONT_VW_MOBILE : START_LEFT;
+  const startRight = startPos
+    ? startPos.right
+    : isMobile ? startLeft + 5.104 * FONT_VW_MOBILE : START_RIGHT;
   const edge = isMobile ? 5 : 3.8;
   const topEnd = isMobile ? '10.5%' : '4%';
   const pill = isMobile ? PILL_M : PILL_D;
@@ -1010,7 +1304,7 @@ export default function App() {
       if (!el) return;
       const stageH = el.firstElementChild?.offsetHeight || window.innerHeight;
       const top = el.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({ top: top + (el.offsetHeight - stageH) * 0.9, behavior: 'smooth' });
+      window.scrollTo({ top: top + (el.offsetHeight - stageH) * STMT_A * 0.9, behavior: 'smooth' });
     }, 80);
   };
 
@@ -1023,7 +1317,12 @@ export default function App() {
   const logoY = useTransform(ep, [0.55, 0.95], [-12, 0]);
 
   const { scrollYProgress: stmtRaw } = useScroll({ target: stmtRef, offset: ['start start', 'end end'] });
-  const sp = useSpring(stmtRaw, SPRING);
+  const stmtOld = useTransform(stmtRaw, [0, STMT_A], [0, 1]);
+  const sp = useSpring(stmtOld, SPRING);
+  const zoomRaw = useTransform(stmtRaw, [STMT_A, STMT_ZOOM_END], [0, 1]);
+  const zoom = useSpring(zoomRaw, { stiffness: 140, damping: 30, mass: 0.4 });
+  const aboutFade = useTransform(zoom, [0, 0.3], [1, 0]);
+  const aboutShift = useTransform(zoom, [0, 0.4], [0, -80]);
 
   const panelY = useTransform(sp, [0.36, 0.62], ['100%', '0%']);
   const radH = useTransform(sp, [0.36, 0.5, 0.62], [50, 6, 0]);
@@ -1048,20 +1347,55 @@ export default function App() {
     };
   }, []);
 
+  /* Preload hero image + both fonts, with a shorter fallback timeout */
   useEffect(() => {
     const img = new Image();
     img.src = HERO_IMG;
     const imgP = img.decode ? img.decode() : Promise.resolve();
-    const fontP = document.fonts ? document.fonts.load('400 100px Marcellus') : Promise.resolve();
-    const timeout = new Promise((r) => setTimeout(r, 4000));
+    const fontP = document.fonts
+      ? Promise.all([
+          document.fonts.load('400 100px MORSEO'),
+          document.fonts.load('400 100px Marcellus'),
+        ])
+      : Promise.resolve();
+    const timeout = new Promise((r) => setTimeout(r, 1500));
     Promise.race([Promise.all([imgP, fontP]).catch(() => {}), timeout]).then(() => setReady(true));
     PROJECTS.forEach((p) => { const im = new Image(); im.src = p.image; });
   }, []);
 
+  /* Measure the real width of PROPERTY / GALLERY and center the pair on screen */
+  useEffect(() => {
+    if (stage > 0) return undefined;
+    const measure = () => {
+      const p = propRef.current;
+      const g = galRef.current;
+      if (!p || !g) return;
+      const vw = window.innerWidth;
+      const wP = (p.offsetWidth / vw) * 100;
+      const wG = (g.offsetWidth / vw) * 100;
+      if (!wP || !wG) return;
+      const gap = fs * (isMobile ? 0.3 : 0.45);
+      const left = (100 - (wP + gap + wG)) / 2;
+      setStartPos({ left, right: left + wP + gap });
+    };
+    measure();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [stage, isMobile, fs]);
+
+  /* Hero video: force muted, start buffering/playing behind the intro, retry on first touch */
   useEffect(() => {
     const v = heroVideoRef.current;
-    if (v && stage >= 2) v.play().catch(() => {});
-  }, [stage]);
+    if (!v || !ready) return undefined;
+    v.muted = true;
+    v.defaultMuted = true;
+    v.setAttribute('playsinline', '');
+    const tryPlay = () => v.play().catch(() => {});
+    tryPlay();
+    window.addEventListener('touchstart', tryPlay, { once: true, passive: true });
+    return () => window.removeEventListener('touchstart', tryPlay);
+  }, [ready, stage]);
 
   useEffect(() => {
     if (!ready) return;
@@ -1090,18 +1424,53 @@ export default function App() {
     };
   }, [unlocked, selectedProject]);
 
-  // The landing view stays mounted (just hidden) while a project is open, so the
-  // scroll trackers keep their elements. When it comes back, ask them to re-measure.
   useEffect(() => {
     if (selectedProject) return undefined;
     const id = requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
     return () => cancelAnimationFrame(id);
   }, [selectedProject]);
 
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    document.body.style.overflowY = 'hidden';
+    return () => { document.body.style.overflowY = ''; };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (!isMobile) setMenuOpen(false);
+  }, [isMobile]);
+
+  const menuGo = (fn) => {
+    setMenuOpen(false);
+    setTimeout(fn, 250);
+  };
+
+  const menuItems = [
+    { label: 'Projects', fn: goProjects },
+    { label: 'About', fn: goAbout },
+    { label: 'Contact', fn: goFooter },
+  ];
+
+  const menuBtn = {
+    background: 'rgba(40,42,48,.55)',
+    backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)',
+    border: 'none',
+    color: CREAM,
+    fontFamily: sans,
+    fontSize: 14,
+    fontWeight: 500,
+    padding: '9px 16px',
+    borderRadius: 6,
+    cursor: 'pointer',
+  };
+
   const wordBase = {
     position: 'absolute',
     margin: 0,
-    fontFamily: serif,
+    fontFamily: '"MORSEO", "Marcellus", Georgia, serif',
     fontWeight: 400,
     fontSize: `${fs}vw`,
     lineHeight: 1,
@@ -1123,16 +1492,8 @@ export default function App() {
       ? { left: { duration: SPLIT_DUR, ease: inOut }, x: { duration: SPLIT_DUR, ease: inOut } }
       : { top: { duration: VERT_DUR, ease: inOut }, y: { duration: VERT_DUR, ease: inOut } };
 
-  const link = {
-    display: 'flex', alignItems: 'center', gap: 'clamp(10px, 1vw, 16px)',
-    fontSize: 'clamp(14px, min(1.2vw, 2.4vh), 19px)', fontWeight: 600, color: INK,
-    lineHeight: 1.25, minWidth: 0, wordBreak: 'break-word', textDecoration: 'none', cursor: 'pointer',
-  };
-  const iconSize = 'clamp(32px, min(2.6vw, 5vh), 44px)';
-
   return (
     <>
-      {/* ============ HEADER ============ */}
       <header
         style={{
           position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
@@ -1177,18 +1538,85 @@ export default function App() {
             color: '#fff', pointerEvents: 'auto',
           }}
         >
-          <span onClick={goProjects} style={{ cursor: 'pointer' }}>Projects</span>
-          <span onClick={goAbout} style={{ cursor: 'pointer' }}>About</span>
-          <span
-            onClick={goFooter}
-            style={{ background: CREAM, color: '#000', padding: isMobile ? '7px 12px' : '10px 20px', borderRadius: 6, fontWeight: 500, cursor: 'pointer' }}
-          >
-            Contact
-          </span>
+          {isMobile ? (
+            <button type="button" onClick={() => setMenuOpen(true)} aria-label="Open menu" style={menuBtn}>
+              Menu
+            </button>
+          ) : (
+            <>
+              <span onClick={goProjects} style={{ cursor: 'pointer' }}>Projects</span>
+              <span onClick={goAbout} style={{ cursor: 'pointer' }}>About</span>
+              <span
+                onClick={goFooter}
+                style={{ background: CREAM, color: '#000', padding: '10px 20px', borderRadius: 6, fontWeight: 500, cursor: 'pointer' }}
+              >
+                Contact
+              </span>
+            </>
+          )}
         </motion.nav>
       </header>
 
-      {/* ============ PROJECT DETAIL VIEW (stacked sticky cards) ============ */}
+      <AnimatePresence>
+        {isMobile && menuOpen && (
+          <motion.div
+            key="mobile-menu"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 300, background: BG,
+              display: 'flex', flexDirection: 'column', justifyContent: 'center',
+              padding: '0 7vw',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setMenuOpen(false)}
+              aria-label="Close menu"
+              style={{ ...menuBtn, position: 'absolute', top: 16, right: '3.8vw' }}
+            >
+              Close
+            </button>
+
+            {menuItems.map((item, idx) => (
+              <motion.button
+                key={item.label}
+                type="button"
+                onClick={() => menuGo(item.fn)}
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: 0.1 + idx * 0.07, ease: outSoft }}
+                style={{
+                  background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer',
+                  color: CREAM, fontFamily: sans, fontWeight: 400,
+                  fontSize: 'clamp(30px, 9vw, 44px)', padding: '10px 0', lineHeight: 1.2,
+                }}
+              >
+                {item.label}
+              </motion.button>
+            ))}
+
+            <motion.a
+              href={WA_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setMenuOpen(false)}
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.1 + menuItems.length * 0.07, ease: outSoft }}
+              style={{
+                color: CREAM, fontFamily: sans, textDecoration: 'none',
+                fontSize: 'clamp(30px, 9vw, 44px)', padding: '10px 0', lineHeight: 1.2,
+              }}
+            >
+              Enquire Now
+            </motion.a>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {selectedProject && (
         <div
           style={{
@@ -1200,7 +1628,7 @@ export default function App() {
             <button
               onClick={goProjects}
               style={{
-                background: 'rgba(244,211,94,0.1)', border: `1px solid ${GOLD_DARK}`, color: GOLD,
+                background: 'rgba(0,0,0,0)', border: `1px solid ${GOLD_DARK}`, color: GOLD,
                 padding: '10px 20px', borderRadius: 8, cursor: 'pointer', fontFamily: sans, fontWeight: 600,
                 marginBottom: '4vh', display: 'flex', alignItems: 'center', gap: 8,
               }}
@@ -1225,9 +1653,7 @@ export default function App() {
         </div>
       )}
 
-      {/* ============ MAIN LANDING VIEW (kept mounted, hidden while a project is open) ============ */}
       <div style={{ display: selectedProject ? 'none' : 'block' }}>
-        {/* ============ HERO INTRO ============ */}
         <div style={{ position: 'sticky', top: 0, height: V(100), zIndex: 0, overflow: 'hidden', background: BG }}>
           <motion.div
             style={{
@@ -1250,8 +1676,8 @@ export default function App() {
             >
               <motion.video
                 ref={heroVideoRef}
-                src={HERO_VIDEO}
-                poster={HERO_IMG}
+                src={isMobile ? HERO_VIDEO_MOBILE : HERO_VIDEO}
+                poster={HERO_POSTER}
                 muted
                 loop
                 playsInline
@@ -1265,6 +1691,7 @@ export default function App() {
             </motion.div>
 
             <motion.h1
+              ref={propRef}
               aria-label="Property Gallery"
               initial={{ opacity: 0, top: '54%', left: `${startLeft}vw`, x: '0%', y: '-50%', rotate: -3 }}
               animate={{
@@ -1281,6 +1708,7 @@ export default function App() {
             </motion.h1>
 
             <motion.div
+              ref={galRef}
               aria-hidden="true"
               initial={{ opacity: 0, top: '54%', left: `${startRight}vw`, x: '0%', y: '-50%', rotate: 3 }}
               animate={{
@@ -1313,8 +1741,7 @@ export default function App() {
           <motion.div style={{ position: 'absolute', inset: 0, background: '#000', opacity: introDim, pointerEvents: 'none', zIndex: 5 }} />
         </div>
 
-        {/* ============ STATEMENT + ABOUT ============ */}
-        <section ref={stmtRef} style={{ position: 'relative', zIndex: 1, height: V(isMobile ? 230 : 240), background: BG }}>
+        <section ref={stmtRef} style={{ position: 'relative', zIndex: 1, height: V(STMT_VH), background: BG }}>
           <div style={{ position: 'sticky', top: 0, height: V(100), overflow: 'hidden', background: BG }}>
             <motion.div
               style={{
@@ -1330,11 +1757,11 @@ export default function App() {
                 }}
               >
                 <div>
-                  <RevealWord progress={stmtRaw} range={range(0)} first>{STATEMENT_FIRST}</RevealWord>
+                  <RevealWord progress={stmtOld} range={range(0)} first>{STATEMENT_FIRST}</RevealWord>
                 </div>
                 <div style={{ textAlign: 'right', maxWidth: isMobile ? '100%' : '68vw', marginLeft: 'auto' }}>
                   {rest.map((w, i) => (
-                    <RevealWord key={i} progress={stmtRaw} range={range(i + 1)}>{w}</RevealWord>
+                    <RevealWord key={i} progress={stmtOld} range={range(i + 1)}>{w}</RevealWord>
                   ))}
                 </div>
               </div>
@@ -1355,6 +1782,7 @@ export default function App() {
                     padding: `max(76px, ${V(11)}) 6vw ${V(3)}`,
                   }}
                 >
+                  <motion.div style={{ opacity: aboutFade, x: aboutShift }}>
                   <div style={{ fontWeight: 800, fontSize: ABOUT.headingSizeMobile, letterSpacing: '0.02em', lineHeight: 1 }}>{ABOUT.heading}</div>
                   <p
                     style={{
@@ -1369,8 +1797,9 @@ export default function App() {
                       <SocialLogo key={c.icon} c={c} size={ABOUT.logoSizeMobile} />
                     ))}
                   </div>
+                  </motion.div>
                   <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Phone small progress={sp} />
+                    <Phone small progress={sp} zoom={zoom} />
                   </div>
                 </div>
               ) : (
@@ -1380,7 +1809,7 @@ export default function App() {
                     alignItems: 'center', gap: '3vw', padding: `${V(11)} 6vw ${V(4)} 7vw`,
                   }}
                 >
-                  <div style={{ minWidth: 0 }}>
+                  <motion.div style={{ minWidth: 0, opacity: aboutFade, x: aboutShift }}>
                     <div style={{ fontWeight: 800, fontSize: ABOUT.headingSize, letterSpacing: '0.02em', lineHeight: 1 }}>{ABOUT.heading}</div>
                     <p style={{ margin: `${ABOUT.textGapTop} 0 0`, maxWidth: ABOUT.textMaxWidth, fontSize: ABOUT.textSize, fontWeight: 500, lineHeight: 1.75, color: 'rgba(20,22,28,.82)' }}>
                       {ABOUT.text}
@@ -1390,17 +1819,19 @@ export default function App() {
                         <SocialLogo key={c.icon} c={c} size={ABOUT.logoSize} />
                       ))}
                     </div>
-                  </div>
+                  </motion.div>
                   <div style={{ justifySelf: 'center' }}>
-                    <Phone progress={sp} />
+                    <Phone progress={sp} zoom={zoom} />
                   </div>
                 </div>
               )}
             </motion.div>
+
+            {/* sharp logo scene (stage level, above the scaled phone) */}
+            <PortalScene zoom={zoom} isMobile={isMobile} onExplore={goProjects} />
           </div>
         </section>
 
-        {/* ============ FEATURED PROJECTS (card grid with View Details) ============ */}
         <section ref={projectsRef} style={{ position: 'relative', zIndex: 10, background: BG, color: CREAM, padding: isMobile ? '9vh 5vw' : '12vh 6vw' }}>
           <div style={{ textAlign: 'center', marginBottom: isMobile ? '6vh' : '9vh' }}>
             <span style={{ fontSize: isMobile ? 13 : 16, letterSpacing: '0.3em', textTransform: 'uppercase', color: GOLD }}>Curated Portfolio</span>
