@@ -19,9 +19,6 @@ const ALI_IMG = '/Alibaug.png';
 const DEL_IMG = '/Delhi.png';
 const MUM_IMG = '/Mumbai.png';
 
-/* Optional hero files (generate with ffmpeg, put them in /public, then set the flag to true):
-   public/hero-poster.jpg        -> first frame of the video
-   public/Website-Portrait.mp4   -> 9:16 crop of the video for phones */
 const USE_EXTRA_HERO_FILES = false;
 const HERO_POSTER = USE_EXTRA_HERO_FILES ? '/hero-poster.jpg' : HERO_IMG;
 const HERO_VIDEO_MOBILE = USE_EXTRA_HERO_FILES ? '/Website-Portrait.mp4' : HERO_VIDEO;
@@ -62,12 +59,12 @@ const ABOUT = {
   logoSize: 'clamp(48px, min(4.4vw, 8.5vh), 76px)',
   logoGap: 'clamp(50px, 2vw, 32px)',
   logoGapTop: '4.5vh',
-  phoneHeight: 'clamp(340px, calc(var(--vh) * 80), 780px)',
+  phoneHeight: 'clamp(320px, calc(var(--vh) * 72), 720px)',
   columns: '1.2fr 0.8fr',
-  headingSizeMobile: 26,
-  textSizeMobile: 12.5,
+  headingSizeMobile: 24,
+  textSizeMobile: 12,
   textLinesMobile: 4,
-  logoSizeMobile: 25,
+  logoSizeMobile: 24,
 };
 
 const WA_URL = `https://wa.me/${WHATSAPP.replace(/[^0-9]/g, '')}`;
@@ -99,7 +96,7 @@ const FOOTER_LOGO = 26;
 const inOut = [0.76, 0, 0.24, 1];
 const outExpo = [0.16, 1, 0.3, 1];
 const outSoft = [0.22, 1, 0.36, 1];
-const SPRING = { stiffness: 220, damping: 34, mass: 0.25 };
+const SPRING = { stiffness: 180, damping: 28, mass: 0.3 };
 
 const FADE_DELAY = 0.4;
 const SPLIT_DUR = 0.8;
@@ -109,11 +106,9 @@ const IMG_DUR = 2.0;
 const IMG_ZOOM_DUR = 2.6;
 const UNLOCK_AFTER = 3.6;
 
-/* About section scroll length: first STMT_BASE_VH is the original timeline, the rest is the portal zoom into the phone */
 const STMT_VH = 340;
 const STMT_BASE_VH = 140;
 const STMT_A = STMT_BASE_VH / (STMT_VH - 100);
-/* portal zoom finishes at this scroll progress, the last bit of scroll just HOLDS the clear logo scene (1 = no hold) */
 const STMT_ZOOM_END = 0.94;
 
 const FONT_VW = 6.3;
@@ -411,18 +406,15 @@ function Phone({ small, progress, zoom }) {
   const [flat, setFlat] = useState(false);
   const wrapRef = useRef(null);
 
-  /* mouse position (-1..1) drives a live 3D tilt on desktop */
   const mx = useMotionValue(0);
   const my = useMotionValue(0);
-  const smx = useSpring(mx, { stiffness: 70, damping: 16, mass: 0.7 });
-  const smy = useSpring(my, { stiffness: 70, damping: 16, mass: 0.7 });
+  const smx = useSpring(mx, { stiffness: 50, damping: 20, mass: 0.8 });
+  const smy = useSpring(my, { stiffness: 50, damping: 20, mass: 0.8 });
 
-  /* portal zoom geometry (measured from layout, so it works on every screen size) */
   const dxMV = useMotionValue(0);
   const dyMV = useMotionValue(0);
   const sMV = useMotionValue(1);
 
-  /* screen cycles between profile and reel; locks on the reel while zooming */
   useEffect(() => {
     if (zooming) {
       setI(1);
@@ -445,7 +437,6 @@ function Phone({ small, progress, zoom }) {
     return zoom.on('change', update);
   }, [zoom]);
 
-  /* once the phone is straight (zoom > 0.3) drop the 3D layers: a flat layer re-renders sharp while it scales */
   useEffect(() => {
     const update = (v) => setFlat(v > 0.3);
     update(zoom.get());
@@ -467,7 +458,6 @@ function Phone({ small, progress, zoom }) {
     };
   }, [small, mx, my]);
 
-  /* how far to move + how much to scale so the phone SCREEN fills the whole stage */
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return undefined;
@@ -503,12 +493,10 @@ function Phone({ small, progress, zoom }) {
   const scrollRotX = useTransform(progress, [PH_IN, PH_OUT], [deg * 0.18, 0]);
   const turnScale = useTransform(progress, [PH_IN, PH_OUT], [0.93, 1]);
 
-  /* the phone straightens up as the camera pushes in */
   const calm = useTransform(zoom, [0, 0.25], [1, 0]);
   const rotY = useTransform([scrollRotY, smx, calm], ([a, b, c]) => (a + b * 9) * c);
   const rotX = useTransform([scrollRotX, smy, calm], ([a, b, c]) => (a - b * 6) * c);
 
-  /* zoom transforms: slide the phone to the stage center while scaling up exponentially */
   const ease = useTransform(zoom, (z) => {
     const c = clamp01(z);
     return c * c * (3 - 2 * c);
@@ -518,11 +506,8 @@ function Phone({ small, progress, zoom }) {
   const zs = useTransform([zoom, sMV], ([z, s]) => Math.pow(s, clamp01(z)));
 
   const fadeOut = useTransform(zoom, [0, 0.2], [1, 0]);
-  /* the zoomed-in photo is only low-res pixels, so the screen fades to plain black EARLY.
-     The sharp logo is drawn by <PortalScene> (outside the scaled phone), never inside it. */
   const sceneO = useTransform(zoom, [0.4, 0.8], [0, 1]);
 
-  /* light moves across the glass and the metal as the phone turns */
   const lightAngle = useTransform(rotY, (v) => 118 - v * 2.4);
   const glare = useMotionTemplate`linear-gradient(${lightAngle}deg, rgba(255,255,255,.34) 0%, rgba(255,255,255,.1) 16%, rgba(255,255,255,0) 38%, rgba(255,255,255,0) 72%, rgba(255,255,255,.07) 100%)`;
   const rimAngle = useTransform(rotY, (v) => 135 - v * 3);
@@ -545,7 +530,7 @@ function Phone({ small, progress, zoom }) {
   });
 
   const height = small
-    ? 'clamp(170px, calc(var(--vh) * 100 - 350px), 400px)'
+    ? 'clamp(260px, calc(var(--vh) * 52), 380px)'
     : ABOUT.phoneHeight;
 
   return (
@@ -555,7 +540,6 @@ function Phone({ small, progress, zoom }) {
         transition={zooming ? { duration: 0.4 } : { duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
         style={{ position: 'relative', justifySelf: 'center' }}
       >
-        {/* warm light bloom + floor shadows (fade out once the zoom starts) */}
         <motion.div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: fadeOut }}>
           <div
             style={{
@@ -610,7 +594,6 @@ function Phone({ small, progress, zoom }) {
               transformStyle: flat ? 'flat' : 'preserve-3d',
             }}
           >
-            {/* machined titanium thickness: 14 slices, lighter at the front, darker at the back (not needed once flat) */}
             {!flat &&
               Array.from({ length: PH_SLICES }, (_, k) => (
                 <div
@@ -630,7 +613,6 @@ function Phone({ small, progress, zoom }) {
             <div style={sideBtn('right', '22%', '10.5%')} />
             <div style={sideBtn('right', '60%', '7.5%')} />
 
-            {/* front frame */}
             <motion.div
               style={{
                 position: 'absolute', inset: 0, boxSizing: 'border-box', borderRadius: PHONE_RADIUS,
@@ -638,7 +620,6 @@ function Phone({ small, progress, zoom }) {
                 boxShadow: '0 0.6em 1.4em rgba(60,24,6,.28)',
               }}
             >
-              {/* brushed metal grain */}
               <div
                 style={{
                   position: 'absolute', inset: 0, borderRadius: PHONE_RADIUS, pointerEvents: 'none',
@@ -667,14 +648,12 @@ function Phone({ small, progress, zoom }) {
                     </motion.div>
                   </AnimatePresence>
 
-                  {/* screen fades to plain black while the camera pushes in */}
                   <motion.div
                     style={{ ...fill, zIndex: 3, opacity: sceneO, background: '#000', pointerEvents: 'none' }}
                   />
 
                   <StatusBar />
 
-                  {/* dynamic island with camera lens */}
                   <div
                     style={{
                       position: 'absolute', top: '0.85em', left: '50%', transform: 'translateX(-50%)',
@@ -694,7 +673,6 @@ function Phone({ small, progress, zoom }) {
 
                   <div style={{ position: 'absolute', bottom: '0.55em', left: '50%', transform: 'translateX(-50%)', width: '34%', height: '0.36em', borderRadius: 999, background: 'rgba(255,255,255,.85)', zIndex: 4, pointerEvents: 'none' }} />
 
-                  {/* glass: live reflection + vignette + sweep */}
                   <motion.div style={{ position: 'absolute', inset: 0, zIndex: 6, pointerEvents: 'none', background: glare }} />
                   <div style={{ position: 'absolute', inset: 0, zIndex: 6, pointerEvents: 'none', background: 'radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 62%, rgba(0,0,0,.28) 100%)' }} />
                   <motion.div
@@ -709,7 +687,6 @@ function Phone({ small, progress, zoom }) {
                 </div>
               </div>
 
-              {/* polished chamfer: bright top-left edge, dark bottom-right edge */}
               <div
                 style={{
                   position: 'absolute', inset: 0, borderRadius: PHONE_RADIUS, pointerEvents: 'none',
@@ -725,17 +702,12 @@ function Phone({ small, progress, zoom }) {
   );
 }
 
-/* ================= PORTAL SCENE =================
-   The sharp "arrival" screen after the zoom. It lives at stage level (NOT inside the scaled phone),
-   so the logo is drawn at its real pixel size and is never enlarged -> always crisp.
-   The logo is also capped to its own pixel width (natural width / devicePixelRatio), so a small
-   logo.png shows smaller but sharp instead of big but blurry. */
 function PortalScene({ zoom, isMobile, onExplore }) {
   const [nat, setNat] = useState(0);
   const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
 
   const o = useTransform(zoom, [0.68, 0.92], [0, 1]);
-  const logoS = useTransform(zoom, [0.7, 1], [0.94, 1]); // stays <= 1, so it is never upscaled
+  const logoS = useTransform(zoom, [0.7, 1], [0.94, 1]);
   const lineS = useTransform(zoom, [0.8, 1], [0, 1]);
   const textO = useTransform(zoom, [0.86, 1], [0, 1]);
   const ctaO = useTransform(zoom, [0.93, 1], [0, 1]);
@@ -1185,7 +1157,7 @@ const PROJECTS = [
       {
         title: 'World-Class Amenities',
         sub: 'Clubhouse, Pools & Wellness',
-        text: 'Equipped with Olympic-length swimming pools, state-of-the-art gymnasiums, sports arenas, and dedicated yoga sanctuaries.',
+        text: 'Test equipped with Olympic-length swimming pools, state-of-the-art gymnasiums, sports arenas, and dedicated yoga sanctuaries.',
         image: EXP_IMG,
       },
     ],
@@ -1249,7 +1221,7 @@ const PROJECTS = [
     tag: 'UNDER CONSTRUCTION',
     sections: [
       {
-        title: 'DLF Luxury Apartments',
+        title: 'DLFLuxury Apartments',
         sub: 'Andheri West, Mumbai',
         text: 'Sprawling luxury residences offering prime connectivity, elite clubhouses, and 80% dedicated open green spaces in Mumbai.',
         image: MUM_IMG,
@@ -1320,9 +1292,9 @@ export default function App() {
   const stmtOld = useTransform(stmtRaw, [0, STMT_A], [0, 1]);
   const sp = useSpring(stmtOld, SPRING);
   const zoomRaw = useTransform(stmtRaw, [STMT_A, STMT_ZOOM_END], [0, 1]);
-  const zoom = useSpring(zoomRaw, { stiffness: 140, damping: 30, mass: 0.4 });
-  const aboutFade = useTransform(zoom, [0, 0.3], [1, 0]);
-  const aboutShift = useTransform(zoom, [0, 0.4], [0, -80]);
+  const zoom = useSpring(zoomRaw, { stiffness: 100, damping: 25, mass: 0.5 });
+  const aboutFade = useTransform(zoom, [0, 0.25], [1, 0]);
+  const aboutShift = useTransform(zoom, [0, 0.35], [0, -50]);
 
   const panelY = useTransform(sp, [0.36, 0.62], ['100%', '0%']);
   const radH = useTransform(sp, [0.36, 0.5, 0.62], [50, 6, 0]);
@@ -1347,7 +1319,6 @@ export default function App() {
     };
   }, []);
 
-  /* Preload hero image + both fonts, with a shorter fallback timeout */
   useEffect(() => {
     const img = new Image();
     img.src = HERO_IMG;
@@ -1363,7 +1334,6 @@ export default function App() {
     PROJECTS.forEach((p) => { const im = new Image(); im.src = p.image; });
   }, []);
 
-  /* Measure the real width of PROPERTY / GALLERY and center the pair on screen */
   useEffect(() => {
     if (stage > 0) return undefined;
     const measure = () => {
@@ -1384,7 +1354,6 @@ export default function App() {
     return () => window.removeEventListener('resize', measure);
   }, [stage, isMobile, fs]);
 
-  /* Hero video: force muted, start buffering/playing behind the intro, retry on first touch */
   useEffect(() => {
     const v = heroVideoRef.current;
     if (!v || !ready) return undefined;
@@ -1779,26 +1748,27 @@ export default function App() {
                 <div
                   style={{
                     position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-                    padding: `max(76px, ${V(11)}) 6vw ${V(3)}`,
+                    padding: `max(50px, ${V(6)}) 5vw ${V(2)}`,
+                    justifyContent: 'space-between',
                   }}
                 >
                   <motion.div style={{ opacity: aboutFade, x: aboutShift }}>
-                  <div style={{ fontWeight: 800, fontSize: ABOUT.headingSizeMobile, letterSpacing: '0.02em', lineHeight: 1 }}>{ABOUT.heading}</div>
-                  <p
-                    style={{
-                      margin: '10px 0 0', fontSize: ABOUT.textSizeMobile, fontWeight: 500, lineHeight: 1.7, color: 'rgba(20,22,28,.82)',
-                      display: '-webkit-box', WebkitLineClamp: ABOUT.textLinesMobile, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                    }}
-                  >
-                    {ABOUT.text}
-                  </p>
-                  <div style={{ display: 'flex', gap: 16, marginTop: 16 }}>
-                    {aboutLogos.map((c) => (
-                      <SocialLogo key={c.icon} c={c} size={ABOUT.logoSizeMobile} />
-                    ))}
-                  </div>
+                    <div style={{ fontWeight: 800, fontSize: ABOUT.headingSizeMobile, letterSpacing: '0.02em', lineHeight: 1 }}>{ABOUT.heading}</div>
+                    <p
+                      style={{
+                        margin: '8px 0 0', fontSize: ABOUT.textSizeMobile, fontWeight: 500, lineHeight: 1.5, color: 'rgba(20,22,28,.82)',
+                        display: '-webkit-box', WebkitLineClamp: ABOUT.textLinesMobile, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                      }}
+                    >
+                      {ABOUT.text}
+                    </p>
+                    <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+                      {aboutLogos.map((c) => (
+                        <SocialLogo key={c.icon} c={c} size={ABOUT.logoSizeMobile} />
+                      ))}
+                    </div>
                   </motion.div>
-                  <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '2vh' }}>
                     <Phone small progress={sp} zoom={zoom} />
                   </div>
                 </div>
@@ -1827,7 +1797,6 @@ export default function App() {
               )}
             </motion.div>
 
-            {/* sharp logo scene (stage level, above the scaled phone) */}
             <PortalScene zoom={zoom} isMobile={isMobile} onExplore={goProjects} />
           </div>
         </section>
