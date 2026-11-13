@@ -898,7 +898,7 @@ function PropertyLocationMap({isMobile}) {
           <motion.div style={{height:'100%',width:'100%',borderRadius:10,background:GOLD,scaleX:reduceMotion?1:progress,transformOrigin:'left',boxShadow:'0 0 10px rgba(244,211,94,.45)'}}/>
         </div>
       </div>
-      {!reduceMotion&&<div style={{position:'absolute',zIndex:10,left:isMobile?14:'5%',bottom:14,fontFamily:sans,color:GOLD,fontSize:9,letterSpacing:'.19em'}}>SCROLL TO TRAVEL ↓</div>}
+      {/* {!reduceMotion&&<div style={{position:'absolute',zIndex:10,left:isMobile?14:'5%',bottom:14,fontFamily:sans,color:GOLD,fontSize:9,letterSpacing:'.19em'}}>SCROLL TO TRAVEL ↓</div>} */}
     </div>
   </section>;
 }
