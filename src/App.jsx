@@ -767,7 +767,7 @@ const JOURNEY_LOCATIONS = [
   {name:'Panipat',lon:76.9635,lat:29.3909,dx:42,dy:-103,w:96},
   {name:'Gurugram',lon:77.0266,lat:28.4595,dx:-139,dy:52,w:114},
   {name:'Noida',lon:77.3910,lat:28.5355,dx:48,dy:65,w:83},
-  {name:'Ahmedabad',lon:72.5714,lat:23.0225,dx:-150,dy:-42,w:125},
+  {name:'Ahmedabad',lon:72.5714,lat:23.0225,dx:-180,dy:-42,w:125},
   {name:'Mumbai',lon:72.8777,lat:19.0760,dx:-128,dy:-21,w:102},
   {name:'Alibaug',lon:72.8722,lat:18.6414,dx:28,dy:27,w:92},
   {name:'Nagpur',lon:79.0882,lat:21.1458,dx:28,dy:-34,w:96},
@@ -778,9 +778,17 @@ const JOURNEY_DUBAI = geoXY(55.2708,25.2048);
 const JOURNEY_MUMBAI = geoXY(72.8777,19.076);
 const journeyClamp = v => Math.min(1,Math.max(0,v));
 const journeyEase = t => {const x=journeyClamp(t);return x*x*(3-2*x)};
-function JourneyPin({city,index,progress,reducedMotion}) {
+function JourneyPin({city,index,progress,reducedMotion,isMobile}) {
   const {x,y}=geoXY(city.lon,city.lat);
-  const xx=x+city.dx, yy=y+city.dy;
+  // Keep city pins at their real coordinates. Only the label/leader positions
+  // shift on narrow screens, so labels never get clipped by the map viewport.
+  const mobileLabelOffsets = {
+    Ahmedabad: { dx: -32, dy: -7 }, // place label to the right of the Gujarat pin
+    Mumbai: { dx: -98, dy: -36 },  // move label inside the left edge
+    Goa: { dx: 26, dy: 9 },        // keep Goa above the lower caption fade
+  };
+  const label = isMobile ? (mobileLabelOffsets[city.name] || city) : city;
+  const xx=x+label.dx, yy=y+label.dy;
   const start=0.22+index*.033;
   const opacity=useTransform(progress,p=>reducedMotion?1:journeyEase((p-start)/.055)*(1-journeyEase((p-.84)/.09)));
   const rise=useTransform(progress,p=>reducedMotion?0:12*(1-journeyEase((p-start)/.055)));
@@ -863,7 +871,7 @@ function PropertyLocationMap({isMobile}) {
         <motion.g style={{opacity:indiaWordOpacity}}>
           <text x="733" y="380" textAnchor="middle" fontFamily="Georgia,serif" fontSize="30" letterSpacing="11" fill="#e7c983" fillOpacity=".6">INDIA</text>
         </motion.g>
-        {JOURNEY_LOCATIONS.map((city,i)=><JourneyPin key={city.name} city={city} index={i} progress={progress} reducedMotion={reduceMotion}/>)}
+        {JOURNEY_LOCATIONS.map((city,i)=><JourneyPin key={city.name} city={city} index={i} progress={progress} reducedMotion={reduceMotion} isMobile={isMobile}/>)}
         <motion.path d={route} fill="none" stroke="url(#journeyFlight)" strokeWidth="3.3" strokeLinecap="round" strokeDasharray="11 7" style={{opacity:routeOpacity,pathLength:flightP}}/>
         <motion.g style={{opacity:dubaiOpacity}}>
           <circle cx={b.x} cy={b.y} r="33" fill="url(#journeyAura)"/>
