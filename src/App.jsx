@@ -1,15 +1,17 @@
-import React, { useState, useEffect, useRef, useId } from 'react';
-import * as THREE from 'three';
+import { lazy, Suspense, useState, useEffect, useRef, useId } from 'react';
 import {
   motion,
   AnimatePresence,
   useScroll,
+  useInView,
   useTransform,
   useSpring,
   useMotionTemplate,
   useMotionValue,
   animate as runAnimation,
 } from 'framer-motion';
+
+const MinimalEarthCanvas = lazy(() => import('./MinimalEarthCanvas.jsx'));
 
 /* ================= 1. CONSTANTS ================= */
 const HERO_IMG = '/pic1.png';
@@ -64,7 +66,6 @@ const ABOUT = {
   columns: '1.2fr 0.8fr',
   headingSizeMobile: 24,
   textSizeMobile: 12,
-  textLinesMobile: 4,
   logoSizeMobile: 24,
 };
 
@@ -109,14 +110,13 @@ const UNLOCK_AFTER = 3.6;
 
 const STMT_VH = 340;
 const STMT_BASE_VH = 140;
-const STMT_A = STMT_BASE_VH / (STMT_VH - 100);
-const STMT_ZOOM_END = 0.94;
-
+const MOBILE_HEADER_HEIGHT = 68;
+const MOBILE_ZOOM_END = 0.94;
+const MOBILE_ZOOM_SPRING = { stiffness: 60, damping: 28, mass: 0.6 };
 const TURN_VH = 45;
 const TURN_DEG = -90;
-// Rotation zoom ke saath-saath hoti hai: zoom ke itne hisse me rotation poori ho jati hai.
-// 0.5 = zoom ke aadhe raaste tak | 1 = rotation aur zoom bilkul ek saath khatam
-const TURN_SHARE = 0.5;
+const DESKTOP_PHONE_END = 0.8;
+const smoothStep = (t) => t * t * (3 - 2 * t);
 
 const FONT_VW = 6.3;
 const FONT_VW_MOBILE = 6.4;
@@ -124,8 +124,8 @@ const START_LEFT = 12.1;
 const START_RIGHT = 55.5;
 const START_LEFT_MOBILE = 12.0;
 const START_RIGHT_MOBILE = 83.0;
-const NAV_FONT = 12;
-const NAV_GAP = 28;
+const NAV_FONT = 16;
+const NAV_GAP = 'clamp(32px, 3vw, 48px)';
 
 const PILL_D = 'inset(39% 37.5% 39% 37.5% round 200px)';
 const MID_D = 'inset(3% 1.5% 3% 1.5% round 28px)';
@@ -148,6 +148,16 @@ function useIsMobile() {
     };
   }, []);
   return m;
+}
+
+function usePageVisible() {
+  const [visible, setVisible] = useState(() => document.visibilityState === 'visible');
+  useEffect(() => {
+    const update = () => setVisible(document.visibilityState === 'visible');
+    document.addEventListener('visibilitychange', update);
+    return () => document.removeEventListener('visibilitychange', update);
+  }, []);
+  return visible;
 }
 
 function Icon({ name, size = 34 }) {
@@ -344,7 +354,8 @@ function CountUp({ to, run, suffix = '' }) {
   return <motion.span>{text}</motion.span>;
 }
 
-function Badge({ icon, label, to, suffix, caption, show, small, from, delay = 0, style }) {
+function Badge({ icon, label, to, suffix, caption, show, active, small, from, delay = 0, style }) {
+  const float = show && active;
   return (
     <motion.div
       initial={{ opacity: 0, x: from }}
@@ -353,9 +364,9 @@ function Badge({ icon, label, to, suffix, caption, show, small, from, delay = 0,
       style={{ position: 'absolute', pointerEvents: 'none', ...style }}
     >
       <motion.div
-        animate={show ? { y: [0, -4, 0] } : { y: 0 }}
+        animate={float ? { y: [0, -4, 0] } : { y: 0 }}
         transition={
-          show
+          float
             ? { duration: 5, repeat: Infinity, ease: 'easeInOut', delay: delay + 2 }
             : { duration: 0.3 }
         }
@@ -405,18 +416,63 @@ const PH_OUT = 0.62;
 const PH_SHOW_ON = 0.55;
 
 const PH_SLICES = 14;
-const clamp01 = (v) => Math.min(1, Math.max(0, v));
 
 const LAND_R = (19.3 - 0.633) / (9 - 0.633);
 
-function Phone({ small, progress, zoom, turn }) {
+function DesktopPhoneDisplay() {
+  return (
+    <>
+      <div style={{ ...fill, backgroundImage: `url(${HERO_IMG})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+      <div style={{ ...fill, background: 'linear-gradient(to bottom, rgba(0,0,0,.25), transparent 35%, transparent 60%, rgba(0,0,0,.65))' }} />
+      <div style={{ position: 'absolute', left: '4%', bottom: '8%', fontFamily: mont, color: '#fff', lineHeight: 1.35 }}>
+        <div style={{ fontWeight: 700, fontSize: '1.5em' }}>@{INSTAGRAM}</div>
+        <div style={{ opacity: 0.9, fontSize: '1.15em' }}>Luxury homes tour · Delhi NCR</div>
+      </div>
+    </>
+  );
+}
+
+function desktopPhonePose(t, { w, h, width, height, dx, dy, header }) {
+  const angle = Math.PI * t / 2;
+  const sin = Math.sin(angle);
+  const cos = Math.cos(angle);
+  // Include the buttons that protrude from the sides of the portrait body.
+  const bodyWidth = w + h * 0.0205 * 0.8;
+  const halfWidth = (bodyWidth * cos + h * sin) / 2;
+  const halfHeight = (bodyWidth * sin + h * cos) / 2;
+  const originX = width / 2 - dx;
+  const originY = height / 2 - dy;
+  const gutter = 12;
+  const top = Math.max(gutter, Math.min(header + gutter, originY - h / 2));
+  const maxScale = Math.min(
+    (width / 2 - gutter) / halfWidth,
+    (height - top - gutter) / (2 * halfHeight),
+    (height / 2 - top) / halfHeight + (1 - t) * 0.5,
+  );
+  const target = 1 + 0.48 * t;
+  // Soften the scale limit to avoid a change in velocity as the bounds meet.
+  const band = Math.min(0.08, t * 0.2);
+  const overlap = Math.max(0, band - Math.abs(target - maxScale));
+  const scale = Math.min(target, maxScale) - (band ? overlap ** 2 / (4 * band) : 0);
+  const insetX = halfWidth * scale;
+  const insetY = halfHeight * scale;
+  return {
+    x: Math.max(gutter + insetX, Math.min(width - gutter - insetX, originX + dx * t)) - originX,
+    y: Math.max(top + insetY, Math.min(height - gutter - insetY, originY + dy * t)) - originY,
+    scale,
+  };
+}
+
+function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen, reveal, settle, enabled }) {
   const [i, setI] = useState(0);
   const [show, setShow] = useState(false);
-  const [zooming, setZooming] = useState(false);
+  const [expanding, setExpanding] = useState(false);
   const [flat, setFlat] = useState(false);
-  const wrapRef = useRef(null);
-
-  const turned = !small && TURN_VH > 0;
+  const showRef = useRef(false);
+  const layoutRef = useRef(null);
+  const displayRef = useRef(null);
+  const inView = useInView(layoutRef);
+  const active = enabled && inView;
 
   const mx = useMotionValue(0);
   const my = useMotionValue(0);
@@ -426,39 +482,49 @@ function Phone({ small, progress, zoom, turn }) {
   const dxMV = useMotionValue(0);
   const dyMV = useMotionValue(0);
   const sMV = useMotionValue(1);
+  const floatY = useMotionValue(0);
+  const geometry = useMotionValue(null);
+  const [displaySize, setDisplaySize] = useState(null);
 
   useEffect(() => {
-    if (zooming) {
-      setI(1);
-      return undefined;
-    }
+    if (!active || expanding) return undefined;
     const t = setInterval(() => setI((v) => (v + 1) % 2), 3300);
     return () => clearInterval(t);
-  }, [zooming]);
+  }, [active, expanding]);
 
   useEffect(() => {
-    const unsub = progress.on('change', (v) =>
-      setShow((prev) => (v > PH_SHOW_ON ? true : v < PH_IN ? false : prev))
-    );
-    return unsub;
-  }, [progress]);
+    if (small || !active || expanding) return undefined;
+    const controls = runAnimation(floatY, [0, -8, 0], { duration: 4.5, repeat: Infinity, ease: 'easeInOut' });
+    return () => controls.stop();
+  }, [small, active, expanding, floatY]);
 
   useEffect(() => {
-    const update = () => setZooming(zoom.get() > 0.01 || turn.get() > 0.01);
+    if (!enabled) return undefined;
+    let previousZooming;
+    let previousFlat;
+    const update = () => {
+      const p = progress.get();
+      const nextShow = p > PH_SHOW_ON ? true : p < PH_IN ? false : showRef.current;
+      const nextZooming = expansion.get() > 0.01;
+      const nextFlat = small && expansion.get() > 0.3;
+      if (nextShow !== showRef.current) {
+        showRef.current = nextShow;
+        setShow(nextShow);
+      }
+      if (nextZooming !== previousZooming) {
+        previousZooming = nextZooming;
+        setExpanding(nextZooming);
+        if (nextZooming) setI(1);
+      }
+      if (nextFlat !== previousFlat) setFlat(previousFlat = nextFlat);
+    };
     update();
-    const u1 = zoom.on('change', update);
-    const u2 = turn.on('change', update);
-    return () => { u1(); u2(); };
-  }, [zoom, turn]);
+    const unsubscribe = [progress, expansion].map((value) => value.on('change', update));
+    return () => unsubscribe.forEach((stop) => stop());
+  }, [enabled, progress, expansion, small]);
 
   useEffect(() => {
-    const update = (v) => setFlat(v > 0.3);
-    update(zoom.get());
-    return zoom.on('change', update);
-  }, [zoom]);
-
-  useEffect(() => {
-    if (small) return undefined;
+    if (small || !active) return undefined;
     const move = (e) => {
       mx.set((e.clientX / window.innerWidth) * 2 - 1);
       my.set((e.clientY / window.innerHeight) * 2 - 1);
@@ -469,27 +535,39 @@ function Phone({ small, progress, zoom, turn }) {
     return () => {
       window.removeEventListener('pointermove', move);
       document.removeEventListener('pointerleave', leave);
+      leave();
     };
-  }, [small, mx, my]);
+  }, [small, active, mx, my]);
 
   useEffect(() => {
-    const el = wrapRef.current;
+    const el = layoutRef.current;
     if (!el) return undefined;
     const measure = () => {
       const op = el.offsetParent;
       if (!op) return;
-      const w = el.offsetWidth;
-      const h = el.offsetHeight;
-      if (!w || !h) return;
+      // Measure the stationary layout box so scroll transforms never feed back into geometry.
+      const box = el.getBoundingClientRect();
+      const panel = op.getBoundingClientRect();
+      const w = small ? el.offsetWidth : box.width;
+      const h = small ? el.offsetHeight : box.height;
+      if (!w || !h || !panel.width || !panel.height) return;
       const em = h * 0.0205;
       const sw = w - 1.6 * em;
       const sh = h - 1.6 * em;
-      dxMV.set(op.offsetWidth / 2 - (el.offsetLeft + w / 2));
-      dyMV.set(op.offsetHeight / 2 - (el.offsetTop + h / 2));
-      const fillScale = turned
-        ? Math.max(op.offsetWidth / sh, op.offsetHeight / sw)
-        : Math.max(op.offsetWidth / sw, op.offsetHeight / sh);
-      sMV.set(fillScale * 1.25);
+      dxMV.set(small ? op.offsetWidth / 2 - (el.offsetLeft + w / 2) : panel.left + panel.width / 2 - (box.left + w / 2));
+      dyMV.set(small ? op.offsetHeight / 2 - (el.offsetTop + h / 2) : panel.top + panel.height / 2 - (box.top + h / 2));
+      if (small) {
+        sMV.set(Math.max(op.offsetWidth / sw, op.offsetHeight / sh) * 1.25);
+        return;
+      }
+      const header = Math.min(108, Math.max(76, window.innerHeight * 0.1));
+      geometry.set({ w, h, width: panel.width, height: panel.height, dx: dxMV.get(), dy: dyMV.get(), header });
+      if (displayRef.current) {
+        const display = getComputedStyle(displayRef.current);
+        const width = parseFloat(display.height);
+        const height = parseFloat(display.width);
+        setDisplaySize((old) => old?.width === width && old?.height === height ? old : { width, height });
+      }
     };
     measure();
     let ro;
@@ -497,46 +575,67 @@ function Phone({ small, progress, zoom, turn }) {
       ro = new ResizeObserver(measure);
       ro.observe(el);
       if (el.offsetParent) ro.observe(el.offsetParent);
+    } else {
+      window.addEventListener('resize', measure);
     }
-    window.addEventListener('resize', measure);
     return () => {
       if (ro) ro.disconnect();
       window.removeEventListener('resize', measure);
     };
-  }, [small, turned, dxMV, dyMV, sMV]);
+  }, [small, dxMV, dyMV, sMV, geometry]);
 
   const deg = PHONE_TURN_DEG * (small ? 0.75 : 1);
   const scrollRotY = useTransform(progress, [PH_IN, PH_OUT], [-deg, 0]);
   const scrollRotX = useTransform(progress, [PH_IN, PH_OUT], [deg * 0.18, 0]);
-  const turnScale = useTransform(progress, [PH_IN, PH_OUT], [0.93, 1]);
+  const entranceScale = useTransform(progress, [PH_IN, PH_OUT], [0.93, 1]);
+  const turnScale = useTransform([entranceScale, settle], ([scale, rest]) => small ? scale : scale + (1 - scale) * rest);
 
-  const calm = useTransform([zoom, turn], ([z, t]) =>
-    Math.max(0, 1 - Math.max(clamp01(z / 0.25), clamp01(t / 0.2)))
-  );
-  const rotY = useTransform([scrollRotY, smx, calm], ([a, b, c]) => (a + b * 9) * c);
-  const rotX = useTransform([scrollRotX, smy, calm], ([a, b, c]) => (a - b * 6) * c);
+  const rotY = useTransform([scrollRotY, smx, settle], ([a, b, rest]) => (a + b * 9) * (1 - rest));
+  const rotX = useTransform([scrollRotX, smy, settle], ([a, b, rest]) => (a - b * 6) * (1 - rest));
+  const turnRot = useTransform(expansion, (t) => small ? 0 : TURN_DEG * t);
+  const landO = useTransform(expansion, [0.3, 0.7], [0, 1]);
+  const statusO = useTransform(landO, (v) => small ? 1 : 1 - v);
 
-  const turnRot = useTransform(turn, (t) => {
-    const c = clamp01(t);
-    return TURN_DEG * c * c * (3 - 2 * c);
+  const zx = useTransform([center, dxMV], ([t, dx]) => t * dx);
+  const zy = useTransform([center, dyMV, floatY, settle], ([t, dy, bob, rest]) => t * dy + (small ? 0 : bob * (1 - rest)));
+  const zs = useTransform([expansion, sMV], ([t, scale]) => Math.pow(scale, Math.max(0, Math.min(1, t))));
+  const pose = useTransform([expansion, geometry], ([t, dimensions]) => dimensions ? desktopPhonePose(t, dimensions) : { x: 0, y: 0, scale: 1 });
+  const desktopX = useTransform(pose, ({ x }) => x);
+  const desktopY = useTransform([pose, floatY, settle], ([{ y }, bob, rest]) => y + bob * (1 - rest));
+  const desktopScale = useTransform(() => {
+    const { scale } = pose.get();
+    const growth = landscapeGrowth?.get() ?? 0;
+    const dimensions = geometry.get();
+    if (!growth || !dimensions || !displaySize?.width || !displaySize.height) return scale;
+
+    // The dimensions are already swapped for landscape. Overscan keeps the
+    // rounded display corners outside the viewport at the end of the zoom.
+    const cover = Math.max(dimensions.width / displaySize.width, dimensions.height / displaySize.height);
+    const target = Math.max(scale, cover * 1.1);
+    return scale * Math.pow(target / scale, growth);
   });
-  const landO = useTransform(turn, [0.45, 0.8], [0, 1]);
-  const statusO = useTransform(landO, (v) => 1 - v);
-
-  const ease = useTransform(zoom, (z) => {
-    const c = clamp01(z);
-    return c * c * (3 - 2 * c);
+  const screenScale = useTransform(() => {
+    const dimensions = geometry.get();
+    if (!fullscreen || !dimensions || !displaySize?.width || !displaySize.height) return 1;
+    const start = desktopPhonePose(1, dimensions).scale;
+    const end = Math.max(dimensions.width / displaySize.width, dimensions.height / displaySize.height);
+    return Math.pow(end / start, fullscreen.get());
   });
-  const zx = useTransform([ease, dxMV], ([e, d]) => e * d);
-  const zy = useTransform([ease, dyMV], ([e, d]) => e * d);
-  const zs = useTransform([zoom, sMV], ([z, s]) => Math.pow(s, clamp01(z)));
-
-  const fadeOut = useTransform([zoom, turn], ([z, t]) =>
-    1 - Math.max(clamp01(z / 0.2), clamp01(t / 0.35))
-  );
-  // Rotate + zoom ek saath chalte hain, isliye screen thodi der se kaali hoti hai
-  // (taaki ghoomi hui landscape image dikhe)
-  const sceneO = useTransform(zoom, [0.5, 0.85], [0, 1]);
+  const nativeRevealOpacity = useTransform(() => {
+    const dimensions = geometry.get();
+    if (!dimensions || !displaySize?.width || !displaySize.height || !reveal) return 0;
+    const cover = Math.max(dimensions.width / displaySize.width, dimensions.height / displaySize.height);
+    const covered = (desktopScale.get() / cover - 1.04) / 0.04;
+    return smoothStep(Math.max(0, Math.min(1, covered))) * reveal.get();
+  });
+  const nativeRevealWidth = useTransform(desktopScale, (scale) => (displaySize?.width ?? 0) * scale);
+  const nativeRevealHeight = useTransform(desktopScale, (scale) => (displaySize?.height ?? 0) * scale);
+  const nativeRevealFont = useTransform(() => (geometry.get()?.h ?? 0) * 0.0205 * desktopScale.get());
+  const nativeRevealPadding = useTransform(() => (geometry.get()?.width ?? 0) * 0.06 * desktopScale.get());
+  const desktopFade = useTransform(center, [0, 0.75], [1, 0]);
+  const mobileFade = useTransform(expansion, [0, 0.2], [1, 0]);
+  const fadeOut = small ? mobileFade : desktopFade;
+  const mobileScreenFade = useTransform(expansion, [0.5, 0.85], [0, 1]);
 
   const lightAngle = useTransform(rotY, (v) => 118 - v * 2.4);
   const glare = useMotionTemplate`linear-gradient(${lightAngle}deg, rgba(255,255,255,.34) 0%, rgba(255,255,255,.1) 16%, rgba(255,255,255,0) 38%, rgba(255,255,255,0) 72%, rgba(255,255,255,.07) 100%)`;
@@ -563,13 +662,8 @@ function Phone({ small, progress, zoom, turn }) {
     ? 'clamp(260px, calc(var(--vh) * 52), 380px)'
     : ABOUT.phoneHeight;
 
-  return (
-    <motion.div ref={wrapRef} style={{ position: 'relative', x: zx, y: zy, scale: zs }}>
-      <motion.div
-        animate={zooming ? { y: 0 } : { y: [0, -8, 0] }}
-        transition={zooming ? { duration: 0.4 } : { duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
-        style={{ position: 'relative', justifySelf: 'center' }}
-      >
+  const phone = (
+    <>
         <motion.div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: fadeOut }}>
           <div
             style={{
@@ -578,16 +672,16 @@ function Phone({ small, progress, zoom, turn }) {
             }}
           />
           <motion.div
-            animate={{ scaleX: [1, 0.9, 1], opacity: [0.9, 0.65, 0.9] }}
-            transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
+            animate={active ? { scaleX: [1, 0.9, 1], opacity: [0.9, 0.65, 0.9] } : { scaleX: 1, opacity: 0.9 }}
+            transition={active ? { duration: 4.5, repeat: Infinity, ease: 'easeInOut' } : { duration: 0 }}
             style={{
               position: 'absolute', left: '6%', right: '-6%', bottom: '-6%', height: '8%', x: shadowX,
               borderRadius: '50%', background: 'rgba(40, 24, 12, 0.32)', filter: 'blur(22px)', pointerEvents: 'none',
             }}
           />
           <motion.div
-            animate={{ scaleX: [1, 0.94, 1] }}
-            transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
+            animate={active ? { scaleX: [1, 0.94, 1] } : { scaleX: 1 }}
+            transition={active ? { duration: 4.5, repeat: Infinity, ease: 'easeInOut' } : { duration: 0 }}
             style={{
               position: 'absolute', left: '16%', right: '4%', bottom: '-3.5%', height: '3%', x: shadowX,
               borderRadius: '50%', background: 'rgba(20, 10, 4, 0.45)', filter: 'blur(8px)', pointerEvents: 'none',
@@ -598,12 +692,12 @@ function Phone({ small, progress, zoom, turn }) {
         <motion.div style={{ position: 'absolute', inset: 0, zIndex: 3, pointerEvents: 'none', opacity: fadeOut }}>
           <Badge
             icon="ig" label="Instagram" to={169} suffix="k" caption="Followers"
-            show={show} small={small} from={small ? -70 : -150} delay={IG_DELAY}
+            show={show} active={active} small={small} from={small ? -70 : -150} delay={IG_DELAY}
             style={{ top: small ? '6%' : '8%', left: 'calc(100% - 40px)', zIndex: 3 }}
           />
           <Badge
             icon="yt" label="YouTube" to={128} suffix="k+" caption="Subscribers"
-            show={show} small={small} from={small ? -60 : 150} delay={YT_DELAY}
+            show={show} active={active} small={small} from={small ? -60 : 150} delay={YT_DELAY}
             style={{ bottom: small ? '14%' : '18%', right: 'calc(100% - 40px)', zIndex: 3 }}
           />
         </motion.div>
@@ -664,7 +758,7 @@ function Phone({ small, progress, zoom, turn }) {
                   boxShadow: '0 0 0 0.05em rgba(0,0,0,.65), inset 0 0 0 1px rgba(255,255,255,.07)',
                 }}
               >
-                <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: '15% / 6.9%', overflow: 'hidden', background: '#000', isolation: 'isolate' }}>
+                <div ref={small ? undefined : displayRef} style={{ position: 'relative', width: '100%', height: '100%', borderRadius: '15% / 6.9%', overflow: 'hidden', background: '#000', isolation: 'isolate' }}>
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={i}
@@ -678,8 +772,7 @@ function Phone({ small, progress, zoom, turn }) {
                     </motion.div>
                   </AnimatePresence>
 
-                  {turned && (
-                    <motion.div
+                  {!small && <motion.div
                       style={{
                         position: 'absolute', top: '50%', left: '50%',
                         width: `${LAND_R * 100}%`, height: `${100 / LAND_R}%`,
@@ -687,18 +780,13 @@ function Phone({ small, progress, zoom, turn }) {
                         opacity: landO, zIndex: 2, overflow: 'hidden', background: '#000', pointerEvents: 'none',
                       }}
                     >
-                      <div style={{ ...fill, backgroundImage: `url(${HERO_IMG})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-                      <div style={{ ...fill, background: 'linear-gradient(to bottom, rgba(0,0,0,.25), transparent 35%, transparent 60%, rgba(0,0,0,.65))' }} />
-                      <div style={{ position: 'absolute', left: '4%', bottom: '8%', fontFamily: mont, color: '#fff', lineHeight: 1.35 }}>
-                        <div style={{ fontWeight: 700, fontSize: '1.5em' }}>@{INSTAGRAM}</div>
-                        <div style={{ opacity: 0.9, fontSize: '1.15em' }}>Luxury homes tour · Delhi NCR</div>
-                      </div>
-                    </motion.div>
-                  )}
+                      <motion.div style={{ ...fill, scale: screenScale }}>
+                        <DesktopPhoneDisplay />
+                      </motion.div>
+                      <PortalScene reveal={reveal} isMobile={false} insidePhone />
+                  </motion.div>}
 
-                  <motion.div
-                    style={{ ...fill, zIndex: 3, opacity: sceneO, background: '#000', pointerEvents: 'none' }}
-                  />
+                  {small && <motion.div style={{ ...fill, zIndex: 3, opacity: mobileScreenFade, background: '#000', pointerEvents: 'none' }} />}
 
                   <StatusBar o={statusO} />
 
@@ -724,12 +812,13 @@ function Phone({ small, progress, zoom, turn }) {
                   <motion.div style={{ position: 'absolute', inset: 0, zIndex: 6, pointerEvents: 'none', background: glare }} />
                   <div style={{ position: 'absolute', inset: 0, zIndex: 6, pointerEvents: 'none', background: 'radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 62%, rgba(0,0,0,.28) 100%)' }} />
                   <motion.div
-                    animate={{ x: ['-140%', '340%'] }}
-                    transition={{ duration: 2.4, ease: inOut, repeat: Infinity, repeatDelay: 3.6 }}
+                    animate={active ? { x: ['-140%', '340%'] } : { x: '-140%' }}
+                    transition={active ? { duration: 2.4, ease: inOut, repeat: Infinity, repeatDelay: 3.6 } : { duration: 0 }}
                     style={{
                       position: 'absolute', top: '-20%', bottom: '-20%', left: 0, width: '42%', rotate: 14,
                       zIndex: 7, pointerEvents: 'none',
                       background: 'linear-gradient(100deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.2) 50%, rgba(255,255,255,0) 100%)',
+                      maskImage: small ? undefined : 'linear-gradient(transparent, #000 22%, #000 78%, transparent)',
                     }}
                   />
                 </div>
@@ -745,8 +834,30 @@ function Phone({ small, progress, zoom, turn }) {
             </motion.div>
           </div>
         </motion.div>
+    </>
+  );
+
+  return (
+    <div ref={layoutRef}>
+      <motion.div style={{ position: 'relative', x: small ? zx : desktopX, y: small ? zy : desktopY, scale: small ? zs : desktopScale }}>
+        {small ? (
+          <motion.div
+            style={{ position: 'relative', justifySelf: 'center' }}
+            animate={active && !expanding ? { y: [0, -8, 0] } : { y: 0 }}
+            transition={active && !expanding ? { duration: 4.5, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.4 }}
+          >
+            {phone}
+          </motion.div>
+        ) : phone}
       </motion.div>
-    </motion.div>
+      {!small && displaySize && (
+        <div aria-hidden="true" style={{ ...fill, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 4 }}>
+          <motion.div style={{ position: 'relative', flexShrink: 0, width: nativeRevealWidth, height: nativeRevealHeight, fontSize: nativeRevealFont, opacity: nativeRevealOpacity }}>
+            <PortalScene reveal={reveal} isMobile={false} insidePhone nativePadding={nativeRevealPadding} />
+          </motion.div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -769,216 +880,13 @@ const EARTH_STOPS = [
   {name:'Goa',lat:15.4909,lon:73.8278,country:'India'},
   {name:'Dubai',lat:25.2048,lon:55.2708,country:'United Arab Emirates'},
 ];
-const EARTH_KEYS = [
-  {p:0,lat:22.4,lon:77.5,d:3.55,stop:-1},
-  {p:.115,lat:28.6139,lon:77.209,d:2.05,stop:0},
-  {p:.195,lat:29.3909,lon:76.9635,d:1.79,stop:1},
-  {p:.275,lat:28.4595,lon:77.0266,d:1.75,stop:2},
-  {p:.355,lat:28.5355,lon:77.391,d:1.77,stop:3},
-  {p:.445,lat:23.0225,lon:72.5714,d:1.87,stop:4},
-  {p:.535,lat:21.1458,lon:79.0882,d:1.96,stop:5},
-  {p:.625,lat:19.076,lon:72.8777,d:1.82,stop:6},
-  {p:.705,lat:18.6414,lon:72.8722,d:1.77,stop:7},
-  {p:.775,lat:15.4909,lon:73.8278,d:1.94,stop:8},
-  {p:.88,lat:22.0,lon:64.0,d:2.95,stop:8},
-  {p:.97,lat:25.2048,lon:55.2708,d:1.94,stop:9},
-  {p:1,lat:25.2048,lon:55.2708,d:1.94,stop:9},
-];
 const EARTH_MILESTONES=[.115,.195,.275,.355,.445,.535,.625,.705,.775,.97];
-const earthClamp=t=>Math.max(0,Math.min(1,t));
-const earthSmooth=t=>{const v=earthClamp(t);return v*v*(3-2*v)};
-const earthLerp=(a,b,t)=>a+(b-a)*t;
-// Three.js SphereGeometry UV: U=0.5 is Greenwich (0°), U=0.75 is 90°E.
-// All camera targets, pins and flight paths must use this same projection.
-const earthPoint=(lat,lon,r=1)=>{
-  const a=THREE.MathUtils.degToRad(lat);
-  const b=THREE.MathUtils.degToRad(lon);
-  return new THREE.Vector3(
-    r*Math.cos(a)*Math.cos(b),
-    r*Math.sin(a),
-    -r*Math.cos(a)*Math.sin(b)
-  );
-};
-// Pixel anchors measured on the user's ORIGINAL 2048 x 1152 artwork.
-// Its coastlines are decorative, not a georeferenced map. For correct visual
-// placement, interpolate between city-specific anchors instead of projecting
-// raw geographic coordinates onto the painted map.
-// Canvas uses the TOP 2048 x 1024 region of the unchanged PNG.
-const ARTWORK_SIZE = {width: 2048, height: 1024};
-const ARTWORK_CITY_ANCHORS = [
-  {lat:28.6139, lon:77.2090, x:1480, y:477}, // Delhi NCR
-  // {lat:29.3909, lon:76.9635, x:1456, y:465}, // Panipat
-  {lat:28.4595, lon:77.0266, x:1479, y:480}, // Gurugram
-  {lat:28.5355, lon:77.3910, x:1485, y:480}, // Noida
-  {lat:23.0225, lon:72.5714, x:1440, y:521}, // Ahmedabad
-  {lat:21.1458, lon:79.0882, x:1490, y:551}, // Nagpur
-  {lat:19.0760, lon:72.8777, x:1440, y:571}, // Mumbai
-  // {lat:18.6414, lon:72.8722, x:1420, y:580}, // Alibaug
-  {lat:15.4909, lon:73.8278, x:1445, y:608}, // Goa
-  {lat:25.2048, lon:55.2708, x:1327, y:505}, // Dubai (UAE coast)
-];
-const artworkPoint=(lat,lon,r=1)=>{
-  // Nearest anchored stop has exact pixel placement. Between stops use
-  // smooth inverse-distance interpolation so the scroll camera stays fluid.
-  let sum=0, x=0, y=0;
-  for(const a of ARTWORK_CITY_ANCHORS){
-    const d2=(lat-a.lat)**2+(lon-a.lon)**2;
-    if(d2<0.000001){x=a.x;y=a.y;sum=1;break;}
-    const w=1/Math.pow(d2+0.04,1.25);
-    x+=a.x*w;y+=a.y*w;sum+=w;
-  }
-  x/=sum;y/=sum;
-  // Correct THREE.SphereGeometry UV basis:
-  // x=-cos(latitude)*cos(2*pi*u), z=cos(latitude)*sin(2*pi*u).
-  // The previous sin/cos swap rotated/flipped camera targeting toward Africa.
-  // All locations, travel route and camera now share these exact UV coordinates.
-  const u=x/ARTWORK_SIZE.width;
-  const phi=u*Math.PI*2;
-  const latitude=(0.5-y/ARTWORK_SIZE.height)*Math.PI;
-  return new THREE.Vector3(
-    -r*Math.cos(latitude)*Math.cos(phi),
-    r*Math.sin(latitude),
-    r*Math.cos(latitude)*Math.sin(phi)
-  );
-};
-const earthInterpolate=(p)=>{
-  let i=0;while(i<EARTH_KEYS.length-2&&p>EARTH_KEYS[i+1].p)i++;
-  const a=EARTH_KEYS[i],b=EARTH_KEYS[i+1];
-  const t=earthSmooth((p-a.p)/(b.p-a.p||1));
-  return {lat:earthLerp(a.lat,b.lat,t),lon:earthLerp(a.lon,b.lon,t),d:earthLerp(a.d,b.d,t)};
-};
-const INDIA_OUTLINE_POINTS=[
-  {lat:23.82,lon:68.52},{lat:22.73,lon:69.38},{lat:21.94,lon:70.57},{lat:20.74,lon:72.02},
-  {lat:19.38,lon:72.86},{lat:18.55,lon:72.80},{lat:16.96,lon:73.32},{lat:15.49,lon:73.83},
-  {lat:13.36,lon:74.79},{lat:11.02,lon:75.79},{lat:8.08,lon:77.54},{lat:9.48,lon:78.15},
-  {lat:11.14,lon:79.79},{lat:13.08,lon:80.28},{lat:15.73,lon:80.97},{lat:17.69,lon:83.22},
-  {lat:19.24,lon:84.91},{lat:20.27,lon:86.70},{lat:21.63,lon:87.93},{lat:21.95,lon:89.12},
-  {lat:22.76,lon:89.58},{lat:24.17,lon:88.74},{lat:25.27,lon:89.01},{lat:26.15,lon:89.35},
-  {lat:26.86,lon:90.72},{lat:27.59,lon:91.68},{lat:28.16,lon:94.10},{lat:27.42,lon:95.11},
-  {lat:26.12,lon:95.02},{lat:24.54,lon:94.37},{lat:24.29,lon:92.79},{lat:24.92,lon:91.67},
-  {lat:25.57,lon:90.94},{lat:26.67,lon:89.80},{lat:27.78,lon:88.69},{lat:28.12,lon:87.12},
-  {lat:28.54,lon:84.92},{lat:29.11,lon:82.72},{lat:29.73,lon:81.14},{lat:30.44,lon:79.61},
-  {lat:31.28,lon:78.20},{lat:32.19,lon:77.10},{lat:33.19,lon:76.48},{lat:34.18,lon:75.67},
-  {lat:35.07,lon:74.70},{lat:35.57,lon:74.16},{lat:34.79,lon:73.55},{lat:33.99,lon:74.17},
-  {lat:32.78,lon:74.91},{lat:31.56,lon:75.66},{lat:30.70,lon:74.72},{lat:29.81,lon:73.88},
-  {lat:28.98,lon:71.99},{lat:27.73,lon:70.50},{lat:26.32,lon:69.46},{lat:24.92,lon:68.83}
-];
-const sphericalPath=(points,r=1.021,segmentsPerEdge=8)=>{
-  const out=[];
-  for(let i=0;i<points.length;i++){
-    const a=earthPoint(points[i].lat,points[i].lon,1).normalize();
-    const b=earthPoint(points[(i+1)%points.length].lat,points[(i+1)%points.length].lon,1).normalize();
-    for(let step=0;step<segmentsPerEdge;step++){
-      const t=step/segmentsPerEdge;
-      out.push(a.clone().lerp(b,t).normalize().multiplyScalar(r));
-    }
-  }
-  return out;
-};
-function MinimalEarthCanvas({progress,isMobile,onWebGLError,reducedMotion}) {
-  const mount=useRef(null);
-  useEffect(()=>{
-    const el=mount.current;if(!el)return;
-    let renderer,frame=0,queued=false,disposed=false;
-    const disposeList=[];
-    const scene=new THREE.Scene();scene.background=new THREE.Color('#05090c');
-    const camera=new THREE.PerspectiveCamera(isMobile?46:39,1,.08,55);
-    const ambient=new THREE.AmbientLight('#ffffff',1.45);scene.add(ambient);
-    const sun=new THREE.DirectionalLight('#fff4df',0.72);sun.position.set(5,7,9);scene.add(sun);
-    const earthGeometry=new THREE.SphereGeometry(1,72,48);
-    const earthMaterial=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:1,metalness:0,emissive:'#090a0a',emissiveIntensity:.12});
-    const sphere=new THREE.Mesh(earthGeometry,earthMaterial);scene.add(sphere);
-    disposeList.push(earthGeometry,earthMaterial);
-    // NEW user-selected black/gold map (unchanged PNG). Use artworkPoint() to calibrate pins to its nonstandard projection.
-    const loader=new THREE.TextureLoader();
-    let live=true;
-    loader.load('/property-gallery-world-map-new.png',texture=>{
-      if(!live){texture.dispose();return;}
-      texture.colorSpace=THREE.SRGBColorSpace;
-      // Original 2048x1152 artwork: sample its upper 2048x1024 area
-      // as a 2:1 globe texture without resizing or modifying image pixels.
-      texture.repeat.set(1, 1024 / 1152);
-      texture.offset.set(0, 128 / 1152);
-      texture.anisotropy=Math.min(renderer?.capabilities.getMaxAnisotropy()||1,8);
-      earthMaterial.map=texture;earthMaterial.needsUpdate=true;
-      disposeList.push(texture);requestDraw();
-    },undefined,()=>{ /* retain an untextured globe when image missing */ });
-    const atmosphereMaterial=new THREE.MeshBasicMaterial({color:'#b89b69',transparent:true,opacity:.025,side:THREE.BackSide,depthWrite:false});
-    const atmosphereGeometry=new THREE.SphereGeometry(1.035,48,32);
-    const atmosphere=new THREE.Mesh(atmosphereGeometry,atmosphereMaterial);scene.add(atmosphere);
-    disposeList.push(atmosphereGeometry,atmosphereMaterial);
-    const dots=EARTH_STOPS.map((city,index)=>{
-      const group=new THREE.Group();const point=artworkPoint(city.lat,city.lon,1.013);
-      group.position.copy(point);
-      group.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),point.clone().normalize());
-      const dotGeometry=new THREE.SphereGeometry(.0062,14,10);
-      const dotMaterial=new THREE.MeshBasicMaterial({color:'#f8df9b',depthTest:true});
-      const dot=new THREE.Mesh(dotGeometry,dotMaterial);group.add(dot);
-      const ringGeometry=new THREE.RingGeometry(.013,.0155,32);
-      const ringMaterial=new THREE.MeshBasicMaterial({color:'#d9b46c',transparent:true,opacity:.58,side:THREE.DoubleSide,depthWrite:false});
-      const ring=new THREE.Mesh(ringGeometry,ringMaterial);group.add(ring);
-      scene.add(group);disposeList.push(dotGeometry,dotMaterial,ringGeometry,ringMaterial);
-      return {group,ring,index};
-    });
-    const routeMaterial=new THREE.LineBasicMaterial({color:'#d8b778',transparent:true,opacity:.62,depthWrite:false});
-    disposeList.push(routeMaterial);
-    const routes=[];
-    for(let i=0;i<EARTH_STOPS.length-1;i++){
-      const a=EARTH_STOPS[i],b=EARTH_STOPS[i+1];
-      const v0=artworkPoint(a.lat,a.lon),v1=artworkPoint(b.lat,b.lon);
-      const points=[];
-      for(let j=0;j<=64;j++){
-        const t=j/64;
-        const q=v0.clone().lerp(v1,t).normalize();
-        q.multiplyScalar(1.017+.065*Math.sin(Math.PI*t));points.push(q);
-      }
-      const geometry=new THREE.BufferGeometry().setFromPoints(points);
-      const line=new THREE.Line(geometry,routeMaterial);scene.add(line);
-      routes.push({line,geometry});disposeList.push(geometry);
-    }
-    try{renderer=new THREE.WebGLRenderer({antialias:!isMobile,powerPreference:'low-power'});}
-    catch(e){onWebGLError?.(true);return;}
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,isMobile?1.15:1.5));
-    renderer.outputColorSpace=THREE.SRGBColorSpace;
-    renderer.toneMapping=THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure=1.05;
-    renderer.domElement.style.cssText='display:block;width:100%;height:100%';
-    el.appendChild(renderer.domElement);
-    function draw(){
-      if(disposed)return;
-      const p=reducedMotion ? 0.115 : earthClamp(progress.get());
-      const key=earthInterpolate(p);
-      // Keep the artwork crisp: city-to-city scroll moves the camera,
-      // but NEVER magnifies the texture past this globe framing.
-      const radius=Math.max(isMobile?4.25:3.65,key.d*(isMobile?1.13:1));
-      const cameraPos=artworkPoint(key.lat,key.lon,radius);
-      camera.position.copy(cameraPos);
-      camera.up.set(0,1,0);camera.lookAt(0,0,0);
-      // On mobile, preserve geographic camera while keeping the active pin above the bottom captions.
-      camera.updateProjectionMatrix();
-      for(let i=0;i<dots.length;i++){
-        const visible=p>EARTH_MILESTONES[i]-.035;
-        dots[i].group.visible=visible;
-        dots[i].ring.scale.setScalar(i===Math.max(0,EARTH_MILESTONES.filter(v=>p>=v-.025).length-1)?1.18:1);
-      }
-      for(let i=0;i<routes.length;i++){
-        const a=EARTH_MILESTONES[i],b=EARTH_MILESTONES[i+1];
-        const amount=earthSmooth((p-a)/(b-a||1));
-        routes[i].geometry.setDrawRange(0,Math.max(0,Math.floor(65*amount)));
-      }
-      renderer.render(scene,camera);
-    }
-    function requestDraw(){if(disposed||queued)return;queued=true;frame=requestAnimationFrame(()=>{queued=false;draw()})}
-    function resize(){if(disposed)return;const w=Math.max(1,el.clientWidth),h=Math.max(1,el.clientHeight);camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false);requestDraw()}
-    const obs=typeof ResizeObserver==='undefined'?null:new ResizeObserver(resize);
-    const unsub=progress.on('change',requestDraw);
-    obs?.observe(el);window.addEventListener('resize',resize);resize();
-    return()=>{live=false;disposed=true;cancelAnimationFrame(frame);unsub();obs?.disconnect();window.removeEventListener('resize',resize);disposeList.forEach(obj=>obj.dispose?.());renderer?.dispose();renderer?.domElement?.remove()};
-  },[progress,isMobile,onWebGLError,reducedMotion]);
-  return <div ref={mount} aria-hidden="true" style={{position:'absolute',inset:0}}/>;
-}
-function PropertyLocationMap({isMobile}) {
+function PropertyLocationMap({isMobile,enabled}) {
   const section=useRef(null);
+  const sticky=useRef(null);
+  const nearby=useInView(section,{margin:'600px 0px',once:true});
+  const inView=useInView(sticky);
+  const activeRendering=enabled&&inView;
   const [active,setActive]=useState(-1);
   const [fallback,setFallback]=useState(false);
   const [reduced,setReduced]=useState(false);
@@ -989,16 +897,25 @@ function PropertyLocationMap({isMobile}) {
     return()=>mq.removeEventListener?.('change',update);
   },[]);
   useEffect(()=>{
+    if(!activeRendering)return;
+    let previous;
     const update=p=>{
       let step=-1;
       for(let i=0;i<EARTH_STOPS.length;i++)if(p>=EARTH_MILESTONES[i]-.025)step=i;
-      setActive(old=>old===step?old:step);
+      if(step!==previous){
+        previous=step;
+        setActive(step);
+      }
     };update(progress.get());return progress.on('change',update);
-  },[progress]);
+  },[progress,activeRendering]);
   const current=active<0?null:EARTH_STOPS[active];
   return <section ref={section} aria-label="Scroll through Property Gallery locations in India and Dubai" style={{position:'relative',height:reduced?'100svh':isMobile?'700svh':'800svh',background:'#05090c',color:CREAM}}>
-    <div style={{position:'sticky',top:0,height:'100svh',overflow:'hidden',isolation:'isolate',background:'#05090c'}}>
-      {!fallback?<MinimalEarthCanvas progress={progress} isMobile={isMobile} reducedMotion={reduced} onWebGLError={setFallback}/>:<div style={{position:'absolute',inset:0,display:'grid',placeItems:'center',color:CREAM}}>Explore India & Dubai</div>}
+    <div ref={sticky} style={{position:'sticky',top:0,height:'100svh',overflow:'hidden',isolation:'isolate',background:'#05090c'}}>
+      {fallback?<div style={{position:'absolute',inset:0,display:'grid',placeItems:'center',color:CREAM}}>Explore India & Dubai</div>:nearby&&(
+        <Suspense fallback={null}>
+          <MinimalEarthCanvas progress={progress} isMobile={isMobile} reducedMotion={reduced} onWebGLError={setFallback} stops={EARTH_STOPS} milestones={EARTH_MILESTONES} active={activeRendering}/>
+        </Suspense>
+      )}
       <div aria-hidden="true" style={{position:'absolute',inset:0,pointerEvents:'none',background:'linear-gradient(90deg,rgba(3,7,9,.62),transparent 46%,rgba(3,7,9,.13)),linear-gradient(180deg,rgba(3,7,9,.1),transparent 25%,transparent 72%,#05090c 100%)'}}/>
       <div style={{position:'absolute',left:isMobile?22:'6%',right:isMobile?22:'auto',top:isMobile?82:'33%',zIndex:5,pointerEvents:'none',textAlign:isMobile?'center':'left',maxWidth:isMobile?'none':330}}>
         <div style={{fontFamily:sans,fontSize:10,letterSpacing:'.24em',color:GOLD,marginBottom:isMobile?10:22}}>PROPERTY GALLERY  /  EXPLORE</div>
@@ -1018,16 +935,16 @@ function PropertyLocationMap({isMobile}) {
   </section>;
 }
 
-function PortalScene({ zoom, isMobile, onExplore }) {
+function PortalScene({ reveal, isMobile, onExplore, insidePhone = false, nativePadding }) {
   const [nat, setNat] = useState(0);
   const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
 
-  const o = useTransform(zoom, [0.68, 0.92], [0, 1]);
-  const logoS = useTransform(zoom, [0.7, 1], [0.94, 1]);
-  const lineS = useTransform(zoom, [0.8, 1], [0, 1]);
-  const textO = useTransform(zoom, [0.86, 1], [0, 1]);
-  const ctaO = useTransform(zoom, [0.93, 1], [0, 1]);
-  const events = useTransform(zoom, (z) => (z > 0.92 ? 'auto' : 'none'));
+  const mobileOpacity = useTransform(reveal, [0.68, 0.92], [0, 1]);
+  const logoS = useTransform(reveal, [isMobile ? 0.7 : 0, 1], [0.94, 1]);
+  const lineS = useTransform(reveal, [isMobile ? 0.8 : 0.25, 1], [0, 1]);
+  const textO = useTransform(reveal, [isMobile ? 0.86 : 0.45, 1], [0, 1]);
+  const ctaO = useTransform(reveal, [isMobile ? 0.93 : 0.65, 1], [0, 1]);
+  const events = useTransform(reveal, (value) => (value > 0.92 ? 'auto' : 'none'));
 
   const want = isMobile ? '46vw' : '20vw';
   const logoW = nat
@@ -1037,10 +954,10 @@ function PortalScene({ zoom, isMobile, onExplore }) {
   return (
     <motion.div
       style={{
-        position: 'absolute', inset: 0, zIndex: 50, opacity: o, pointerEvents: events,
+        position: 'absolute', inset: 0, zIndex: 50, opacity: nativePadding ? 1 : isMobile ? mobileOpacity : reveal, pointerEvents: insidePhone ? 'none' : events,
         background: 'radial-gradient(ellipse at 50% 40%, #171b0b 0%, #060704 52%, #000 100%)',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        textAlign: 'center', padding: '0 6vw',
+        textAlign: 'center', padding: nativePadding ? 0 : '0 6vw', paddingInline: nativePadding,
       }}
     >
       <motion.img
@@ -1049,14 +966,14 @@ function PortalScene({ zoom, isMobile, onExplore }) {
         draggable={false}
         onLoad={(e) => setNat(e.currentTarget.naturalWidth)}
         style={{
-          scale: logoS, width: logoW, height: 'auto', display: 'block',
+          scale: logoS, width: insidePhone ? '20%' : logoW, height: 'auto', display: 'block',
           filter: 'drop-shadow(0 0 1.4em rgba(244,211,94,.2))',
         }}
       />
 
       <motion.div
         style={{
-          scaleX: lineS, width: 'min(320px, 56vw)', height: 1, margin: `${V(4)} 0 ${V(3)}`,
+          scaleX: lineS, width: insidePhone ? '56%' : 'min(320px, 56vw)', height: 1, margin: insidePhone ? '0.8em 0 0.6em' : `${V(4)} 0 ${V(3)}`,
           background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)`,
         }}
       />
@@ -1064,7 +981,7 @@ function PortalScene({ zoom, isMobile, onExplore }) {
       <motion.div
         style={{
           opacity: textO, fontFamily: serif, color: CREAM, letterSpacing: '0.42em', paddingLeft: '0.42em',
-          fontSize: isMobile ? 14 : 'clamp(15px, 1.5vw, 22px)', textTransform: 'uppercase',
+          fontSize: insidePhone ? '1em' : isMobile ? 14 : 'clamp(15px, 1.5vw, 22px)', textTransform: 'uppercase',
         }}
       >
         Property Gallery
@@ -1073,7 +990,7 @@ function PortalScene({ zoom, isMobile, onExplore }) {
       <motion.div
         style={{
           opacity: textO, fontFamily: sans, color: GOLD, letterSpacing: '0.3em', paddingLeft: '0.3em',
-          fontSize: isMobile ? 10.5 : 12, textTransform: 'uppercase', marginTop: 14,
+          fontSize: insidePhone ? '0.65em' : isMobile ? 10.5 : 12, textTransform: 'uppercase', marginTop: insidePhone ? '0.8em' : 14,
         }}
       >
         Delhi NCR · Mumbai · Goa · Noida · Alibaug · Nagpur · Ahmedabad · Dubai
@@ -1110,11 +1027,11 @@ function RevealWord({ children, progress, range, first }) {
   );
 }
 
-function GoldLine() {
+function GoldLine({active}) {
   return (
     <motion.div
-      animate={{ backgroundPosition: ['0% 0%', '100% 0%'] }}
-      transition={{ duration: 5, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' }}
+      animate={active ? { backgroundPosition: ['0% 0%', '100% 0%'] } : { backgroundPosition: '0% 0%' }}
+      transition={active ? { duration: 5, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' } : { duration: 0 }}
       style={{
         height: 1,
         opacity: 0.75,
@@ -1190,6 +1107,7 @@ function StackCard({ sec, i, n, progress, isMobile }) {
           <motion.img
             src={sec.image}
             alt={sec.title}
+            loading={i === 0 ? 'eager' : 'lazy'}
             decoding="async"
             style={{ rotate: counterRotate, width: '100%', height: '100%', objectFit: 'cover', display: 'block', scale: STACK.imageZoom }}
           />
@@ -1204,7 +1122,13 @@ function StackText({ sections, progress, isMobile }) {
   const [active, setActive] = useState(0);
 
   useEffect(() => {
-    const update = (v) => setActive(Math.min(n - 1, Math.max(0, Math.round(v * (n - 1)))));
+    let previous;
+    const update = (v) => {
+      const index = Math.min(n - 1, Math.max(0, Math.round(v * (n - 1))));
+      if (index === previous) return;
+      previous = index;
+      setActive(index);
+    };
     update(progress.get());
     return progress.on('change', update);
   }, [progress, n]);
@@ -1309,7 +1233,9 @@ function StackedCards({ sections, isMobile }) {
   );
 }
 
-function Footer({ isMobile, footerRef, onProjects, onAbout }) {
+function Footer({ isMobile, footerRef, onProjects, onAbout, pageVisible }) {
+  const inView = useInView(footerRef);
+  const active = pageVisible && inView;
   const year = new Date().getFullYear();
 
   const up = (delay = 0) => ({
@@ -1416,7 +1342,7 @@ function Footer({ isMobile, footerRef, onProjects, onAbout }) {
           </motion.div>
         </div>
 
-        <GoldLine />
+        <GoldLine active={active} />
 
         <div
           style={{
@@ -1435,7 +1361,7 @@ function Footer({ isMobile, footerRef, onProjects, onAbout }) {
               background: 'rgba(0,0,0,0)', color: GOLD, cursor: 'pointer', display: 'grid', placeItems: 'center', fontSize: 18,
             }}
           >
-            <motion.span animate={{ y: [0, -3, 0] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}>↑</motion.span>
+            <motion.span animate={active ? { y: [0, -3, 0] } : { y: 0 }} transition={active ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0 }}>↑</motion.span>
           </motion.button>
         </div>
 
@@ -1554,10 +1480,12 @@ const PROJECTS = [
 
 export default function App() {
   const isMobile = useIsMobile();
+  const pageVisible = usePageVisible();
   const [stage, setStage] = useState(0);
   const [ready, setReady] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
+  const landingActive = pageVisible && !selectedProject;
 
   const stmtRef = useRef(null);
   const projectsRef = useRef(null);
@@ -1612,16 +1540,22 @@ export default function App() {
   const stmtOld = useTransform(stmtRaw, [0, stmtA], [0, 1]);
   const sp = useSpring(stmtOld, SPRING);
 
-  // Rotate + zoom dono About panel ke poora aane (stmtA) ke baad ek saath shuru hote hain.
-  // Rotation zoom ke TURN_SHARE hisse me poori hoti hai, zoom STMT_ZOOM_END tak chalta hai.
-  const turnEnd = stmtA + (STMT_ZOOM_END - stmtA) * TURN_SHARE;
-  const turnRaw = useTransform(stmtRaw, [stmtA, Math.max(turnEnd, stmtA + 0.0001)], [0, turnVh > 0 ? 1 : 0]);
-  const turn = useSpring(turnRaw, { stiffness: 60, damping: 28, mass: 0.6 });
-  const zoomRaw = useTransform(stmtRaw, [stmtA, STMT_ZOOM_END], [0, 1]);
-  const zoom = useSpring(zoomRaw, { stiffness: 60, damping: 28, mass: 0.6 });
-
-  const aboutFade = useTransform([turn, zoom], ([t, z]) => 1 - clamp01(Math.max(t / 0.5, z / 0.25)));
-  const aboutShift = useTransform([turn, zoom], ([t, z]) => -50 * clamp01(Math.max(t / 0.7, z / 0.35)));
+  // Preserve the About entrance and divide the remaining scroll into the phone phases.
+  const phoneProgress = useTransform(stmtRaw, [stmtA, 1], [0, 1]);
+  const settle = useTransform(stmtRaw, [stmtA * 0.7, stmtA], [0, 1], { ease: smoothStep });
+  // One eased value keeps desktop translation, rotation, and scale in lockstep in both directions.
+  const desktopMotion = useTransform(phoneProgress, [0, DESKTOP_PHONE_END], [0, 1], { ease: smoothStep });
+  const desktopLandscapeGrowth = useTransform(phoneProgress, [DESKTOP_PHONE_END, 1], [0, 1], { ease: smoothStep });
+  const desktopFullscreen = useTransform(phoneProgress, [DESKTOP_PHONE_END, 0.96], [0, 1], { ease: smoothStep });
+  const reveal = useTransform(phoneProgress, [0.91, 1], [0, 1], { ease: smoothStep });
+  const mobileZoomRaw = useTransform(stmtRaw, [stmtA, MOBILE_ZOOM_END], [0, isMobile ? 1 : 0]);
+  const mobileZoom = useSpring(mobileZoomRaw, MOBILE_ZOOM_SPRING);
+  const mobileCenter = useTransform(mobileZoom, (z) => smoothStep(Math.max(0, Math.min(1, z))));
+  const mobileSettle = useTransform(mobileZoom, [0, 0.25], [0, 1]);
+  const mobileAboutFade = useTransform(mobileZoom, [0, 0.25], [1, 0]);
+  const mobileAboutShift = useTransform(mobileZoom, [0, 0.35], [0, -50]);
+  const aboutFade = useTransform(desktopMotion, [0, 0.65], [1, 0]);
+  const aboutShift = useTransform(desktopMotion, [0, 0.8], [0, -50]);
 
   const panelY = useTransform(sp, [0.36, 0.62], ['100%', '0%']);
   const radH = useTransform(sp, [0.36, 0.5, 0.62], [50, 6, 0]);
@@ -1658,7 +1592,6 @@ export default function App() {
       : Promise.resolve();
     const timeout = new Promise((r) => setTimeout(r, 1500));
     Promise.race([Promise.all([imgP, fontP]).catch(() => {}), timeout]).then(() => setReady(true));
-    PROJECTS.forEach((p) => { const im = new Image(); im.src = p.image; });
   }, []);
 
   useEffect(() => {
@@ -1683,15 +1616,30 @@ export default function App() {
 
   useEffect(() => {
     const v = heroVideoRef.current;
-    if (!v || !ready) return undefined;
+    if (!v || !ready || !landingActive) return undefined;
     v.muted = true;
     v.defaultMuted = true;
     v.setAttribute('playsinline', '');
-    const tryPlay = () => v.play().catch(() => {});
-    tryPlay();
+    const tryPlay = () => {
+      if (enterRaw.get() < 1) v.play().catch(() => {});
+    };
+    let wasVisible;
+    const update = (progress) => {
+      const visible = progress < 1;
+      if (visible === wasVisible) return;
+      wasVisible = visible;
+      if (visible) tryPlay();
+      else v.pause();
+    };
+    update(enterRaw.get());
+    const unsubscribe = enterRaw.on('change', update);
     window.addEventListener('touchstart', tryPlay, { once: true, passive: true });
-    return () => window.removeEventListener('touchstart', tryPlay);
-  }, [ready, stage]);
+    return () => {
+      unsubscribe();
+      v.pause();
+      window.removeEventListener('touchstart', tryPlay);
+    };
+  }, [ready, landingActive, enterRaw]);
 
   useEffect(() => {
     if (!ready) return;
@@ -1793,7 +1741,7 @@ export default function App() {
       <header
         style={{
           position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-          height: isMobile ? 68 : 'clamp(76px, 10vh, 108px)',
+          height: isMobile ? MOBILE_HEADER_HEIGHT : 'clamp(76px, 10vh, 108px)',
           padding: '0 3.8vw',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           pointerEvents: 'none',
@@ -1840,11 +1788,11 @@ export default function App() {
             </button>
           ) : (
             <>
-              <span onClick={goProjects} style={{ cursor: 'pointer' }}>Projects</span>
-              <span onClick={goAbout} style={{ cursor: 'pointer' }}>About</span>
+              <span onClick={goProjects} style={{ cursor: 'pointer', paddingBlock: 12 }}>Projects</span>
+              <span onClick={goAbout} style={{ cursor: 'pointer', paddingBlock: 12 }}>About</span>
               <span
                 onClick={goFooter}
-                style={{ background: CREAM, color: '#000', padding: '10px 20px', borderRadius: 6, fontWeight: 500, cursor: 'pointer' }}
+                style={{ background: CREAM, color: '#000', padding: '12px 25px', lineHeight: '20px', borderRadius: 6, fontWeight: 500, cursor: 'pointer' }}
               >
                 Contact
               </span>
@@ -2075,16 +2023,15 @@ export default function App() {
                 <div
                   style={{
                     position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-                    padding: `max(50px, ${V(6)}) 5vw ${V(2)}`,
+                    padding: `${MOBILE_HEADER_HEIGHT + 8}px 5vw ${V(2)}`,
                     justifyContent: 'space-between',
                   }}
                 >
-                  <motion.div style={{ opacity: aboutFade, x: aboutShift }}>
+                  <motion.div style={{ opacity: mobileAboutFade, x: mobileAboutShift }}>
                     <div style={{ fontWeight: 800, fontSize: ABOUT.headingSizeMobile, letterSpacing: '0.02em', lineHeight: 1 }}>{ABOUT.heading}</div>
                     <p
                       style={{
                         margin: '8px 0 0', fontSize: ABOUT.textSizeMobile, fontWeight: 500, lineHeight: 1.5, color: 'rgba(20,22,28,.82)',
-                        display: '-webkit-box', WebkitLineClamp: ABOUT.textLinesMobile, WebkitBoxOrient: 'vertical', overflow: 'hidden',
                       }}
                     >
                       {ABOUT.text}
@@ -2096,7 +2043,7 @@ export default function App() {
                     </div>
                   </motion.div>
                   <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '2vh' }}>
-                    <Phone small progress={sp} zoom={zoom} turn={turn} />
+                    <Phone small progress={sp} center={mobileCenter} expansion={mobileZoom} settle={mobileSettle} enabled={landingActive} />
                   </div>
                 </div>
               ) : (
@@ -2118,17 +2065,17 @@ export default function App() {
                     </div>
                   </motion.div>
                   <div style={{ justifySelf: 'center' }}>
-                    <Phone progress={sp} zoom={zoom} turn={turn} />
+                    <Phone progress={sp} center={desktopMotion} expansion={desktopMotion} landscapeGrowth={desktopLandscapeGrowth} fullscreen={desktopFullscreen} reveal={reveal} settle={settle} enabled={landingActive} />
                   </div>
                 </div>
               )}
             </motion.div>
 
-            <PortalScene zoom={zoom} isMobile={isMobile} onExplore={goProjects} />
+            {isMobile && <PortalScene reveal={mobileZoom} isMobile onExplore={goProjects} />}
           </div>
         </section>
 
-        <PropertyLocationMap isMobile={isMobile} />
+        <PropertyLocationMap isMobile={isMobile} enabled={landingActive} />
 
         <section ref={projectsRef} style={{ position: 'relative', zIndex: 10, background: BG, color: CREAM, padding: isMobile ? '9vh 5vw' : '12vh 6vw' }}>
           <div style={{ textAlign: 'center', marginBottom: isMobile ? '6vh' : '9vh' }}>
@@ -2167,6 +2114,8 @@ export default function App() {
                   <img
                     src={proj.image}
                     alt={proj.title}
+                    loading="lazy"
+                    decoding="async"
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                   <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(14,18,1,0.9), transparent 50%)' }} />
@@ -2213,7 +2162,7 @@ export default function App() {
         </section>
       </div>
 
-      <Footer isMobile={isMobile} footerRef={footerRef} onProjects={goProjects} onAbout={goAbout} />
+      <Footer isMobile={isMobile} footerRef={footerRef} onProjects={goProjects} onAbout={goAbout} pageVisible={pageVisible} />
     </>
   );
 }
