@@ -760,8 +760,8 @@ function Phone({ small, progress, zoom, turn }) {
 const EARTH_STOPS = [
   {name:'Delhi NCR',lat:28.6139,lon:77.2090,country:'India'},
   // {name:'Panipat',lat:29.3909,lon:76.9635,country:'India'},
-  {name:'Gurugram',lat:27.4595,lon:76.0266,country:'India'},
-  {name:'Noida',lat:28.5355,lon:79.3910,country:'India'},
+  {name:'Gurugram',lat:28.4595,lon:77.0266,country:'India'},
+  {name:'Noida',lat:28.5355,lon:77.3910,country:'India'},
   {name:'Ahmedabad',lat:23.0225,lon:72.5714,country:'India'},
   {name:'Nagpur',lat:21.1458,lon:79.0882,country:'India'},
   {name:'Mumbai',lat:19.0760,lon:72.8777,country:'India'},
@@ -772,14 +772,14 @@ const EARTH_STOPS = [
 const EARTH_KEYS = [
   {p:0,lat:22.4,lon:77.5,d:3.55,stop:-1},
   {p:.115,lat:28.6139,lon:77.209,d:2.05,stop:0},
-  // {p:.195,lat:29.3909,lon:76.9635,d:1.79,stop:1},
+  {p:.195,lat:29.3909,lon:76.9635,d:1.79,stop:1},
   {p:.275,lat:28.4595,lon:77.0266,d:1.75,stop:2},
   {p:.355,lat:28.5355,lon:77.391,d:1.77,stop:3},
   {p:.445,lat:23.0225,lon:72.5714,d:1.87,stop:4},
   {p:.535,lat:21.1458,lon:79.0882,d:1.96,stop:5},
   {p:.625,lat:19.076,lon:72.8777,d:1.82,stop:6},
   {p:.705,lat:18.6414,lon:72.8722,d:1.77,stop:7},
-  // {p:.775,lat:15.4909,lon:73.8278,d:1.94,stop:8},
+  {p:.775,lat:15.4909,lon:73.8278,d:1.94,stop:8},
   {p:.88,lat:22.0,lon:64.0,d:2.95,stop:8},
   {p:.97,lat:25.2048,lon:55.2708,d:1.94,stop:9},
   {p:1,lat:25.2048,lon:55.2708,d:1.94,stop:9},
@@ -799,11 +799,81 @@ const earthPoint=(lat,lon,r=1)=>{
     -r*Math.cos(a)*Math.sin(b)
   );
 };
+// Pixel anchors measured on the user's ORIGINAL 2048 x 1152 artwork.
+// Its coastlines are decorative, not a georeferenced map. For correct visual
+// placement, interpolate between city-specific anchors instead of projecting
+// raw geographic coordinates onto the painted map.
+// Canvas uses the TOP 2048 x 1024 region of the unchanged PNG.
+const ARTWORK_SIZE = {width: 2048, height: 1024};
+const ARTWORK_CITY_ANCHORS = [
+  {lat:28.6139, lon:77.2090, x:1480, y:477}, // Delhi NCR
+  // {lat:29.3909, lon:76.9635, x:1456, y:465}, // Panipat
+  {lat:28.4595, lon:77.0266, x:1479, y:480}, // Gurugram
+  {lat:28.5355, lon:77.3910, x:1485, y:480}, // Noida
+  {lat:23.0225, lon:72.5714, x:1440, y:521}, // Ahmedabad
+  {lat:21.1458, lon:79.0882, x:1490, y:551}, // Nagpur
+  {lat:19.0760, lon:72.8777, x:1440, y:571}, // Mumbai
+  // {lat:18.6414, lon:72.8722, x:1420, y:580}, // Alibaug
+  {lat:15.4909, lon:73.8278, x:1445, y:608}, // Goa
+  {lat:25.2048, lon:55.2708, x:1327, y:505}, // Dubai (UAE coast)
+];
+const artworkPoint=(lat,lon,r=1)=>{
+  // Nearest anchored stop has exact pixel placement. Between stops use
+  // smooth inverse-distance interpolation so the scroll camera stays fluid.
+  let sum=0, x=0, y=0;
+  for(const a of ARTWORK_CITY_ANCHORS){
+    const d2=(lat-a.lat)**2+(lon-a.lon)**2;
+    if(d2<0.000001){x=a.x;y=a.y;sum=1;break;}
+    const w=1/Math.pow(d2+0.04,1.25);
+    x+=a.x*w;y+=a.y*w;sum+=w;
+  }
+  x/=sum;y/=sum;
+  // Correct THREE.SphereGeometry UV basis:
+  // x=-cos(latitude)*cos(2*pi*u), z=cos(latitude)*sin(2*pi*u).
+  // The previous sin/cos swap rotated/flipped camera targeting toward Africa.
+  // All locations, travel route and camera now share these exact UV coordinates.
+  const u=x/ARTWORK_SIZE.width;
+  const phi=u*Math.PI*2;
+  const latitude=(0.5-y/ARTWORK_SIZE.height)*Math.PI;
+  return new THREE.Vector3(
+    -r*Math.cos(latitude)*Math.cos(phi),
+    r*Math.sin(latitude),
+    r*Math.cos(latitude)*Math.sin(phi)
+  );
+};
 const earthInterpolate=(p)=>{
   let i=0;while(i<EARTH_KEYS.length-2&&p>EARTH_KEYS[i+1].p)i++;
   const a=EARTH_KEYS[i],b=EARTH_KEYS[i+1];
   const t=earthSmooth((p-a.p)/(b.p-a.p||1));
   return {lat:earthLerp(a.lat,b.lat,t),lon:earthLerp(a.lon,b.lon,t),d:earthLerp(a.d,b.d,t)};
+};
+const INDIA_OUTLINE_POINTS=[
+  {lat:23.82,lon:68.52},{lat:22.73,lon:69.38},{lat:21.94,lon:70.57},{lat:20.74,lon:72.02},
+  {lat:19.38,lon:72.86},{lat:18.55,lon:72.80},{lat:16.96,lon:73.32},{lat:15.49,lon:73.83},
+  {lat:13.36,lon:74.79},{lat:11.02,lon:75.79},{lat:8.08,lon:77.54},{lat:9.48,lon:78.15},
+  {lat:11.14,lon:79.79},{lat:13.08,lon:80.28},{lat:15.73,lon:80.97},{lat:17.69,lon:83.22},
+  {lat:19.24,lon:84.91},{lat:20.27,lon:86.70},{lat:21.63,lon:87.93},{lat:21.95,lon:89.12},
+  {lat:22.76,lon:89.58},{lat:24.17,lon:88.74},{lat:25.27,lon:89.01},{lat:26.15,lon:89.35},
+  {lat:26.86,lon:90.72},{lat:27.59,lon:91.68},{lat:28.16,lon:94.10},{lat:27.42,lon:95.11},
+  {lat:26.12,lon:95.02},{lat:24.54,lon:94.37},{lat:24.29,lon:92.79},{lat:24.92,lon:91.67},
+  {lat:25.57,lon:90.94},{lat:26.67,lon:89.80},{lat:27.78,lon:88.69},{lat:28.12,lon:87.12},
+  {lat:28.54,lon:84.92},{lat:29.11,lon:82.72},{lat:29.73,lon:81.14},{lat:30.44,lon:79.61},
+  {lat:31.28,lon:78.20},{lat:32.19,lon:77.10},{lat:33.19,lon:76.48},{lat:34.18,lon:75.67},
+  {lat:35.07,lon:74.70},{lat:35.57,lon:74.16},{lat:34.79,lon:73.55},{lat:33.99,lon:74.17},
+  {lat:32.78,lon:74.91},{lat:31.56,lon:75.66},{lat:30.70,lon:74.72},{lat:29.81,lon:73.88},
+  {lat:28.98,lon:71.99},{lat:27.73,lon:70.50},{lat:26.32,lon:69.46},{lat:24.92,lon:68.83}
+];
+const sphericalPath=(points,r=1.021,segmentsPerEdge=8)=>{
+  const out=[];
+  for(let i=0;i<points.length;i++){
+    const a=earthPoint(points[i].lat,points[i].lon,1).normalize();
+    const b=earthPoint(points[(i+1)%points.length].lat,points[(i+1)%points.length].lon,1).normalize();
+    for(let step=0;step<segmentsPerEdge;step++){
+      const t=step/segmentsPerEdge;
+      out.push(a.clone().lerp(b,t).normalize().multiplyScalar(r));
+    }
+  }
+  return out;
 };
 function MinimalEarthCanvas({progress,isMobile,onWebGLError,reducedMotion}) {
   const mount=useRef(null);
@@ -813,19 +883,23 @@ function MinimalEarthCanvas({progress,isMobile,onWebGLError,reducedMotion}) {
     const disposeList=[];
     const scene=new THREE.Scene();scene.background=new THREE.Color('#05090c');
     const camera=new THREE.PerspectiveCamera(isMobile?46:39,1,.08,55);
-    const ambient=new THREE.AmbientLight('#f3e8cf',2.1);scene.add(ambient);
-    const sun=new THREE.DirectionalLight('#f8edd8',1.22);sun.position.set(5,7,9);scene.add(sun);
+    const ambient=new THREE.AmbientLight('#ffffff',1.45);scene.add(ambient);
+    const sun=new THREE.DirectionalLight('#fff4df',0.72);sun.position.set(5,7,9);scene.add(sun);
     const earthGeometry=new THREE.SphereGeometry(1,72,48);
-    const earthMaterial=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:1,metalness:0,emissive:'#0b0c0b',emissiveIntensity:.20});
+    const earthMaterial=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:1,metalness:0,emissive:'#090a0a',emissiveIntensity:.12});
     const sphere=new THREE.Mesh(earthGeometry,earthMaterial);scene.add(sphere);
     disposeList.push(earthGeometry,earthMaterial);
-    // Custom lightweight equirectangular silhouette texture: no grass, mountains, blue oceans, or satellite detail.
+    // NEW user-selected black/gold map (unchanged PNG). Use artworkPoint() to calibrate pins to its nonstandard projection.
     const loader=new THREE.TextureLoader();
     let live=true;
-    loader.load('/property-gallery-earth-minimal-v2.png',texture=>{
+    loader.load('/property-gallery-world-map-new.png',texture=>{
       if(!live){texture.dispose();return;}
       texture.colorSpace=THREE.SRGBColorSpace;
-      texture.anisotropy=Math.min(renderer?.capabilities.getMaxAnisotropy()||1,4);
+      // Original 2048x1152 artwork: sample its upper 2048x1024 area
+      // as a 2:1 globe texture without resizing or modifying image pixels.
+      texture.repeat.set(1, 1024 / 1152);
+      texture.offset.set(0, 128 / 1152);
+      texture.anisotropy=Math.min(renderer?.capabilities.getMaxAnisotropy()||1,8);
       earthMaterial.map=texture;earthMaterial.needsUpdate=true;
       disposeList.push(texture);requestDraw();
     },undefined,()=>{ /* retain an untextured globe when image missing */ });
@@ -834,7 +908,7 @@ function MinimalEarthCanvas({progress,isMobile,onWebGLError,reducedMotion}) {
     const atmosphere=new THREE.Mesh(atmosphereGeometry,atmosphereMaterial);scene.add(atmosphere);
     disposeList.push(atmosphereGeometry,atmosphereMaterial);
     const dots=EARTH_STOPS.map((city,index)=>{
-      const group=new THREE.Group();const point=earthPoint(city.lat,city.lon,1.013);
+      const group=new THREE.Group();const point=artworkPoint(city.lat,city.lon,1.013);
       group.position.copy(point);
       group.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),point.clone().normalize());
       const dotGeometry=new THREE.SphereGeometry(.0062,14,10);
@@ -851,7 +925,7 @@ function MinimalEarthCanvas({progress,isMobile,onWebGLError,reducedMotion}) {
     const routes=[];
     for(let i=0;i<EARTH_STOPS.length-1;i++){
       const a=EARTH_STOPS[i],b=EARTH_STOPS[i+1];
-      const v0=earthPoint(a.lat,a.lon),v1=earthPoint(b.lat,b.lon);
+      const v0=artworkPoint(a.lat,a.lon),v1=artworkPoint(b.lat,b.lon);
       const points=[];
       for(let j=0;j<=64;j++){
         const t=j/64;
@@ -874,8 +948,10 @@ function MinimalEarthCanvas({progress,isMobile,onWebGLError,reducedMotion}) {
       if(disposed)return;
       const p=reducedMotion ? 0.115 : earthClamp(progress.get());
       const key=earthInterpolate(p);
-      const radius=key.d*(isMobile?1.13:1);
-      const cameraPos=earthPoint(key.lat,key.lon,radius);
+      // Keep the artwork crisp: city-to-city scroll moves the camera,
+      // but NEVER magnifies the texture past this globe framing.
+      const radius=Math.max(isMobile?4.25:3.65,key.d*(isMobile?1.13:1));
+      const cameraPos=artworkPoint(key.lat,key.lon,radius);
       camera.position.copy(cameraPos);
       camera.up.set(0,1,0);camera.lookAt(0,0,0);
       // On mobile, preserve geographic camera while keeping the active pin above the bottom captions.
@@ -925,7 +1001,7 @@ function PropertyLocationMap({isMobile}) {
       {!fallback?<MinimalEarthCanvas progress={progress} isMobile={isMobile} reducedMotion={reduced} onWebGLError={setFallback}/>:<div style={{position:'absolute',inset:0,display:'grid',placeItems:'center',color:CREAM}}>Explore India & Dubai</div>}
       <div aria-hidden="true" style={{position:'absolute',inset:0,pointerEvents:'none',background:'linear-gradient(90deg,rgba(3,7,9,.62),transparent 46%,rgba(3,7,9,.13)),linear-gradient(180deg,rgba(3,7,9,.1),transparent 25%,transparent 72%,#05090c 100%)'}}/>
       <div style={{position:'absolute',left:isMobile?22:'6%',right:isMobile?22:'auto',top:isMobile?82:'33%',zIndex:5,pointerEvents:'none',textAlign:isMobile?'center':'left',maxWidth:isMobile?'none':330}}>
-        {/* <div style={{fontFamily:sans,fontSize:10,letterSpacing:'.24em',color:GOLD,marginBottom:isMobile?10:22}}>PROPERTY GALLERY  /  EXPLORE</div> */}
+        <div style={{fontFamily:sans,fontSize:10,letterSpacing:'.24em',color:GOLD,marginBottom:isMobile?10:22}}>PROPERTY GALLERY  /  EXPLORE</div>
         <AnimatePresence mode="wait" initial={false}>
           <motion.div key={current?.name||'intro'} initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-12}} transition={{duration:.28}}>
             <h2 style={{fontFamily:serif,fontSize:isMobile?'clamp(28px,7vw,39px)':'clamp(42px,4vw,68px)',fontWeight:400,lineHeight:1.1,margin:0,textShadow:'0 3px 22px rgba(0,0,0,.65)'}}>{current?.name||'India to Dubai'}</h2>
@@ -933,10 +1009,10 @@ function PropertyLocationMap({isMobile}) {
           </motion.div>
         </AnimatePresence>
       </div>
-      {/* <div style={{position:'absolute',right:isMobile?18:'4.5%',top:isMobile?'auto':'47%',bottom:isMobile?68:'auto',color:'#dfd4bc',fontFamily:sans,fontSize:10,letterSpacing:'.19em',textAlign:'right',zIndex:5,pointerEvents:'none'}}>{active<0?'01 / 09':String(active+2).padStart(2,'0')+' / 09'}</div> */}
+      <div style={{position:'absolute',right:isMobile?18:'4.5%',top:isMobile?'auto':'47%',bottom:isMobile?68:'auto',color:'#dfd4bc',fontFamily:sans,fontSize:10,letterSpacing:'.19em',textAlign:'right',zIndex:5,pointerEvents:'none'}}>{active<0?'00 / 08':String(active+1).padStart(1,'0')+' / 08'}</div>
       <div style={{position:'absolute',left:isMobile?22:'6%',right:isMobile?22:'6%',bottom:isMobile?37:42,zIndex:5,pointerEvents:'none'}}>
         <div style={{height:1,background:'rgba(244,211,94,.22)',overflow:'hidden'}}><motion.div style={{height:'100%',background:GOLD,scaleX:progress,transformOrigin:'left'}}/></div>
-        <div style={{display:'flex',justifyContent:'space-between',fontFamily:sans,fontSize:9,letterSpacing:'.15em',color:'#bdb18f',marginTop:12}}><span>INDIA</span><span>SCROLL TO TRAVEL </span><span>DUBAI</span></div>
+        <div style={{display:'flex',justifyContent:'space-between',fontFamily:sans,fontSize:9,letterSpacing:'.15em',color:'#bdb18f',marginTop:12}}><span>INDIA</span><span>SCROLL TO TRAVEL ↓</span><span>DUBAI</span></div>
       </div>
     </div>
   </section>;
