@@ -1,20 +1,24 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
+// Scroll camera timeline:
+// 0-14%: zoom from the world view into India.
+// 14-72%: visit active Indian locations (Panipat/Alibaug are intentionally skipped).
+// 72-100%: zoom out over the Arabian Sea, then approach Dubai.
 const EARTH_KEYS = [
-  {p:0,lat:22.4,lon:77.5,d:3.55,stop:-1},
-  {p:.115,lat:28.6139,lon:77.209,d:2.05,stop:0},
-  {p:.195,lat:29.3909,lon:76.9635,d:1.79,stop:1},
-  {p:.275,lat:28.4595,lon:77.0266,d:1.75,stop:2},
-  {p:.355,lat:28.5355,lon:77.391,d:1.77,stop:3},
-  {p:.445,lat:23.0225,lon:72.5714,d:1.87,stop:4},
-  {p:.535,lat:21.1458,lon:79.0882,d:1.96,stop:5},
-  {p:.625,lat:19.076,lon:72.8777,d:1.82,stop:6},
-  {p:.705,lat:18.6414,lon:72.8722,d:1.77,stop:7},
-  {p:.775,lat:15.4909,lon:73.8278,d:1.94,stop:8},
-  {p:.88,lat:22.0,lon:64.0,d:2.95,stop:8},
-  {p:.97,lat:25.2048,lon:55.2708,d:1.94,stop:9},
-  {p:1,lat:25.2048,lon:55.2708,d:1.94,stop:9},
+  {p:0.00, lat:22.4, lon:77.5, d:3.75}, // India visible on globe
+  {p:0.14, lat:22.4, lon:77.5, d:2.20}, // Zoom into India
+  {p:0.22, lat:28.6139, lon:77.2090, d:1.97}, // Delhi
+  {p:0.30, lat:28.4595, lon:77.0266, d:1.91}, // Gurugram
+  {p:0.38, lat:28.5355, lon:77.3910, d:1.91}, // Noida
+  {p:0.46, lat:23.0225, lon:72.5714, d:1.97}, // Ahmedabad
+  {p:0.54, lat:21.1458, lon:79.0882, d:1.98}, // Nagpur
+  {p:0.62, lat:19.0760, lon:72.8777, d:1.94}, // Mumbai
+  {p:0.72, lat:15.4909, lon:73.8278, d:2.05}, // Goa
+  {p:0.81, lat:20.0, lon:66.0, d:2.65}, // Arabian Sea transition
+  {p:0.91, lat:23.0, lon:59.0, d:2.35}, // Approach UAE
+  {p:0.98, lat:25.2048, lon:55.2708, d:1.96}, // Dubai
+  {p:1.00, lat:25.2048, lon:55.2708, d:1.96}, // Hold Dubai
 ];
 const earthClamp=t=>Math.max(0,Math.min(1,t));
 const earthSmooth=t=>{const v=earthClamp(t);return v*v*(3-2*v)};
@@ -30,23 +34,19 @@ const earthPoint=(lat,lon,r=1)=>{
     -r*Math.cos(a)*Math.sin(b)
   );
 };
-// Pixel anchors measured on the user's ORIGINAL 2048 x 1152 artwork.
-// Its coastlines are decorative, not a georeferenced map. For correct visual
-// placement, interpolate between city-specific anchors instead of projecting
-// raw geographic coordinates onto the painted map.
-// Canvas uses the TOP 2048 x 1024 region of the unchanged PNG.
+
 const ARTWORK_SIZE = {width: 2048, height: 1024};
 const ARTWORK_CITY_ANCHORS = [
-  {lat:28.6139, lon:77.2090, x:1480, y:477}, // Delhi NCR
+  {lat:28.6139, lon:77.2090, x:1465, y:400}, // Delhi NCR
   // {lat:29.3909, lon:76.9635, x:1456, y:465}, // Panipat
-  {lat:28.4595, lon:77.0266, x:1479, y:480}, // Gurugram
-  {lat:28.5355, lon:77.3910, x:1485, y:480}, // Noida
-  {lat:23.0225, lon:72.5714, x:1440, y:521}, // Ahmedabad
-  {lat:21.1458, lon:79.0882, x:1490, y:551}, // Nagpur
-  {lat:19.0760, lon:72.8777, x:1440, y:571}, // Mumbai
+  {lat:28.4595, lon:77.0266, x:1462, y:405}, // Gurugram
+  {lat:28.5355, lon:77.3910, x:1470, y:403}, // Noida
+  {lat:23.0225, lon:72.5714, x:1444, y:427}, // Ahmedabad
+  {lat:21.1458, lon:79.0882, x:1476, y:442}, // Nagpur
+  {lat:19.0760, lon:72.8777, x:1442, y:459}, // Mumbai
   // {lat:18.6414, lon:72.8722, x:1420, y:580}, // Alibaug
-  {lat:15.4909, lon:73.8278, x:1445, y:608}, // Goa
-  {lat:25.2048, lon:55.2708, x:1327, y:505}, // Dubai (UAE coast)
+  {lat:15.4909, lon:73.8278, x:1448, y:487}, // Goa
+  {lat:25.2048, lon:55.2708, x:1342, y:409}, // Dubai (UAE coast)
 ];
 const artworkPoint=(lat,lon,r=1)=>{
   // Nearest anchored stop has exact pixel placement. Between stops use
@@ -127,7 +127,7 @@ export default function MinimalEarthCanvas({progress,isMobile,onWebGLError,reduc
     // NEW user-selected black/gold map (unchanged PNG). Use artworkPoint() to calibrate pins to its nonstandard projection.
     const loader=new THREE.TextureLoader();
     let live=true;
-    loader.load('/property-gallery-world-map-new.png',texture=>{
+    loader.load('/world_country_borders_8k.png',texture=>{
       if(!live){texture.dispose();return;}
       texture.colorSpace=THREE.SRGBColorSpace;
       // Original 2048x1152 artwork: sample its upper 2048x1024 area
@@ -181,9 +181,10 @@ export default function MinimalEarthCanvas({progress,isMobile,onWebGLError,reduc
       if(disposed)return;
       const p=reducedMotion ? 0.115 : earthClamp(progress.get());
       const key=earthInterpolate(p);
-      // Keep the artwork crisp: city-to-city scroll moves the camera,
-      // but NEVER magnifies the texture past this globe framing.
-      const radius=Math.max(isMobile?4.25:3.65,key.d*(isMobile?1.13:1));
+      // Allow the scroll-controlled zoom. The old minimum of 3.65 / 4.25
+      // prevented all close-up keyframes from actually zooming in.
+      // Keep a sensible minimum so the camera stays outside the globe.
+      const radius=Math.max(isMobile?2.25:1.85,key.d*(isMobile?1.07:1));
       const cameraPos=artworkPoint(key.lat,key.lon,radius);
       camera.position.copy(cameraPos);
       camera.up.set(0,1,0);camera.lookAt(0,0,0);

@@ -12,9 +12,11 @@ import {
 } from 'framer-motion';
 
 const MinimalEarthCanvas = lazy(() => import('./MinimalEarthCanvas.jsx'));
+const IPhoneModel = lazy(() => import('./IPhoneModel.jsx'));
 
 /* ================= 1. CONSTANTS ================= */
 const HERO_IMG = '/pic1.png';
+const DEFAULT_PHONE_SCREEN_IMAGE = HERO_IMG;
 const HERO_VIDEO = '/Website-Landscape.mp4';
 const LOGO = '/logo.png';
 const EXP_IMG = '/Signature.png';
@@ -230,10 +232,10 @@ function SocialLogo({ c, size }) {
 
 const fill = { position: 'absolute', inset: 0 };
 
-function ProfileScreen() {
+function ProfileScreen({ image }) {
   const tile = (pos) => ({
     aspectRatio: '1',
-    backgroundImage: `url(${HERO_IMG})`,
+    backgroundImage: `url(${image})`,
     backgroundSize: '260%',
     backgroundPosition: pos,
   });
@@ -261,7 +263,7 @@ function ProfileScreen() {
       </div>
       <div style={{ display: 'flex', gap: '0.8em', margin: '1em 0 0.8em' }}>
         {['20% 30%', '70% 30%', '30% 80%', '80% 80%'].map((p) => (
-          <div key={p} style={{ width: '3.4em', height: '3.4em', borderRadius: '50%', border: '1.5px solid #555', backgroundImage: `url(${HERO_IMG})`, backgroundSize: '300%', backgroundPosition: p }} />
+          <div key={p} style={{ width: '3.4em', height: '3.4em', borderRadius: '50%', border: '1.5px solid #555', backgroundImage: `url(${image})`, backgroundSize: '300%', backgroundPosition: p }} />
         ))}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 2 }}>
@@ -273,7 +275,7 @@ function ProfileScreen() {
   );
 }
 
-function ReelScreen() {
+function ReelScreen({ image }) {
   const circle = { width: '2.6em', height: '2.6em', borderRadius: '50%', background: 'rgba(0,0,0,.35)', display: 'grid', placeItems: 'center' };
   return (
     <div style={{ ...fill, background: '#000', overflow: 'hidden', fontFamily: mont, color: '#fff' }}>
@@ -281,7 +283,7 @@ function ReelScreen() {
         initial={{ scale: 1.05 }}
         animate={{ scale: 1.22 }}
         transition={{ duration: 3.4, ease: 'linear' }}
-        style={{ ...fill, backgroundImage: `url(${HERO_IMG})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+        style={{ ...fill, backgroundImage: `url(${image})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
       />
       <div style={{ ...fill, background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.35), transparent 30%, transparent 55%, rgba(0,0,0,.75))' }} />
       <div style={{ position: 'absolute', top: '3.5em', left: '0.8em', right: '0.8em', height: 3, background: 'rgba(255,255,255,.3)', borderRadius: 2 }}>
@@ -330,10 +332,6 @@ function StatusBar({ o }) {
 }
 
 const PHONE_RADIUS = '17% / 7.9%';
-const PHONE_TITANIUM =
-  'linear-gradient(135deg, #ffd9b5 0%, #f0a366 10%, #d2692a 24%, #8f3f12 42%, #5e2608 52%, #b4561b 66%, #ea9552 84%, #ffdcc0 100%)';
-const PHONE_BRUSHED =
-  'repeating-linear-gradient(90deg, rgba(255,255,255,.07) 0, rgba(255,255,255,.07) 1px, rgba(0,0,0,.07) 1px, rgba(0,0,0,.07) 2px)';
 
 const PHONE_TURN_DEG = 30;
 const IG_DELAY = 0.1;
@@ -415,14 +413,12 @@ const PH_IN = 0.42;
 const PH_OUT = 0.62;
 const PH_SHOW_ON = 0.55;
 
-const PH_SLICES = 14;
-
 const LAND_R = (19.3 - 0.633) / (9 - 0.633);
 
-function DesktopPhoneDisplay() {
+function DesktopPhoneDisplay({ image }) {
   return (
     <>
-      <div style={{ ...fill, backgroundImage: `url(${HERO_IMG})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+      <div style={{ ...fill, backgroundImage: `url(${image})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
       <div style={{ ...fill, background: 'linear-gradient(to bottom, rgba(0,0,0,.25), transparent 35%, transparent 60%, rgba(0,0,0,.65))' }} />
       <div style={{ position: 'absolute', left: '4%', bottom: '8%', fontFamily: mont, color: '#fff', lineHeight: 1.35 }}>
         <div style={{ fontWeight: 700, fontSize: '1.5em' }}>@{INSTAGRAM}</div>
@@ -463,15 +459,103 @@ function desktopPhonePose(t, { w, h, width, height, dx, dy, header }) {
   };
 }
 
-function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen, reveal, settle, enabled }) {
+function usePhoneDrag(enabled) {
+  const pointer = useRef(null);
+  const suppressClick = useRef(false);
+  const [dragging, setDragging] = useState(false);
+  const yawTarget = useMotionValue(0);
+  const pitchTarget = useMotionValue(0);
+  const yaw = useSpring(yawTarget, { stiffness: 300, damping: 34 });
+  const pitch = useSpring(pitchTarget, { stiffness: 300, damping: 34 });
+
+  useEffect(() => {
+    if (!enabled) return undefined;
+    const finish = (event) => {
+      if (pointer.current?.id !== event.pointerId) return;
+      suppressClick.current = pointer.current.dragging;
+      pointer.current = null;
+      setDragging(false);
+    };
+    const move = (event) => {
+      const start = pointer.current;
+      if (!start || start.id !== event.pointerId) return;
+      const dx = event.clientX - start.x;
+      const dy = event.clientY - start.y;
+      if (!start.dragging) {
+        if (Math.hypot(dx, dy) < 6) return;
+        if (event.pointerType === 'touch' && Math.abs(dy) >= Math.abs(dx)) {
+          pointer.current = null;
+          return;
+        }
+        start.dragging = true;
+        setDragging(true);
+      }
+      yawTarget.set(start.yaw + dx * 0.9);
+      pitchTarget.set(Math.max(-65, Math.min(65, start.pitch - dy * 0.55)));
+    };
+    const cancel = () => {
+      pointer.current = null;
+      setDragging(false);
+    };
+    const reset = () => {
+      if (pointer.current?.dragging) return;
+      // Reset to the nearest front-facing turn after a full revolution.
+      const front = Math.round(yawTarget.get() / 360) * 360;
+      yawTarget.set(front);
+      pitchTarget.set(0);
+    };
+    window.addEventListener('scroll', reset, { passive: true });
+    window.addEventListener('pointermove', move, { passive: true });
+    window.addEventListener('pointerup', finish, { passive: true });
+    window.addEventListener('pointercancel', finish, { passive: true });
+    window.addEventListener('blur', cancel);
+    return () => {
+      window.removeEventListener('scroll', reset);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', finish);
+      window.removeEventListener('pointercancel', finish);
+      window.removeEventListener('blur', cancel);
+      cancel();
+      yawTarget.set(0);
+      pitchTarget.set(0);
+    };
+  }, [enabled, yawTarget, pitchTarget]);
+
+  const handlers = enabled ? {
+    onPointerDown(event) {
+      if (!event.isPrimary || event.button !== 0) return;
+      suppressClick.current = false;
+      pointer.current = { id: event.pointerId, x: event.clientX, y: event.clientY, yaw: yaw.get(), pitch: pitch.get(), dragging: false };
+      if (event.pointerType === 'mouse') event.currentTarget.setPointerCapture(event.pointerId);
+    },
+    onClickCapture(event) {
+      if (event.detail && suppressClick.current) {
+        suppressClick.current = false;
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    },
+  } : {};
+  return { yaw, pitch, dragging, handlers };
+}
+
+function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen, reveal, settle, enabled, image }) {
   const [i, setI] = useState(0);
   const [show, setShow] = useState(false);
   const [expanding, setExpanding] = useState(false);
-  const [flat, setFlat] = useState(false);
   const showRef = useRef(false);
   const layoutRef = useRef(null);
   const displayRef = useRef(null);
   const inView = useInView(layoutRef);
+  // Mount the 3D model very early so it is ready before the user scrolls here.
+  const nearViewport = useInView(layoutRef, { once: true, margin: '2000px 0px' });
+  const [modelReady, setModelReady] = useState(false);
+  const interactive = enabled && modelReady;
+  const { yaw, pitch, dragging, handlers } = usePhoneDrag(interactive);
+  const faceOpacity = useTransform([yaw, pitch], ([y, x]) => {
+    const facing = Math.cos(y * Math.PI / 180) * Math.cos(x * Math.PI / 180);
+    return Math.min(1, Math.max(0, facing * 12));
+  });
   const active = enabled && inView;
 
   const mx = useMotionValue(0);
@@ -501,12 +585,10 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
   useEffect(() => {
     if (!enabled) return undefined;
     let previousZooming;
-    let previousFlat;
     const update = () => {
       const p = progress.get();
       const nextShow = p > PH_SHOW_ON ? true : p < PH_IN ? false : showRef.current;
       const nextZooming = expansion.get() > 0.01;
-      const nextFlat = small && expansion.get() > 0.3;
       if (nextShow !== showRef.current) {
         showRef.current = nextShow;
         setShow(nextShow);
@@ -516,7 +598,6 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
         setExpanding(nextZooming);
         if (nextZooming) setI(1);
       }
-      if (nextFlat !== previousFlat) setFlat(previousFlat = nextFlat);
     };
     update();
     const unsubscribe = [progress, expansion].map((value) => value.on('change', update));
@@ -626,7 +707,8 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
     if (!dimensions || !displaySize?.width || !displaySize.height || !reveal) return 0;
     const cover = Math.max(dimensions.width / displaySize.width, dimensions.height / displaySize.height);
     const covered = (desktopScale.get() / cover - 1.04) / 0.04;
-    return smoothStep(Math.max(0, Math.min(1, covered))) * reveal.get();
+    const front = Math.max(0, 1 - Math.hypot(Math.sin(yaw.get() * Math.PI / 360), Math.sin(pitch.get() * Math.PI / 360)) * 18);
+    return smoothStep(Math.max(0, Math.min(1, covered))) * reveal.get() * front;
   });
   const nativeRevealWidth = useTransform(desktopScale, (scale) => (displaySize?.width ?? 0) * scale);
   const nativeRevealHeight = useTransform(desktopScale, (scale) => (displaySize?.height ?? 0) * scale);
@@ -637,26 +719,7 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
   const fadeOut = small ? mobileFade : desktopFade;
   const mobileScreenFade = useTransform(expansion, [0.5, 0.85], [0, 1]);
 
-  const lightAngle = useTransform(rotY, (v) => 118 - v * 2.4);
-  const glare = useMotionTemplate`linear-gradient(${lightAngle}deg, rgba(255,255,255,.34) 0%, rgba(255,255,255,.1) 16%, rgba(255,255,255,0) 38%, rgba(255,255,255,0) 72%, rgba(255,255,255,.07) 100%)`;
-  const rimAngle = useTransform(rotY, (v) => 135 - v * 3);
-  const frameBg = useMotionTemplate`linear-gradient(${rimAngle}deg, #ffd9b5 0%, #f0a366 10%, #d2692a 24%, #8f3f12 42%, #5e2608 52%, #b4561b 66%, #ea9552 84%, #ffdcc0 100%)`;
   const shadowX = useTransform(rotY, (v) => v * -0.9);
-
-  const sideBtn = (side, top, height) => ({
-    position: 'absolute',
-    [side]: '-0.3em',
-    top,
-    height,
-    width: '0.4em',
-    borderRadius: '0.2em',
-    background:
-      side === 'left'
-        ? 'linear-gradient(90deg, #7a3510, #e08a4a 45%, #fbc08a 60%, #8f3f12)'
-        : 'linear-gradient(90deg, #8f3f12, #fbc08a 40%, #e08a4a 55%, #7a3510)',
-    boxShadow: '0 0.1em 0.25em rgba(0,0,0,.35)',
-    transform: 'translateZ(-0.6em)',
-  });
 
   const height = small
     ? 'clamp(260px, calc(var(--vh) * 52), 380px)'
@@ -665,100 +728,94 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
   const phone = (
     <>
         <motion.div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: fadeOut }}>
-          <div
-            style={{
-              position: 'absolute', inset: '-22% -48%', pointerEvents: 'none',
-              background: 'radial-gradient(closest-side, rgba(240,150,80,.22), rgba(240,150,80,0) 70%)',
-            }}
-          />
           <motion.div
-            animate={active ? { scaleX: [1, 0.9, 1], opacity: [0.9, 0.65, 0.9] } : { scaleX: 1, opacity: 0.9 }}
-            transition={active ? { duration: 4.5, repeat: Infinity, ease: 'easeInOut' } : { duration: 0 }}
-            style={{
-              position: 'absolute', left: '6%', right: '-6%', bottom: '-6%', height: '8%', x: shadowX,
-              borderRadius: '50%', background: 'rgba(40, 24, 12, 0.32)', filter: 'blur(22px)', pointerEvents: 'none',
-            }}
-          />
-          <motion.div
-            animate={active ? { scaleX: [1, 0.94, 1] } : { scaleX: 1 }}
-            transition={active ? { duration: 4.5, repeat: Infinity, ease: 'easeInOut' } : { duration: 0 }}
-            style={{
-              position: 'absolute', left: '16%', right: '4%', bottom: '-3.5%', height: '3%', x: shadowX,
-              borderRadius: '50%', background: 'rgba(20, 10, 4, 0.45)', filter: 'blur(8px)', pointerEvents: 'none',
-            }}
-          />
+            initial={false}
+            animate={{ opacity: modelReady ? 1 : 0 }}
+            transition={{ duration: 0.5 }}
+            style={{ position: 'absolute', inset: 0 }}
+          >
+            <div
+              style={{
+                position: 'absolute', inset: '-22% -48%', pointerEvents: 'none',
+                background: 'radial-gradient(closest-side, rgba(255,255,255,.10), rgba(255,255,255,0) 70%)',
+              }}
+            />
+            <motion.div
+              animate={active ? { scaleX: [1, 0.9, 1], opacity: [0.9, 0.65, 0.9] } : { scaleX: 1, opacity: 0.9 }}
+              transition={active ? { duration: 4.5, repeat: Infinity, ease: 'easeInOut' } : { duration: 0 }}
+              style={{
+                position: 'absolute', left: '6%', right: '-6%', bottom: '-6%', height: '8%', x: shadowX,
+                borderRadius: '50%', background: 'rgba(40, 24, 12, 0.32)', filter: 'blur(22px)', pointerEvents: 'none',
+              }}
+            />
+            <motion.div
+              animate={active ? { scaleX: [1, 0.94, 1] } : { scaleX: 1 }}
+              transition={active ? { duration: 4.5, repeat: Infinity, ease: 'easeInOut' } : { duration: 0 }}
+              style={{
+                position: 'absolute', left: '16%', right: '4%', bottom: '-3.5%', height: '3%', x: shadowX,
+                borderRadius: '50%', background: 'rgba(20, 10, 4, 0.45)', filter: 'blur(8px)', pointerEvents: 'none',
+              }}
+            />
+          </motion.div>
         </motion.div>
 
         <motion.div style={{ position: 'absolute', inset: 0, zIndex: 3, pointerEvents: 'none', opacity: fadeOut }}>
           <Badge
             icon="ig" label="Instagram" to={169} suffix="k" caption="Followers"
-            show={show} active={active} small={small} from={small ? -70 : -150} delay={IG_DELAY}
+            show={show && modelReady} active={active} small={small} from={small ? -70 : -150} delay={IG_DELAY}
             style={{ top: small ? '6%' : '8%', left: 'calc(100% - 40px)', zIndex: 3 }}
           />
           <Badge
             icon="yt" label="YouTube" to={128} suffix="k+" caption="Subscribers"
-            show={show} active={active} small={small} from={small ? -60 : 150} delay={YT_DELAY}
+            show={show && modelReady} active={active} small={small} from={small ? -60 : 150} delay={YT_DELAY}
             style={{ bottom: small ? '14%' : '18%', right: 'calc(100% - 40px)', zIndex: 3 }}
           />
         </motion.div>
 
+        {/* Phone stays invisible until the 3D model is ready, then fades in. */}
         <motion.div
+          initial={false}
+          animate={{ opacity: modelReady ? 1 : 0 }}
+          transition={{ duration: 0.5 }}
           style={{
-            position: 'relative', zIndex: 2, transformStyle: flat ? 'flat' : 'preserve-3d',
+            position: 'relative', zIndex: 2, transformStyle: 'flat',
             transformPerspective: 1400, rotate: turnRot, rotateY: rotY, rotateX: rotX, scale: turnScale,
           }}
         >
           <div
+            {...handlers}
             style={{
               '--ph': height,
               position: 'relative',
               height: 'var(--ph)',
               aspectRatio: '9 / 19.3',
               fontSize: 'calc(var(--ph) * 0.0205)',
-              transformStyle: flat ? 'flat' : 'preserve-3d',
+              transformStyle: 'flat',
+              touchAction: interactive ? 'pan-y' : undefined,
+              cursor: interactive ? (dragging ? 'grabbing' : 'grab') : undefined,
+              userSelect: interactive ? 'none' : undefined,
             }}
           >
-            {!flat &&
-              Array.from({ length: PH_SLICES }, (_, k) => (
-                <div
-                  key={k}
-                  style={{
-                    position: 'absolute', inset: 0, borderRadius: PHONE_RADIUS,
-                    background: `hsl(22, 70%, ${54 - k * 2.2}%)`,
-                    transform: `translateZ(${-(k + 1) * 0.19}em)`,
-                    boxShadow: k % 2 ? 'none' : 'inset 0 0 0 0.05em rgba(255,214,176,.28)',
-                  }}
-                />
-              ))}
-
-            <div style={sideBtn('left', '13%', '3.2%')} />
-            <div style={sideBtn('left', '19%', '6.5%')} />
-            <div style={sideBtn('left', '27%', '6.5%')} />
-            <div style={sideBtn('right', '22%', '10.5%')} />
-            <div style={sideBtn('right', '60%', '7.5%')} />
+            {nearViewport && (
+              <Suspense fallback={null}>
+                <IPhoneModel displayRef={displayRef} image={image} onReady={setModelReady} ready={modelReady} zoom={small ? zs : desktopScale} yaw={yaw} pitch={pitch} />
+              </Suspense>
+            )}
 
             <motion.div
               style={{
                 position: 'absolute', inset: 0, boxSizing: 'border-box', borderRadius: PHONE_RADIUS,
-                background: frameBg, padding: '0.5em',
-                boxShadow: '0 0.6em 1.4em rgba(60,24,6,.28)',
+                padding: '0.5em', zIndex: 1,
+                rotateX: pitch, rotateY: yaw, opacity: faceOpacity, backfaceVisibility: 'hidden',
               }}
             >
               <div
                 style={{
-                  position: 'absolute', inset: 0, borderRadius: PHONE_RADIUS, pointerEvents: 'none',
-                  background: PHONE_BRUSHED, mixBlendMode: 'overlay', opacity: 0.7,
-                }}
-              />
-
-              <div
-                style={{
                   position: 'relative', width: '100%', height: '100%', boxSizing: 'border-box',
-                  borderRadius: '16.2% / 7.5%', background: '#000', padding: '0.3em',
-                  boxShadow: '0 0 0 0.05em rgba(0,0,0,.65), inset 0 0 0 1px rgba(255,255,255,.07)',
+                  borderRadius: '16.2% / 7.5%', padding: '0.3em',
                 }}
               >
-                <div ref={small ? undefined : displayRef} style={{ position: 'relative', width: '100%', height: '100%', borderRadius: '15% / 6.9%', overflow: 'hidden', background: '#000', isolation: 'isolate' }}>
+                <div ref={displayRef} style={{ position: 'relative', width: '100%', height: '100%', borderRadius: '15% / 6.9%', overflow: 'hidden', isolation: 'isolate' }}>
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={i}
@@ -768,7 +825,7 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
                       transition={{ duration: 0.55, ease: outSoft }}
                       style={fill}
                     >
-                      {i === 0 ? <ProfileScreen /> : <ReelScreen />}
+                      {i === 0 ? <ProfileScreen image={image} /> : <ReelScreen image={image} />}
                     </motion.div>
                   </AnimatePresence>
 
@@ -781,7 +838,7 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
                       }}
                     >
                       <motion.div style={{ ...fill, scale: screenScale }}>
-                        <DesktopPhoneDisplay />
+                        <DesktopPhoneDisplay image={image} />
                       </motion.div>
                       <PortalScene reveal={reveal} isMobile={false} insidePhone />
                   </motion.div>}
@@ -790,47 +847,11 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
 
                   <StatusBar o={statusO} />
 
-                  <div
-                    style={{
-                      position: 'absolute', top: '0.85em', left: '50%', transform: 'translateX(-50%)',
-                      width: '31%', height: '2.05em', background: '#000', borderRadius: 999, zIndex: 5,
-                      boxShadow: 'inset 0 0 0.35em rgba(255,255,255,.07)',
-                    }}
-                  >
-                    <div
-                      style={{
-                        position: 'absolute', right: '11%', top: '50%', transform: 'translateY(-50%)',
-                        width: '0.95em', height: '0.95em', borderRadius: '50%',
-                        background: 'radial-gradient(circle at 35% 35%, #3d4f78 0%, #10131c 45%, #04050a 100%)',
-                        boxShadow: '0 0 0 0.1em #0a0b10, inset 0 0 0.12em rgba(120,160,255,.35)',
-                      }}
-                    />
-                  </div>
-
                   <div style={{ position: 'absolute', bottom: '0.55em', left: '50%', transform: 'translateX(-50%)', width: '34%', height: '0.36em', borderRadius: 999, background: 'rgba(255,255,255,.85)', zIndex: 4, pointerEvents: 'none' }} />
 
-                  <motion.div style={{ position: 'absolute', inset: 0, zIndex: 6, pointerEvents: 'none', background: glare }} />
                   <div style={{ position: 'absolute', inset: 0, zIndex: 6, pointerEvents: 'none', background: 'radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 62%, rgba(0,0,0,.28) 100%)' }} />
-                  <motion.div
-                    animate={active ? { x: ['-140%', '340%'] } : { x: '-140%' }}
-                    transition={active ? { duration: 2.4, ease: inOut, repeat: Infinity, repeatDelay: 3.6 } : { duration: 0 }}
-                    style={{
-                      position: 'absolute', top: '-20%', bottom: '-20%', left: 0, width: '42%', rotate: 14,
-                      zIndex: 7, pointerEvents: 'none',
-                      background: 'linear-gradient(100deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.2) 50%, rgba(255,255,255,0) 100%)',
-                      maskImage: small ? undefined : 'linear-gradient(transparent, #000 22%, #000 78%, transparent)',
-                    }}
-                  />
                 </div>
               </div>
-
-              <div
-                style={{
-                  position: 'absolute', inset: 0, borderRadius: PHONE_RADIUS, pointerEvents: 'none',
-                  boxShadow:
-                    'inset 0 0 0 0.07em rgba(255,236,214,.6), inset 0.18em 0.22em 0.5em rgba(255,255,255,.3), inset -0.2em -0.25em 0.5em rgba(70,26,4,.45), inset 0 0 0.6em rgba(255,255,255,.12)',
-                }}
-              />
             </motion.div>
           </div>
         </motion.div>
@@ -995,18 +1016,6 @@ function PortalScene({ reveal, isMobile, onExplore, insidePhone = false, nativeP
       >
         Delhi NCR · Mumbai · Goa · Noida · Alibaug · Nagpur · Ahmedabad · Dubai
       </motion.div>
-
-      {/* <motion.buttona
-        type="button"
-        onClick={onExplore}
-        style={{
-          opacity: ctaO, marginTop: V(6), cursor: 'pointer', background: 'rgba(0,0,0,0)',
-          border: `1px solid ${GOLD_DARK}`, color: CREAM, fontFamily: sans, fontWeight: 500,
-          fontSize: 13, letterSpacing: '0.12em', padding: '13px 28px', borderRadius: 999,
-        }}
-      >
-        Explore Featured Projects ↓
-      </motion.button> */}
     </motion.div>
   );
 }
@@ -1485,6 +1494,7 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
+  const [phoneScreenImage, setPhoneScreenImage] = useState(DEFAULT_PHONE_SCREEN_IMAGE);
   const landingActive = pageVisible && !selectedProject;
 
   const stmtRef = useRef(null);
@@ -1578,6 +1588,11 @@ export default function App() {
       document.documentElement.style.overflowX = '';
       document.body.style.overflowX = '';
     };
+  }, []);
+
+  // Preload the 3D iPhone model in the background as soon as the page opens.
+  useEffect(() => {
+    import('./IPhoneModel.jsx').then((m) => m.preloadIPhoneModel?.()).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -2043,7 +2058,7 @@ export default function App() {
                     </div>
                   </motion.div>
                   <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '2vh' }}>
-                    <Phone small progress={sp} center={mobileCenter} expansion={mobileZoom} settle={mobileSettle} enabled={landingActive} />
+                    <Phone small progress={sp} center={mobileCenter} expansion={mobileZoom} settle={mobileSettle} enabled={landingActive} image={phoneScreenImage} />
                   </div>
                 </div>
               ) : (
@@ -2065,7 +2080,7 @@ export default function App() {
                     </div>
                   </motion.div>
                   <div style={{ justifySelf: 'center' }}>
-                    <Phone progress={sp} center={desktopMotion} expansion={desktopMotion} landscapeGrowth={desktopLandscapeGrowth} fullscreen={desktopFullscreen} reveal={reveal} settle={settle} enabled={landingActive} />
+                    <Phone progress={sp} center={desktopMotion} expansion={desktopMotion} landscapeGrowth={desktopLandscapeGrowth} fullscreen={desktopFullscreen} reveal={reveal} settle={settle} enabled={landingActive} image={phoneScreenImage} />
                   </div>
                 </div>
               )}
@@ -2143,6 +2158,7 @@ export default function App() {
                     <button
                       onClick={() => {
                         setSelectedProject(proj);
+                        setPhoneScreenImage(proj.image);
                         window.scrollTo({ top: 0, behavior: 'auto' });
                       }}
                       style={{
