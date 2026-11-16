@@ -1754,7 +1754,7 @@ export default function App() {
     borderRadius: 4,
     cursor: 'pointer',
     position: 'relative',
-    top: '19px',
+    top: '16px',
   };
 
   const wordBase = {
