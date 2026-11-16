@@ -48,7 +48,7 @@ const STATEMENT_REST =
 const INSTAGRAM = 'propertygallery13';
 const LINKEDIN = 'linkedin.com/in/harpreet-singh-ghulati-64535234';
 const WHATSAPP = '+91 8851678180';
-const EMAIL = 'info@propertygallery.com';
+const EMAIL = 'contact@propertygallery.in';
 const YOUTUBE = 'Property Gallery Vlogs';
 const YOUTUBE_URL = 'https://www.youtube.com/@PropertyGalleryVlogs';
 
@@ -1499,7 +1499,136 @@ const PROJECTS = [
       },
     ],
   },
+  {
+  id: 'smart-world-sky-arc',
+  title: 'Smart World Sky Arc',
+  subtitle: 'Smart World · Sector 69, Gurugram',
+  price: 'Price on request',
+  specs: '3, 3.5 & 4.5 BHK · 2,355–3,270 sq. ft.',
+  desc: 'Luxury apartments in Sector 69, Gurugram, with a clubhouse, rooftop jogging track, and infinity pool.',
+  image: '/Smart_world_sky.png',
+  tag: 'UNDER CONSTRUCTION',
+  sections: [
+    {
+      title: 'Smart World Sky Arc',
+      sub: 'Sector 69, Gurugram · Luxury Apartments',
+      text: 'Explore 3, 3.5 and 4.5 BHK residences near Golf Course Extension Road.',
+      image: '/Smart_world_sky.png',
+    },
+  ],
+},
 ];
+
+function ProjectCoverFlow({ onOpen }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const touchStart = useRef(null);
+  const count = PROJECTS.length;
+  const activeProject = PROJECTS[activeIndex];
+  useEffect(() => {
+  const timer = window.setInterval(() => {
+    setActiveIndex((index) => (index + 1) % count);
+  }, 3000);
+
+  return () => window.clearInterval(timer);
+}, [count]);
+
+  const step = (direction) => {
+    setActiveIndex((index) => (index + direction + count) % count);
+  };
+
+  return (
+    <div className="pg-cover" aria-label="Featured projects carousel" onKeyDown={(event) => {
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        event.preventDefault();
+        step(event.key === 'ArrowLeft' ? -1 : 1);
+      }
+    }}>
+      <style>{`
+        .pg-cover { max-width: 1280px; margin: auto; }
+        .pg-cover-stage { height: clamp(280px, 44vw, 560px); position: relative; perspective: 1100px; overflow: hidden; touch-action: pan-y; }
+        .pg-cover-card { position: absolute; inset: 5% auto 5% 19%; width: 62%; border: 1px solid #fff0cc60; border-radius: 18px; padding: 0; overflow: hidden; background: #191714; color: #fff0cc; text-align: left; opacity: 0; transform: scale(.7); transition: transform 520ms cubic-bezier(.22,.75,.24,1), opacity 420ms ease, border-color 420ms ease; pointer-events: none; }
+        .pg-cover-card[data-position="0"] { z-index: 3; opacity: 1; transform: translateX(0) rotateY(0deg) scale(1); border-color: #fff0cc; pointer-events: auto; }
+        .pg-cover-card[data-position="-1"], .pg-cover-card[data-position="1"] { z-index: 2; opacity: .63; transform: translateX(var(--shift)) rotateY(var(--tilt)) scale(.79); cursor: pointer; pointer-events: auto; }
+        .pg-cover-card[data-position="-1"] { --shift: -73%; --tilt: 24deg; }
+        .pg-cover-card[data-position="1"] { --shift: 73%; --tilt: -24deg; }
+        .pg-cover-card img { display: block; width: 100%; height: 100%; object-fit: cover; }
+        .pg-cover-caption { position: absolute; inset: auto 0 0; padding: 44px 18px 16px; background: linear-gradient(transparent, #090909 95%); }
+        .pg-cover-caption h3 { font: 700 clamp(16px, 2.7vw, 34px)/1.1 system-ui, sans-serif; margin: 0 0 6px; }
+        .pg-cover-caption span { font: 500 clamp(11px, 1.1vw, 14px)/1.3 system-ui, sans-serif; }
+        .pg-cover-tag { position: absolute; top: 12px; left: 12px; padding: 5px 9px; background: #fff0cc; color: #111; border-radius: 20px; font: 700 10px/1.2 system-ui, sans-serif; text-transform: uppercase; }
+        .pg-cover-side { position: absolute; inset: 0; border: 0; background: transparent; cursor: pointer; }
+        .pg-cover-side:focus-visible { outline: 2px solid #fff0cc; outline-offset: -4px; }
+        .pg-cover-controls { display: flex; align-items: center; justify-content: center; gap: 7px; }
+        .pg-cover-controls button { color: inherit; background: transparent; border: 1px solid #fff0cc70; border-radius: 50%; width: 44px; height: 44px; cursor: pointer; font-size: 20px; }
+        .pg-cover-controls .pg-cover-dot { border: 0; width: 30px; }
+        .pg-cover-dot::after { content: ''; display: block; height: 4px; width: 19px; border-radius: 4px; background: #665f57; margin: auto; }
+        .pg-cover-dot[aria-pressed="true"]::after { background: #fff0cc; }
+        .pg-cover-info { max-width: 680px; margin: 18px auto 0; text-align: center; line-height: 1.55; }
+        .pg-cover-info p { margin: 10px 0; font-size: 20px; }
+        .pg-cover-details { display: inline-block; background: #fff0cc; color: #111; border: 0; border-radius: 8px; min-height: 44px; padding: 0 17px; margin: 9px 8px 0; font: 700 13px system-ui, sans-serif; cursor: pointer; }
+        @media (max-width: 700px) {
+          .pg-cover-card { left: 11%; width: 78%; border-radius: 12px; }
+          .pg-cover-card[data-position="-1"] { --shift: -80%; }
+          .pg-cover-card[data-position="1"] { --shift: 80%; }
+        }
+        @media (prefers-reduced-motion: reduce) { .pg-cover-card { transition: none; } }
+      `}</style>
+
+      <div className="pg-cover-stage"
+        onTouchStart={(event) => {
+          const { clientX, clientY } = event.changedTouches[0];
+          touchStart.current = { clientX, clientY };
+        }}
+        onTouchCancel={() => { touchStart.current = null; }}
+        onTouchEnd={(event) => {
+          const start = touchStart.current;
+          touchStart.current = null;
+          if (!start) return;
+          const { clientX, clientY } = event.changedTouches[0];
+          const horizontal = clientX - start.clientX;
+          const vertical = clientY - start.clientY;
+          if (Math.abs(horizontal) > 45 && Math.abs(horizontal) > Math.abs(vertical)) {
+            if (event.cancelable) event.preventDefault();
+            step(horizontal < 0 ? 1 : -1);
+          }
+        }}
+      >
+        {PROJECTS.map((project, index) => {
+          const offset = (index - activeIndex + count) % count;
+          const position = offset === count - 1 ? -1 : offset;
+          const isSide = Math.abs(position) === 1;
+          return (
+            <article className="pg-cover-card" key={project.id} data-position={position} aria-hidden={position > 1}>
+              <img src={project.image} alt={project.title} loading="lazy" decoding="async" draggable={false} />
+              <span className="pg-cover-tag">{project.tag}</span>
+              <div className="pg-cover-caption">
+                <h3>{project.title}</h3>
+                <span>{project.subtitle}</span>
+              </div>
+              {isSide && <button className="pg-cover-side" type="button" aria-label={`Show ${project.title}`} onClick={() => setActiveIndex(index)} />}
+            </article>
+          );
+        })}
+      </div>
+
+      <div className="pg-cover-controls" aria-label="Choose project">
+        <button type="button" aria-label="Previous project" onClick={() => step(-1)}>←</button>
+        {PROJECTS.map((project, index) => (
+          <button className="pg-cover-dot" type="button" key={project.id} aria-label={project.title}
+            aria-pressed={index === activeIndex} onClick={() => setActiveIndex(index)} />
+        ))}
+        <button type="button" aria-label="Next project" onClick={() => step(1)}>→</button>
+      </div>
+
+      <div className="pg-cover-info" aria-live="polite">
+        <p><strong style={{ color: GOLD }}>{activeProject.price}</strong> · {activeProject.specs}</p>
+        <p style={{ opacity: .76 }}>{activeProject.desc}</p>
+        <button className="pg-cover-details" type="button" onClick={() => onOpen(activeProject)}>View Details →</button>
+        <span style={{ fontSize: 12, opacity: .65 }}>RERA Verified</span>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   const isMobile = useIsMobile();
@@ -2130,83 +2259,11 @@ export default function App() {
             <h2 style={{ fontFamily: serif, fontSize: isMobile ? 32 : 52, margin: '1.2vh 0 0', fontWeight: 400 }}>Featured Projects</h2>
           </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-              gap: '32px',
-              maxWidth: 1280,
-              margin: '0 auto',
-            }}
-          >
-            {PROJECTS.map((proj, idx) => (
-              <motion.div
-                key={proj.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.7, delay: idx * 0.15, ease: outSoft }}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '20px',
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-                }}
-                whileHover={{ y: -6, borderColor: 'rgba(244,211,94,0.4)' }}
-              >
-                <div style={{ position: 'relative', height: isMobile ? 220 : 280, overflow: 'hidden', background: '#000' }}>
-                  <img
-                    src={proj.image}
-                    alt={proj.title}
-                    loading="lazy"
-                    decoding="async"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(14,18,1,0.9), transparent 50%)' }} />
-
-                  <div style={{ position: 'absolute', top: 16, left: 16, background: CREAM, color: INK, padding: '5px 12px', borderRadius: '20px', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                    {proj.tag}
-                  </div>
-
-                  <div style={{ position: 'absolute', bottom: 16, left: 20, right: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                    <div>
-                      <div style={{ fontSize: 11, color: GOLD, letterSpacing: '0.15em', textTransform: 'uppercase' }}>{proj.subtitle}</div>
-                      <h3 style={{ fontFamily: serif, fontSize: isMobile ? 22 : 26, margin: '4px 0 0', color: '#fff', fontWeight: 400 }}>{proj.title}</h3>
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ padding: isMobile ? 20 : 28, display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
-                  <div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: GOLD, marginBottom: 10 }}>{proj.price}</div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: CREAM, opacity: 0.9, marginBottom: 12 }}>{proj.specs}</div>
-                    <p style={{ fontFamily: sans, fontSize: 14, lineHeight: 1.7, opacity: 0.75, margin: 0 }}>{proj.desc}</p>
-                  </div>
-
-                  <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <button
-                      onClick={() => {
-                        setSelectedProject(proj);
-                        setPhoneScreenImage(proj.image);
-                        window.scrollTo({ top: 0, behavior: 'auto' });
-                      }}
-                      style={{
-                        background: 'transparent', color: CREAM, padding: '10px 0', border: 'none',
-                        fontWeight: 600, fontSize: 13, letterSpacing: '0.05em', cursor: 'pointer',
-                        borderBottom: `1px solid ${GOLD}`, display: 'inline-flex', alignItems: 'center', gap: 6,
-                      }}
-                    >
-                      View Details →
-                    </button>
-                    <span style={{ fontSize: 12, opacity: 0.5 }}>RERA Verified</span>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+          <ProjectCoverFlow onOpen={(project) => {
+            setSelectedProject(project);
+            setPhoneScreenImage(project.image);
+            window.scrollTo({ top: 0, behavior: 'auto' });
+          }} />
         </section>
       </div>
 
