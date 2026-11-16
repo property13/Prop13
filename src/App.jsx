@@ -1751,10 +1751,10 @@ export default function App() {
     fontSize: 18,
     fontWeight: 500,
     padding: '9px 16px',
-    borderRadius: 6,
+    borderRadius: 4,
     cursor: 'pointer',
     position: 'relative',
-    top: '22px',
+    top: '19px',
   };
 
   const wordBase = {
