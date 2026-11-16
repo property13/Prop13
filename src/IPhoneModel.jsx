@@ -14,7 +14,7 @@ function loadModel() {
   return modelRequest;
 }
 
-// Called from App.jsx on page load so the GLB is downloaded before the user scrolls here.
+// Warm the shared GLB request before the viewer enters the viewport.
 export const preloadIPhoneModel = () => loadModel().catch(() => {});
 
 export default function IPhoneModel({ displayRef, image, onReady, ready, zoom, yaw, pitch }) {
@@ -34,6 +34,7 @@ export default function IPhoneModel({ displayRef, image, onReady, ready, zoom, y
     let observer;
     let screenMaterial;
     let environment;
+    let reportedReady = false;
     const scene = new THREE.Scene();
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.01, 5);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -43,6 +44,7 @@ export default function IPhoneModel({ displayRef, image, onReady, ready, zoom, y
 
     const unavailable = (event) => {
       event.preventDefault();
+      reportedReady = false;
       onReady(false);
     };
     renderer.domElement.addEventListener('webglcontextlost', unavailable);
@@ -86,11 +88,15 @@ export default function IPhoneModel({ displayRef, image, onReady, ready, zoom, y
       let frame = 0;
       let bufferWidth = 0;
       let bufferHeight = 0;
-      const draw = () => {
-        if (disposed || renderer.getContext().isContextLost()) return;
+      let width = 0;
+      let height = 0;
+      let lastYaw;
+      let lastPitch;
+      let invalidated = true;
+      const measure = () => {
         const display = displayRef.current;
-        const width = host.clientWidth;
-        const height = host.clientHeight;
+        width = host.clientWidth;
+        height = host.clientHeight;
         if (!display?.clientWidth || !display.clientHeight || !width || !height) return;
         // Match the mesh aperture to the existing rounded DOM display. The
         // shared parent then applies the same scroll transforms to both.
@@ -99,6 +105,11 @@ export default function IPhoneModel({ displayRef, image, onReady, ready, zoom, y
         camera.top = size.y * height / display.clientHeight / 2;
         camera.bottom = -camera.top;
         camera.updateProjectionMatrix();
+        invalidated = true;
+        requestDraw();
+      };
+      const draw = () => {
+        if (disposed || !width || !height || renderer.getContext().isContextLost()) return;
         // Allocate pixels for the CSS-transformed size, not the layout box.
         const pixelBudget = 6_000_000;
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -110,10 +121,20 @@ export default function IPhoneModel({ displayRef, image, onReady, ready, zoom, y
           renderer.setSize(nextWidth, nextHeight, false);
           bufferWidth = nextWidth;
           bufferHeight = nextHeight;
+          invalidated = true;
         }
-        pivot.rotation.set(-THREE.MathUtils.degToRad(pitch.get()), THREE.MathUtils.degToRad(yaw.get()), 0);
+        const nextYaw = yaw.get();
+        const nextPitch = pitch.get();
+        if (!invalidated && nextYaw === lastYaw && nextPitch === lastPitch) return;
+        lastYaw = nextYaw;
+        lastPitch = nextPitch;
+        invalidated = false;
+        pivot.rotation.set(-THREE.MathUtils.degToRad(nextPitch), THREE.MathUtils.degToRad(nextYaw), 0);
         renderer.render(scene, camera);
-        onReady(true);
+        if (!reportedReady) {
+          reportedReady = true;
+          onReady(true);
+        }
       };
 
       const requestDraw = () => {
@@ -124,20 +145,25 @@ export default function IPhoneModel({ displayRef, image, onReady, ready, zoom, y
         });
       };
       const unsubscribe = [zoom, yaw, pitch].map((value) => value.on('change', requestDraw));
+      const redraw = () => {
+        invalidated = true;
+        requestDraw();
+      };
       viewerRef.current = {
-        draw: requestDraw,
+        draw: redraw,
         material: screenMaterial,
         anisotropy: renderer.capabilities.getMaxAnisotropy(),
         dispose() {
           unsubscribe.forEach((stop) => stop());
           cancelAnimationFrame(frame);
-          renderer.domElement.removeEventListener('webglcontextrestored', draw);
+          renderer.domElement.removeEventListener('webglcontextrestored', redraw);
         },
       };
-      observer = new ResizeObserver(requestDraw);
+      observer = new ResizeObserver(measure);
       observer.observe(host);
-      renderer.domElement.addEventListener('webglcontextrestored', draw);
-      draw();
+      if (displayRef.current) observer.observe(displayRef.current);
+      renderer.domElement.addEventListener('webglcontextrestored', redraw);
+      measure();
     }).catch(() => {
       if (!disposed) onReady(false);
     });

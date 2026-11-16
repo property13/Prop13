@@ -127,7 +127,7 @@ export default function MinimalEarthCanvas({progress,isMobile,onWebGLError,reduc
     // NEW user-selected black/gold map (unchanged PNG). Use artworkPoint() to calibrate pins to its nonstandard projection.
     const loader=new THREE.TextureLoader();
     let live=true;
-    loader.load('/world_country_borders_8k.png',texture=>{
+    loader.load('/world_country_borders_silver_4k.png',texture=>{
       if(!live){texture.dispose();return;}
       texture.colorSpace=THREE.SRGBColorSpace;
       // Original 2048x1152 artwork: sample its upper 2048x1024 area

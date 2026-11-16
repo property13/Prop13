@@ -547,10 +547,9 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
   const layoutRef = useRef(null);
   const displayRef = useRef(null);
   const inView = useInView(layoutRef);
-  // Mount the 3D model very early so it is ready before the user scrolls here.
-  const nearViewport = useInView(layoutRef, { once: true, margin: '2000px 0px' });
+  const nearViewport = useInView(layoutRef, { once: true, margin: '250px 0px' });
   const [modelReady, setModelReady] = useState(false);
-  const interactive = enabled && modelReady;
+  const interactive = enabled && inView && modelReady;
   const { yaw, pitch, dragging, handlers } = usePhoneDrag(interactive);
   const faceOpacity = useTransform([yaw, pitch], ([y, x]) => {
     const facing = Math.cos(y * Math.PI / 180) * Math.cos(x * Math.PI / 180);
@@ -847,6 +846,22 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
 
                   <StatusBar o={statusO} />
 
+                  <div
+                    aria-hidden="true"
+                    style={{
+                      position: 'absolute', top: '0.85em', left: '50%', transform: 'translateX(-50%)',
+                      width: '31%', height: '2.05em', borderRadius: 999, zIndex: 7, pointerEvents: 'none',
+                      background: '#080809', boxShadow: 'inset 0 0 0.14em rgba(255,255,255,.14)',
+                    }}
+                  >
+                    <span style={{
+                      position: 'absolute', right: '11%', top: '50%', transform: 'translateY(-50%)',
+                      width: '0.85em', height: '0.85em', borderRadius: '50%',
+                      background: 'radial-gradient(circle at 35% 35%, #40516e, #151a29 38%, #05060a 70%)',
+                      boxShadow: '0 0 0 0.09em #111216',
+                    }} />
+                  </div>
+
                   <div style={{ position: 'absolute', bottom: '0.55em', left: '50%', transform: 'translateX(-50%)', width: '34%', height: '0.36em', borderRadius: 999, background: 'rgba(255,255,255,.85)', zIndex: 4, pointerEvents: 'none' }} />
 
                   <div style={{ position: 'absolute', inset: 0, zIndex: 6, pointerEvents: 'none', background: 'radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 62%, rgba(0,0,0,.28) 100%)' }} />
@@ -949,8 +964,8 @@ function PropertyLocationMap({isMobile,enabled}) {
       </div>
       <div style={{position:'absolute',right:isMobile?18:'4.5%',top:isMobile?'auto':'47%',bottom:isMobile?68:'auto',color:'#dfd4bc',fontFamily:sans,fontSize:10,letterSpacing:'.19em',textAlign:'right',zIndex:5,pointerEvents:'none'}}>{active<0?'00 / 08':String(active+1).padStart(1,'0')+' / 08'}</div>
       <div style={{position:'absolute',left:isMobile?22:'6%',right:isMobile?22:'6%',bottom:isMobile?37:42,zIndex:5,pointerEvents:'none'}}>
-        <div style={{height:1,background:'rgba(244,211,94,.22)',overflow:'hidden'}}><motion.div style={{height:'100%',background:GOLD,scaleX:progress,transformOrigin:'left'}}/></div>
-        <div style={{display:'flex',justifyContent:'space-between',fontFamily:sans,fontSize:9,letterSpacing:'.15em',color:'#bdb18f',marginTop:12}}><span>INDIA</span><span>SCROLL TO TRAVEL ↓</span><span>DUBAI</span></div>
+        {/* <div style={{height:1,background:'rgba(244,211,94,.22)',overflow:'hidden'}}><motion.div style={{height:'100%',background:GOLD,scaleX:progress,transformOrigin:'left'}}/></div> */}
+        {/* <div style={{display:'flex',justifyContent:'space-between',fontFamily:sans,fontSize:9,letterSpacing:'.15em',color:'#bdb18f',marginTop:12}}><span>INDIA</span><span>SCROLL TO TRAVEL ↓</span><span>DUBAI</span></div> */}
       </div>
     </div>
   </section>;
@@ -1028,7 +1043,6 @@ function RevealWord({ children, progress, range, first }) {
         opacity: o,
         display: 'inline-block',
         marginLeft: first ? 0 : '0.28em',
-        willChange: 'opacity',
       }}
     >
       {children}
@@ -1498,6 +1512,7 @@ export default function App() {
   const landingActive = pageVisible && !selectedProject;
 
   const stmtRef = useRef(null);
+  const aboutNearby = useInView(stmtRef, { once: true, margin: '350px 0px' });
   const projectsRef = useRef(null);
   const footerRef = useRef(null);
   const heroVideoRef = useRef(null);
@@ -1514,7 +1529,7 @@ export default function App() {
     ? startPos.right
     : isMobile ? startLeft + 5.104 * FONT_VW_MOBILE : START_RIGHT;
   const edge = isMobile ? 5 : 3.8;
-  const topEnd = isMobile ? '10.5%' : '4%';
+  const topEnd = isMobile ? '5%' : '4%';
   const pill = isMobile ? PILL_M : PILL_D;
   const mid = isMobile ? MID_M : MID_D;
 
@@ -1571,6 +1586,10 @@ export default function App() {
   const radH = useTransform(sp, [0.36, 0.5, 0.62], [50, 6, 0]);
   const radV = useTransform(sp, [0.36, 0.5, 0.62], [70, 8, 0]);
   const panelRadius = useMotionTemplate`${radH}% ${radV}%`;
+  const mobileRadH = useTransform(sp, [0.36, 0.5, 0.62], [50, 24, 0]);
+  const mobileRadV = useTransform(sp, [0.36, 0.5, 0.62], [30, 11, 0]);
+  // Tie the cap depth to the viewport width so tall screens keep a broad arc.
+  const mobilePanelRadius = useMotionTemplate`${mobileRadH}% ${mobileRadV}vw`;
   const stmtOpacity = useTransform(sp, [0.36, 0.62], [1, 0.25]);
   const stmtScale = useTransform(sp, [0.36, 0.62], [1, 0.94]);
   const glass = useTransform(sp, [0.5, 0.6], [0, 1]);
@@ -1590,10 +1609,11 @@ export default function App() {
     };
   }, []);
 
-  // Preload the 3D iPhone model in the background as soon as the page opens.
+  // Warm the model as the user approaches About, after the hero's first load.
   useEffect(() => {
+    if (!aboutNearby) return;
     import('./IPhoneModel.jsx').then((m) => m.preloadIPhoneModel?.()).catch(() => {});
-  }, []);
+  }, [aboutNearby]);
 
   useEffect(() => {
     const img = new Image();
@@ -1605,8 +1625,17 @@ export default function App() {
           document.fonts.load('400 100px Marcellus'),
         ])
       : Promise.resolve();
-    const timeout = new Promise((r) => setTimeout(r, 1500));
-    Promise.race([Promise.all([imgP, fontP]).catch(() => {}), timeout]).then(() => setReady(true));
+    let cancelled = false;
+    let timer;
+    const timeout = new Promise((resolve) => { timer = setTimeout(resolve, 1500); });
+    Promise.race([Promise.all([imgP, fontP]).catch(() => {}), timeout]).then(() => {
+      clearTimeout(timer);
+      if (!cancelled) setReady(true);
+    });
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, []);
 
   useEffect(() => {
@@ -1719,11 +1748,13 @@ export default function App() {
     border: 'none',
     color: CREAM,
     fontFamily: sans,
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: 500,
     padding: '9px 16px',
     borderRadius: 6,
     cursor: 'pointer',
+    position: 'relative',
+    top: '22px',
   };
 
   const wordBase = {
@@ -2028,8 +2059,9 @@ export default function App() {
 
             <motion.div
               style={{
-                position: 'absolute', inset: 0, zIndex: 40, y: panelY, willChange: 'transform',
-                borderTopLeftRadius: panelRadius, borderTopRightRadius: panelRadius,
+                position: 'absolute', inset: 0, zIndex: 40, y: panelY,
+                borderTopLeftRadius: isMobile ? mobilePanelRadius : panelRadius,
+                borderTopRightRadius: isMobile ? mobilePanelRadius : panelRadius,
                 background: 'linear-gradient(160deg, #ffffff 0%, #f6f7fa 100%)',
                 borderTop: '1px solid rgba(0,0,0,.08)', overflow: 'hidden', color: INK, fontFamily: mont,
               }}
