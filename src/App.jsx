@@ -48,7 +48,7 @@ const STATEMENT_REST =
 const INSTAGRAM = 'propertygallery13';
 const LINKEDIN = 'linkedin.com/in/harpreet-singh-ghulati-64535234';
 const WHATSAPP = '+91 8851678180';
-const EMAIL = 'contact@propertygallery.in';
+const EMAIL = 'info@propertygallery.com';
 const YOUTUBE = 'Property Gallery Vlogs';
 const YOUTUBE_URL = 'https://www.youtube.com/@PropertyGalleryVlogs';
 
@@ -1500,37 +1500,46 @@ const PROJECTS = [
     ],
   },
   {
-  id: 'smart-world-sky-arc',
-  title: 'Smart World Sky Arc',
-  subtitle: 'Smart World · Sector 69, Gurugram',
-  price: 'Price on request',
-  specs: '3, 3.5 & 4.5 BHK · 2,355–3,270 sq. ft.',
-  desc: 'Luxury apartments in Sector 69, Gurugram, with a clubhouse, rooftop jogging track, and infinity pool.',
-  image: '/Smart_world_sky.png',
-  tag: 'UNDER CONSTRUCTION',
-  sections: [
-    {
-      title: 'Smart World Sky Arc',
-      sub: 'Sector 69, Gurugram · Luxury Apartments',
-      text: 'Explore 3, 3.5 and 4.5 BHK residences near Golf Course Extension Road.',
-      image: '/Smart_world_sky.png',
-    },
-  ],
-},
+    id: 'smart-world-sky-arc',
+    title: 'Smart World Sky Arc',
+    subtitle: 'Smart World · Sector 69, Gurugram',
+    price: 'Price on request',
+    specs: '3, 3.5 & 4.5 BHK · 2,355–3,270 sq. ft.',
+    desc: 'Luxury apartments in Sector 69, Gurugram, with a clubhouse, rooftop jogging track, and infinity pool.',
+    image: './public/Smart_world_sky.png',
+    tag: 'UNDER CONSTRUCTION',
+    sections: [
+      {
+        title: 'Smart World Sky Arc',
+        sub: 'Sector 69, Gurugram · Luxury Apartments',
+        text: 'Explore 3, 3.5 and 4.5 BHK residences near Golf Course Extension Road.',
+        image: './public/Smart_world_sky.png',
+      },
+    ],
+  },
 ];
+
+const PROJECT_SLIDE_DURATION = 6000;
 
 function ProjectCoverFlow({ onOpen }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const touchStart = useRef(null);
+  const stageRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: stageRef,
+    offset: ['start 1', 'start 0.3'],
+  });
+  const staggerRaw = useTransform(scrollYProgress, [0, 1], [1, 0]);
+  const stagger = useSpring(staggerRaw, { stiffness: 120, damping: 25, mass: 0.4 });
   const count = PROJECTS.length;
-  const activeProject = PROJECTS[activeIndex];
-  useEffect(() => {
-  const timer = window.setInterval(() => {
-    setActiveIndex((index) => (index + 1) % count);
-  }, 3000);
 
-  return () => window.clearInterval(timer);
-}, [count]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setActiveIndex((index) => (index + 1) % count);
+    }, PROJECT_SLIDE_DURATION);
+
+    return () => window.clearTimeout(timer);
+  }, [activeIndex, count]);
 
   const step = (direction) => {
     setActiveIndex((index) => (index + direction + count) % count);
@@ -1544,37 +1553,196 @@ function ProjectCoverFlow({ onOpen }) {
       }
     }}>
       <style>{`
-        .pg-cover { max-width: 1280px; margin: auto; }
-        .pg-cover-stage { height: clamp(280px, 44vw, 560px); position: relative; perspective: 1100px; overflow: hidden; touch-action: pan-y; }
-        .pg-cover-card { position: absolute; inset: 5% auto 5% 19%; width: 62%; border: 1px solid #fff0cc60; border-radius: 18px; padding: 0; overflow: hidden; background: #191714; color: #fff0cc; text-align: left; opacity: 0; transform: scale(.7); transition: transform 520ms cubic-bezier(.22,.75,.24,1), opacity 420ms ease, border-color 420ms ease; pointer-events: none; }
-        .pg-cover-card[data-position="0"] { z-index: 3; opacity: 1; transform: translateX(0) rotateY(0deg) scale(1); border-color: #fff0cc; pointer-events: auto; }
-        .pg-cover-card[data-position="-1"], .pg-cover-card[data-position="1"] { z-index: 2; opacity: .63; transform: translateX(var(--shift)) rotateY(var(--tilt)) scale(.79); cursor: pointer; pointer-events: auto; }
-        .pg-cover-card[data-position="-1"] { --shift: -73%; --tilt: 24deg; }
-        .pg-cover-card[data-position="1"] { --shift: 73%; --tilt: -24deg; }
-        .pg-cover-card img { display: block; width: 100%; height: 100%; object-fit: cover; }
-        .pg-cover-caption { position: absolute; inset: auto 0 0; padding: 44px 18px 16px; background: linear-gradient(transparent, #090909 95%); }
+        .pg-cover { width: 100%; margin: auto; }
+        .pg-cover-stage {
+          --pg-card-gap: clamp(5px, 1.3vw, 20px);
+          --pg-arrow-rail: clamp(44px, 5vw, 72px);
+          --pg-card-space: calc(100% - 2 * var(--pg-arrow-rail) - 2 * var(--pg-card-gap));
+          --pg-card-width: calc(var(--pg-card-space) / 3);
+          --pg-stagger-step: clamp(14px, 3vw, 48px);
+          --pg-card-height: clamp(215px, 42vw, 720px);
+          height: calc(var(--pg-card-height) + var(--pg-stagger-step));
+          position: relative;
+          overflow: hidden;
+          touch-action: pan-y;
+        }
+        .pg-cover-card {
+          position: absolute;
+          top: 0;
+          left: 50%;
+          width: var(--pg-card-width);
+          height: var(--pg-card-height);
+          border-radius: 12px;
+          color: #fff0cc;
+          text-align: left;
+          opacity: 0;
+          transform: translateX(-50%);
+          transition: left 520ms cubic-bezier(.22,.75,.24,1), opacity 260ms ease;
+          pointer-events: none;
+          --pg-row: 0;
+        }
+        .pg-cover-card-surface {
+          position: relative;
+          height: 100%;
+          overflow: hidden;
+          border-radius: inherit;
+          background: #191714;
+          --pg-local: clamp(0, calc((var(--pg-stagger) - var(--pg-settle, 0)) * 1.5), 1);
+          clip-path: inset(calc(var(--pg-local) * 100%) 0 0 0);
+        }
+        .pg-cover-card[data-position="-1"] { --pg-settle: 0.30; }
+        .pg-cover-card[data-position="0"]  { --pg-settle: 0.15; }
+        .pg-cover-card[data-position="1"]  { --pg-settle: 0; }
+        .pg-cover-card[data-position="-1"] { left: calc(var(--pg-arrow-rail) + var(--pg-card-width) / 2); }
+        .pg-cover-card[data-position="1"] { left: calc(100% - var(--pg-arrow-rail) - var(--pg-card-width) / 2); --pg-row: 2; }
+        .pg-cover-card[data-position="2"] { left: 130%; --pg-row: 2; }
+        .pg-cover-card[data-position="3"] { left: -30%; }
+        .pg-cover-card[data-position="-1"], .pg-cover-card[data-position="0"], .pg-cover-card[data-position="1"] {
+          opacity: 1;
+          pointer-events: auto;
+        }
+        .pg-cover-card img { display: block; width: 100%; height: 100%; object-fit: cover; translate: 0 calc(var(--pg-local) * 18%); }
+
+        .pg-cover-caption {
+          position: absolute;
+          inset: auto 0 0;
+          padding: 100px 18px 16px;
+          isolation: isolate;
+          background: linear-gradient(transparent, rgba(0,0,0,.55) 85%);
+        }
+        .pg-cover-caption::before,
+        .pg-cover-caption::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          z-index: -1;
+          pointer-events: none;
+        }
+        /* halka blur: upar se shuru */
+        .pg-cover-caption::before {
+          -webkit-backdrop-filter: blur(5px);
+          backdrop-filter: blur(5px);
+          -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 55%);
+          mask-image: linear-gradient(to bottom, transparent 0%, #000 55%);
+        }
+        /* gehra blur: sirf niche ke hisse me */
+        .pg-cover-caption::after {
+          -webkit-backdrop-filter: blur(16px);
+          backdrop-filter: blur(16px);
+          -webkit-mask-image: linear-gradient(to bottom, transparent 40%, #000 90%);
+          mask-image: linear-gradient(to bottom, transparent 40%, #000 90%);
+        }
+
         .pg-cover-caption h3 { font: 700 clamp(16px, 2.7vw, 34px)/1.1 system-ui, sans-serif; margin: 0 0 6px; }
         .pg-cover-caption span { font: 500 clamp(11px, 1.1vw, 14px)/1.3 system-ui, sans-serif; }
         .pg-cover-tag { position: absolute; top: 12px; left: 12px; padding: 5px 9px; background: #fff0cc; color: #111; border-radius: 20px; font: 700 10px/1.2 system-ui, sans-serif; text-transform: uppercase; }
         .pg-cover-side { position: absolute; inset: 0; border: 0; background: transparent; cursor: pointer; }
         .pg-cover-side:focus-visible { outline: 2px solid #fff0cc; outline-offset: -4px; }
-        .pg-cover-controls { display: flex; align-items: center; justify-content: center; gap: 7px; }
-        .pg-cover-controls button { color: inherit; background: transparent; border: 1px solid #fff0cc70; border-radius: 50%; width: 44px; height: 44px; cursor: pointer; font-size: 20px; }
-        .pg-cover-controls .pg-cover-dot { border: 0; width: 30px; }
-        .pg-cover-dot::after { content: ''; display: block; height: 4px; width: 19px; border-radius: 4px; background: #665f57; margin: auto; }
-        .pg-cover-dot[aria-pressed="true"]::after { background: #fff0cc; }
-        .pg-cover-info { max-width: 680px; margin: 18px auto 0; text-align: center; line-height: 1.55; }
-        .pg-cover-info p { margin: 10px 0; font-size: 20px; }
-        .pg-cover-details { display: inline-block; background: #fff0cc; color: #111; border: 0; border-radius: 8px; min-height: 44px; padding: 0 17px; margin: 9px 8px 0; font: 700 13px system-ui, sans-serif; cursor: pointer; }
-        @media (max-width: 700px) {
-          .pg-cover-card { left: 11%; width: 78%; border-radius: 12px; }
-          .pg-cover-card[data-position="-1"] { --shift: -80%; }
-          .pg-cover-card[data-position="1"] { --shift: 80%; }
+        .pg-cover-arrow {
+          position: absolute;
+          z-index: 5;
+          top: calc(var(--pg-card-height) / 2);
+          transform: translateY(-50%);
+          display: grid;
+          place-items: center;
+          width: 44px;
+          height: 44px;
+          padding: 0;
+          border: 1px solid #fff0cc80;
+          border-radius: 50%;
+          background: #0b0a08dd;
+          color: #fff0cc;
+          cursor: pointer;
+          transition: background-color 180ms ease, color 180ms ease;
         }
-        @media (prefers-reduced-motion: reduce) { .pg-cover-card { transition: none; } }
+        .pg-cover-arrow::before {
+          content: '';
+          width: 10px;
+          height: 10px;
+          border-top: 2px solid currentColor;
+          border-right: 2px solid currentColor;
+        }
+        .pg-cover-arrow--prev::before { transform: translateX(2px) rotate(-135deg); }
+        .pg-cover-arrow--next::before { transform: translateX(-2px) rotate(45deg); }
+        .pg-cover-arrow--prev { left: calc((var(--pg-arrow-rail) - 44px) / 2); }
+        .pg-cover-arrow--next { right: calc((var(--pg-arrow-rail) - 44px) / 2); }
+        .pg-cover-arrow:hover, .pg-cover-arrow:focus-visible { background: #fff0cc; color: #111; }
+        @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+          .pg-cover-stage { --pg-side-shrink: .90; }
+
+          .pg-cover-card-surface { transition: scale 350ms ease, filter 350ms ease; transform-origin: top center; }
+          .pg-cover-card img { transition: scale 350ms ease; transform-origin: top center; }
+
+          .pg-cover-card[data-position="0"]:hover .pg-cover-card-surface { scale: 1.03; }
+
+          /* container peeche jaye */
+          .pg-cover-stage:has(.pg-cover-card[data-position="0"]:hover)
+            .pg-cover-card:is([data-position="-1"], [data-position="1"]) .pg-cover-card-surface {
+            scale: var(--pg-side-shrink);
+            filter: brightness(.90);
+          }
+
+          /* image apni jagah fixed rahe (counter-scale) */
+          .pg-cover-stage:has(.pg-cover-card[data-position="0"]:hover)
+            .pg-cover-card:is([data-position="-1"], [data-position="1"]) img {
+            scale: calc(1 / var(--pg-side-shrink));
+          }
+        }
+        /* MOBILE / TOUCH: side cards hamesha peeche, image fixed */
+        @media (hover: none), (pointer: coarse) {
+          .pg-cover-stage { --pg-side-shrink: .86; }
+
+          .pg-cover-card-surface { transition: scale 350ms ease, filter 350ms ease; transform-origin: top center; }
+          .pg-cover-card img { transition: scale 350ms ease; transform-origin: top center; }
+
+          .pg-cover-card:is([data-position="-1"], [data-position="1"]) .pg-cover-card-surface {
+            scale: var(--pg-side-shrink);
+            filter: brightness(.85);
+          }
+          .pg-cover-card:is([data-position="-1"], [data-position="1"]) img {
+            scale: calc(1 / var(--pg-side-shrink));
+          }
+
+          /* center card thoda aage */
+          .pg-cover-card[data-position="0"] .pg-cover-card-surface { scale: 1.03; }
+        }
+        @media (max-width: 700px) {
+          .pg-cover-card { border-radius: 8px; }
+          .pg-cover-caption { padding: 60px 7px 8px; }
+          .pg-cover-caption h3 { font-size: clamp(12px, 2.7vw, 18px); overflow-wrap: anywhere; }
+          .pg-cover-caption span, .pg-cover-tag,
+          .pg-cover-card:not([data-position="0"]) .pg-cover-caption { display: none; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .pg-cover-card { transition: none; }
+          .pg-cover-card-surface { clip-path: none; }
+          .pg-cover-card img { translate: none; }
+        }
+        /* Side cards: andar wala kinara fixed rahe, gap same rahe */
+        .pg-cover-card[data-position="-1"] .pg-cover-card-surface,
+        .pg-cover-card[data-position="-1"] img { transform-origin: right top; }
+
+        .pg-cover-card[data-position="1"] .pg-cover-card-surface,
+        .pg-cover-card[data-position="1"] img { transform-origin: left top; }
+
+        /* Center card 1.03 se badhta hai, uski jagah side cards ko thoda bahar shift karo */
+        @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+          .pg-cover-stage:has(.pg-cover-card[data-position="0"]:hover)
+            .pg-cover-card[data-position="-1"] .pg-cover-card-surface {
+            translate: calc(var(--pg-card-width) * -0.015) 0;
+          }
+          .pg-cover-stage:has(.pg-cover-card[data-position="0"]:hover)
+            .pg-cover-card[data-position="1"] .pg-cover-card-surface {
+            translate: calc(var(--pg-card-width) * 0.015) 0;
+          }
+        }
+        @media (hover: none), (pointer: coarse) {
+          .pg-cover-card[data-position="-1"] .pg-cover-card-surface { translate: calc(var(--pg-card-width) * -0.015) 0; }
+          .pg-cover-card[data-position="1"] .pg-cover-card-surface { translate: calc(var(--pg-card-width) * 0.015) 0; }
+        }
       `}</style>
 
-      <div className="pg-cover-stage"
+      <motion.div ref={stageRef} className="pg-cover-stage" style={{ '--pg-stagger': stagger }}
         onTouchStart={(event) => {
           const { clientX, clientY } = event.changedTouches[0];
           touchStart.current = { clientX, clientY };
@@ -1599,33 +1767,31 @@ function ProjectCoverFlow({ onOpen }) {
           const isSide = Math.abs(position) === 1;
           return (
             <article className="pg-cover-card" key={project.id} data-position={position} aria-hidden={position > 1}>
-              <img src={project.image} alt={project.title} loading="lazy" decoding="async" draggable={false} />
-              <span className="pg-cover-tag">{project.tag}</span>
-              <div className="pg-cover-caption">
-                <h3>{project.title}</h3>
-                <span>{project.subtitle}</span>
+              <div className="pg-cover-card-surface">
+                <img src={project.image} alt={project.title} loading="lazy" decoding="async" draggable={false} />
+                <span className="pg-cover-tag">{project.tag}</span>
+                <div className="pg-cover-caption">
+                  <h3>{project.title}</h3>
+                  <span>{project.subtitle}</span>
+                </div>
+                {(isSide || position === 0) && (
+                  <button
+                    className="pg-cover-side"
+                    type="button"
+                    aria-label={isSide ? `Show ${project.title}` : `View details for ${project.title}`}
+                    onClick={() => isSide ? setActiveIndex(index) : onOpen(project)}
+                  />
+                )}
               </div>
-              {isSide && <button className="pg-cover-side" type="button" aria-label={`Show ${project.title}`} onClick={() => setActiveIndex(index)} />}
             </article>
           );
         })}
-      </div>
+        <button type="button" className="pg-cover-arrow pg-cover-arrow--prev"
+          aria-label="Previous project" onClick={() => step(-1)} />
+        <button type="button" className="pg-cover-arrow pg-cover-arrow--next"
+          aria-label="Next project" onClick={() => step(1)} />
+      </motion.div>
 
-      <div className="pg-cover-controls" aria-label="Choose project">
-        <button type="button" aria-label="Previous project" onClick={() => step(-1)}>←</button>
-        {PROJECTS.map((project, index) => (
-          <button className="pg-cover-dot" type="button" key={project.id} aria-label={project.title}
-            aria-pressed={index === activeIndex} onClick={() => setActiveIndex(index)} />
-        ))}
-        <button type="button" aria-label="Next project" onClick={() => step(1)}>→</button>
-      </div>
-
-      <div className="pg-cover-info" aria-live="polite">
-        <p><strong style={{ color: GOLD }}>{activeProject.price}</strong> · {activeProject.specs}</p>
-        <p style={{ opacity: .76 }}>{activeProject.desc}</p>
-        <button className="pg-cover-details" type="button" onClick={() => onOpen(activeProject)}>View Details →</button>
-        <span style={{ fontSize: 12, opacity: .65 }}>RERA Verified</span>
-      </div>
     </div>
   );
 }
@@ -2251,9 +2417,7 @@ export default function App() {
           </div>
         </section>
 
-        <PropertyLocationMap isMobile={isMobile} enabled={landingActive} />
-
-        <section ref={projectsRef} style={{ position: 'relative', zIndex: 10, background: BG, color: CREAM, padding: isMobile ? '9vh 5vw' : '12vh 6vw' }}>
+        <section ref={projectsRef} style={{ position: 'relative', zIndex: 10, background: BG, color: CREAM, padding: isMobile ? '9vh 1vw' : '12vh 1.5vw' }}>
           <div style={{ textAlign: 'center', marginBottom: isMobile ? '6vh' : '9vh' }}>
             <span style={{ fontSize: isMobile ? 13 : 16, letterSpacing: '0.3em', textTransform: 'uppercase', color: GOLD }}>Curated Portfolio</span>
             <h2 style={{ fontFamily: serif, fontSize: isMobile ? 32 : 52, margin: '1.2vh 0 0', fontWeight: 400 }}>Featured Projects</h2>
@@ -2265,6 +2429,8 @@ export default function App() {
             window.scrollTo({ top: 0, behavior: 'auto' });
           }} />
         </section>
+
+        <PropertyLocationMap isMobile={isMobile} enabled={landingActive} />
       </div>
 
       <Footer isMobile={isMobile} footerRef={footerRef} onProjects={goProjects} onAbout={goAbout} pageVisible={pageVisible} />
