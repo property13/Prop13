@@ -1506,14 +1506,14 @@ const PROJECTS = [
     price: 'Price on request',
     specs: '3, 3.5 & 4.5 BHK · 2,355–3,270 sq. ft.',
     desc: 'Luxury apartments in Sector 69, Gurugram, with a clubhouse, rooftop jogging track, and infinity pool.',
-    image: './public/Smart_world_sky.png',
+    image: './Smart_world_sky.png',
     tag: 'UNDER CONSTRUCTION',
     sections: [
       {
         title: 'Smart World Sky Arc',
         sub: 'Sector 69, Gurugram · Luxury Apartments',
         text: 'Explore 3, 3.5 and 4.5 BHK residences near Golf Course Extension Road.',
-        image: './public/Smart_world_sky.png',
+        image: './Smart_world_sky.png',
       },
     ],
   },
