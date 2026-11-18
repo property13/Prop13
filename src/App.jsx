@@ -954,7 +954,7 @@ function PropertyLocationMap({isMobile,enabled}) {
       )}
       <div aria-hidden="true" style={{position:'absolute',inset:0,pointerEvents:'none',background:'linear-gradient(90deg,rgba(3,7,9,.62),transparent 46%,rgba(3,7,9,.13)),linear-gradient(180deg,rgba(3,7,9,.1),transparent 25%,transparent 72%,#05090c 100%)'}}/>
       <div style={{position:'absolute',left:isMobile?22:'6%',right:isMobile?22:'auto',top:isMobile?82:'33%',zIndex:5,pointerEvents:'none',textAlign:isMobile?'center':'left',maxWidth:isMobile?'none':330}}>
-        <div style={{fontFamily:sans,fontSize:10,letterSpacing:'.24em',color:GOLD,marginBottom:isMobile?10:22}}>PROPERTY GALLERY  /  EXPLORE</div>
+        <div style={{fontFamily:sans,fontSize:14,letterSpacing:'.24em',color:GOLD,marginBottom:isMobile?10:22}}>PROPERTY GALLERY  /  EXPLORE</div>
         <AnimatePresence mode="wait" initial={false}>
           <motion.div key={current?.name||'intro'} initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-12}} transition={{duration:.28}}>
             <h2 style={{fontFamily:serif,fontSize:isMobile?'clamp(28px,7vw,39px)':'clamp(42px,4vw,68px)',fontWeight:400,lineHeight:1.1,margin:0,textShadow:'0 3px 22px rgba(0,0,0,.65)'}}>{current?.name||'India to Dubai'}</h2>
@@ -1129,6 +1129,7 @@ function StackCard({ sec, i, n, progress, isMobile }) {
         >
           <motion.img
             src={sec.image}
+            onError={sec.onImageError}
             alt={sec.title}
             loading={i === 0 ? 'eager' : 'lazy'}
             decoding="async"
@@ -1506,14 +1507,14 @@ const PROJECTS = [
     price: 'Price on request',
     specs: '3, 3.5 & 4.5 BHK · 2,355–3,270 sq. ft.',
     desc: 'Luxury apartments in Sector 69, Gurugram, with a clubhouse, rooftop jogging track, and infinity pool.',
-    image: './Smart_world_sky.png',
+    image: '/Smart_world_sky.png',
     tag: 'UNDER CONSTRUCTION',
     sections: [
       {
         title: 'Smart World Sky Arc',
         sub: 'Sector 69, Gurugram · Luxury Apartments',
         text: 'Explore 3, 3.5 and 4.5 BHK residences near Golf Course Extension Road.',
-        image: './Smart_world_sky.png',
+        image: '/Smart_world_sky.png',
       },
     ],
   },
@@ -1710,7 +1711,7 @@ function ProjectCoverFlow({ onOpen }) {
           .pg-cover-card { border-radius: 8px; }
           .pg-cover-caption { padding: 60px 7px 8px; }
           .pg-cover-caption h3 { font-size: clamp(12px, 2.7vw, 18px); overflow-wrap: anywhere; }
-          .pg-cover-caption span, .pg-cover-tag,
+          .pg-cover-card .pg-cover-caption span, .pg-cover-card .pg-cover-tag,
           .pg-cover-card:not([data-position="0"]) .pg-cover-caption { display: none; }
         }
         @media (prefers-reduced-motion: reduce) {
@@ -1796,19 +1797,157 @@ function ProjectCoverFlow({ onOpen }) {
   );
 }
 
+const PROJECT_PHOTO_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'JPG', 'JPEG', 'PNG', 'WEBP'];
+
+function tryNextProjectPhoto(event) {
+  const image = event.currentTarget;
+  const path = image.getAttribute('src');
+  const dot = path.lastIndexOf('.');
+  const currentExtension = path.slice(dot + 1);
+  const nextExtension = PROJECT_PHOTO_EXTENSIONS[PROJECT_PHOTO_EXTENSIONS.indexOf(currentExtension) + 1];
+  if (nextExtension) image.src = `${path.slice(0, dot)}.${nextExtension}`;
+}
+
+const ADDITIONAL_PROPERTIES = [
+  {
+    id: 'central-park-delphine',
+    photos: ['centralpark', 'centralpark1', 'centralpark2'],
+    title: 'Central Park Delphine',
+    subtitle: 'Central Park · Sector 104, Dwarka Expressway',
+    tag: 'READY TO MOVE',
+    specs: '4,242–4,281 sq. ft.',
+    desc: 'Luxury apartments by Central Park in Sector 104, Gurugram, along Dwarka Expressway.',
+  },
+  {
+    id: 'dlf-the-camellias',
+    photos: ['Dlfcamellias', 'Dlfcamellias1', 'Dlfcamellias2'],
+    title: 'DLF The Camellias',
+    subtitle: 'DLF · Golf Course Road, Gurugram',
+    tag: 'READY TO MOVE',
+    specs: '7,000–16,000 sq. ft.',
+    desc: 'Luxury apartments by DLF on Golf Course Road in Gurugram.',
+  },
+  {
+    id: 'unity-the-amaryllis-versace',
+    photos: ['Amaryllis_versace', 'Amaryllis_versace1', 'Amaryllis_versace2'],
+    title: 'Unity The Amaryllis Versace',
+    subtitle: 'Unity Group · Karol Bagh, New Delhi',
+    tag: 'READY TO MOVE',
+    specs: '5,800–7,171 sq. ft.',
+    desc: 'Luxury apartments by Unity Group in Karol Bagh, New Delhi, with interiors designed in collaboration with Versace Home.',
+  },
+  {
+    id: 'elan-the-emperor',
+    photos: ['Elan_emperor', 'elan_emperor1', 'elan_emperor2'],
+    title: 'Elan The Emperor',
+    subtitle: 'Elan · Sector 106, Dwarka Expressway',
+    tag: 'UNDER CONSTRUCTION',
+    specs: '4,223–10,347 sq. ft.',
+    desc: 'Luxury apartments by Elan in Sector 106, Gurugram, along Dwarka Expressway.',
+  },
+].map(({ photos, ...property }) => {
+  const images = photos.map((name) => `${import.meta.env.BASE_URL}Project/${name}.${PROJECT_PHOTO_EXTENSIONS[0]}`);
+  const sections = [
+    { title: 'Property Overview', sub: property.tag, text: `Luxury apartments · ${property.specs}` },
+    { title: 'Property Gallery', sub: property.title, text: property.subtitle },
+    { title: 'Gallery', sub: property.title, text: property.desc },
+  ];
+
+  return {
+    ...property,
+    image: images[0],
+    sections: sections.map((section, index) => ({
+      ...section,
+      image: images[index],
+      onImageError: tryNextProjectPhoto,
+    })),
+  };
+});
+
+function FeaturedProjects({ isMobile, onOpen, headingAs: Heading = 'h2', style }) {
+  const headingId = useId();
+  return (
+    <section aria-labelledby={headingId} style={style}>
+      <Heading id={headingId} style={{
+        fontFamily: serif, fontSize: isMobile ? 32 : 52, textAlign: 'center',
+        fontWeight: 400, margin: '0 0 6vh',
+      }}>
+        Featured Projects
+      </Heading>
+      <ProjectCoverFlow onOpen={onOpen} />
+    </section>
+  );
+}
+
+function ProjectsView({ isMobile, onOpen }) {
+  return (
+    <main style={{
+      position: 'relative', zIndex: 10, background: BG, color: CREAM,
+      minHeight: V(100), padding: isMobile ? '100px 0 64px' : '140px 0 96px',
+    }}>
+      <FeaturedProjects isMobile={isMobile} onOpen={onOpen} headingAs="h1" />
+
+      <section aria-labelledby="properties-heading" style={{
+        maxWidth: 1760, margin: '64px auto 0', padding: isMobile ? '0 4vw' : '0 2vw',
+      }}>
+        <h2 id="properties-heading" style={{
+          fontFamily: serif, fontSize: isMobile ? 30 : 42, fontWeight: 400, margin: '0 0 24px',
+        }}>
+          More Properties
+        </h2>
+        <div style={{
+          display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, minmax(0, 1fr))',
+          gap: isMobile ? 12 : 20,
+        }}>
+          {ADDITIONAL_PROPERTIES.map((property) => (
+            <button key={property.id} type="button" onClick={(event) => {
+              const cover = event.currentTarget.querySelector('img');
+              onOpen(property, cover?.naturalWidth ? cover.getAttribute('src') : null);
+            }}
+              aria-label={`View details for ${property.title}`}
+              style={{
+                position: 'relative', display: 'block', textAlign: 'left', color: CREAM,
+                background: '#151410', border: '1px solid rgba(244,211,94,.23)', borderRadius: 12,
+                height: isMobile ? 'clamp(225px, 59vw, 320px)' : 'clamp(300px, 32vw, 480px)',
+                padding: 0, overflow: 'hidden', cursor: 'pointer',
+              }}>
+              <img src={property.image} onError={tryNextProjectPhoto} alt="" loading="lazy" decoding="async"
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+              <span className="pg-cover-tag" style={{ top: isMobile ? 8 : 12, left: isMobile ? 8 : 12, fontSize: isMobile ? 8 : 10 }}>
+                {property.tag}
+              </span>
+              <span className="pg-cover-caption" style={{
+                display: 'block', padding: isMobile ? '56px 10px 12px' : '96px 16px 18px',
+              }}>
+                <span style={{
+                  display: 'block', fontWeight: 700, fontSize: isMobile ? 17 : 'clamp(20px, 2.25vw, 32px)',
+                  lineHeight: 1.1, overflowWrap: 'anywhere', marginBottom: 6,
+                }}>
+                  {property.title}
+                </span>
+                <span style={{ display: 'block', fontSize: isMobile ? 11 : 13 }}>{property.subtitle}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
+    </main>
+  );
+}
+
 export default function App() {
   const isMobile = useIsMobile();
   const pageVisible = usePageVisible();
   const [stage, setStage] = useState(0);
   const [ready, setReady] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
+  const [projectsOpen, setProjectsOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [phoneScreenImage, setPhoneScreenImage] = useState(DEFAULT_PHONE_SCREEN_IMAGE);
-  const landingActive = pageVisible && !selectedProject;
+  const landingActive = pageVisible && !projectsOpen;
 
   const stmtRef = useRef(null);
   const aboutNearby = useInView(stmtRef, { once: true, margin: '350px 0px' });
-  const projectsRef = useRef(null);
   const footerRef = useRef(null);
   const heroVideoRef = useRef(null);
   const propRef = useRef(null);
@@ -1833,11 +1972,19 @@ export default function App() {
   const stmtA = STMT_BASE_VH / (stmtVh - 100);
 
   const goProjects = () => {
+    setProjectsOpen(true);
     setSelectedProject(null);
-    setTimeout(() => projectsRef.current?.scrollIntoView({ behavior: 'smooth' }), 80);
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
+  };
+  const openProject = (project, phoneImage = project.image) => {
+    setProjectsOpen(true);
+    setSelectedProject(project);
+    if (phoneImage) setPhoneScreenImage(phoneImage);
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
   };
   const goFooter = () => footerRef.current?.scrollIntoView({ behavior: 'smooth' });
   const goAbout = () => {
+    setProjectsOpen(false);
     setSelectedProject(null);
     setTimeout(() => {
       const el = stmtRef.current;
@@ -1876,6 +2023,7 @@ export default function App() {
   const mobileAboutShift = useTransform(mobileZoom, [0, 0.35], [0, -50]);
   const aboutFade = useTransform(desktopMotion, [0, 0.65], [1, 0]);
   const aboutShift = useTransform(desktopMotion, [0, 0.8], [0, -50]);
+
 
   const panelY = useTransform(sp, [0.36, 0.62], ['100%', '0%']);
   const radH = useTransform(sp, [0.36, 0.5, 0.62], [50, 6, 0]);
@@ -1989,7 +2137,7 @@ export default function App() {
   }, [ready]);
 
   useEffect(() => {
-    if (unlocked || selectedProject) return;
+    if (unlocked || projectsOpen) return;
     const stop = (e) => e.preventDefault();
     const keys = (e) => {
       if ([' ', 'PageDown', 'PageUp', 'End', 'Home', 'ArrowDown', 'ArrowUp'].includes(e.key)) e.preventDefault();
@@ -2005,13 +2153,13 @@ export default function App() {
       window.removeEventListener('keydown', keys);
       window.removeEventListener('scroll', reset);
     };
-  }, [unlocked, selectedProject]);
+  }, [unlocked, projectsOpen]);
 
   useEffect(() => {
-    if (selectedProject) return undefined;
+    if (projectsOpen) return undefined;
     const id = requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
     return () => cancelAnimationFrame(id);
-  }, [selectedProject]);
+  }, [projectsOpen]);
 
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -2090,15 +2238,16 @@ export default function App() {
       >
         <motion.div
           style={{
-            position: 'absolute', inset: 0, zIndex: -1, opacity: glass,
+            position: 'absolute', inset: 0, zIndex: -1, opacity: projectsOpen ? 1 : glass,
             background: 'rgba(40,42,48,.5)',
             backdropFilter: `blur(${isMobile ? 8 : 14}px)`,
             WebkitBackdropFilter: `blur(${isMobile ? 8 : 14}px)`,
           }}
         />
         <motion.div
-          style={{ opacity: logoOpacity, y: logoY, display: 'flex', alignItems: 'center', pointerEvents: 'auto', cursor: 'pointer' }}
+          style={{ opacity: projectsOpen ? 1 : logoOpacity, y: projectsOpen ? 0 : logoY, display: 'flex', alignItems: 'center', pointerEvents: 'auto', cursor: 'pointer' }}
           onClick={() => {
+            setProjectsOpen(false);
             setSelectedProject(null);
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
@@ -2129,7 +2278,10 @@ export default function App() {
             </button>
           ) : (
             <>
-              <span onClick={goProjects} style={{ cursor: 'pointer', paddingBlock: 12 }}>Projects</span>
+              <button type="button" onClick={goProjects} aria-current={projectsOpen ? 'page' : undefined}
+                style={{ background: 'none', border: 0, color: 'inherit', font: 'inherit', cursor: 'pointer', padding: '12px 0' }}>
+                Projects
+              </button>
               <span onClick={goAbout} style={{ cursor: 'pointer', paddingBlock: 12 }}>About</span>
               <span
                 onClick={goFooter}
@@ -2238,7 +2390,9 @@ export default function App() {
         </div>
       )}
 
-      <div style={{ display: selectedProject ? 'none' : 'block' }}>
+      {projectsOpen && !selectedProject && <ProjectsView isMobile={isMobile} onOpen={openProject} />}
+
+      <div style={{ display: projectsOpen ? 'none' : 'block' }}>
         <div style={{ position: 'sticky', top: 0, height: V(100), zIndex: 0, overflow: 'hidden', background: BG }}>
           <motion.div
             style={{
@@ -2357,7 +2511,7 @@ export default function App() {
                 position: 'absolute', inset: 0, zIndex: 40, y: panelY,
                 borderTopLeftRadius: isMobile ? mobilePanelRadius : panelRadius,
                 borderTopRightRadius: isMobile ? mobilePanelRadius : panelRadius,
-                background: 'linear-gradient(160deg, #ffffff 0%, #f6f7fa 100%)',
+                background: 'rgb(255, 255, 255)',
                 borderTop: '1px solid rgba(0,0,0,.08)', overflow: 'hidden', color: INK, fontFamily: mont,
               }}
             >
@@ -2369,7 +2523,7 @@ export default function App() {
                     justifyContent: 'space-between',
                   }}
                 >
-                  <motion.div style={{ opacity: mobileAboutFade, x: mobileAboutShift }}>
+                  <motion.div style={{ position: 'relative', zIndex: 2, opacity: mobileAboutFade, x: mobileAboutShift }}>
                     <div style={{ fontWeight: 800, fontSize: ABOUT.headingSizeMobile, letterSpacing: '0.02em', lineHeight: 1 }}>{ABOUT.heading}</div>
                     <p
                       style={{
@@ -2384,18 +2538,18 @@ export default function App() {
                       ))}
                     </div>
                   </motion.div>
-                  <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '2vh' }}>
+                  <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingRight: '2vw', paddingBottom: '2vh' }}>
                     <Phone small progress={sp} center={mobileCenter} expansion={mobileZoom} settle={mobileSettle} enabled={landingActive} image={phoneScreenImage} />
                   </div>
                 </div>
               ) : (
                 <div
                   style={{
-                    position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: ABOUT.columns,
+                    position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: '0.95fr 1.05fr',
                     alignItems: 'center', gap: '3vw', padding: `${V(11)} 6vw ${V(4)} 7vw`,
                   }}
                 >
-                  <motion.div style={{ minWidth: 0, opacity: aboutFade, x: aboutShift }}>
+                  <motion.div style={{ position: 'relative', zIndex: 2, minWidth: 0, opacity: aboutFade, x: aboutShift }}>
                     <div style={{ fontWeight: 800, fontSize: ABOUT.headingSize, letterSpacing: '0.02em', lineHeight: 1 }}>{ABOUT.heading}</div>
                     <p style={{ margin: `${ABOUT.textGapTop} 0 0`, maxWidth: ABOUT.textMaxWidth, fontSize: ABOUT.textSize, fontWeight: 500, lineHeight: 1.75, color: 'rgba(20,22,28,.82)' }}>
                       {ABOUT.text}
@@ -2417,18 +2571,12 @@ export default function App() {
           </div>
         </section>
 
-        <section ref={projectsRef} style={{ position: 'relative', zIndex: 10, background: BG, color: CREAM, padding: isMobile ? '9vh 1vw' : '12vh 1.5vw' }}>
-          <div style={{ textAlign: 'center', marginBottom: isMobile ? '6vh' : '9vh' }}>
-            <span style={{ fontSize: isMobile ? 13 : 16, letterSpacing: '0.3em', textTransform: 'uppercase', color: GOLD }}>Curated Portfolio</span>
-            <h2 style={{ fontFamily: serif, fontSize: isMobile ? 32 : 52, margin: '1.2vh 0 0', fontWeight: 400 }}>Featured Projects</h2>
-          </div>
-
-          <ProjectCoverFlow onOpen={(project) => {
-            setSelectedProject(project);
-            setPhoneScreenImage(project.image);
-            window.scrollTo({ top: 0, behavior: 'auto' });
+        {!projectsOpen && (
+          <FeaturedProjects isMobile={isMobile} onOpen={openProject} style={{
+            position: 'relative', zIndex: 10, background: BG, color: CREAM,
+            padding: isMobile ? '9vh 1vw' : '12vh 1.5vw',
           }} />
-        </section>
+        )}
 
         <PropertyLocationMap isMobile={isMobile} enabled={landingActive} />
       </div>
