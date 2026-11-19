@@ -54,7 +54,7 @@ const YOUTUBE = 'Property Gallery Vlogs';
 const YOUTUBE_URL = 'https://www.youtube.com/@PropertyGalleryVlogs';
 
 const ABOUT = {
-  heading: 'ABOUT',
+  heading: 'About',
   text:
     "Add your founder story here. Share why you started Property Gallery, what you believe about real estate, and how you help buyers find the right home. Keep it to a few short lines so it stays easy to read.",
   logos: ['ig', 'in', 'wa', 'yt', 'em'],
@@ -397,7 +397,7 @@ function Badge({ icon, label, to, suffix, caption, show, active, small, from, de
         </div>
         <div style={{ lineHeight: 1.25, position: 'relative' }}>
           {!small && (
-            <div style={{ fontSize: 10, opacity: 0.65, textTransform: 'uppercase', letterSpacing: '0.16em' }}>{label}</div>
+            <div style={{ fontSize: 10, opacity: 0.65, textTransform: 'capitalize', letterSpacing: '0.16em' }}>{label}</div>
           )}
           <div style={{ fontSize: small ? 12 : 16, fontWeight: 700, color: GOLD }}>
             <CountUp to={to} run={show} suffix={suffix} />
@@ -957,7 +957,7 @@ function PropertyLocationMap({isMobile,enabled}) {
       )}
       <div aria-hidden="true" style={{position:'absolute',inset:0,pointerEvents:'none',background:'linear-gradient(90deg,rgba(3,7,9,.62),transparent 46%,rgba(3,7,9,.13)),linear-gradient(180deg,rgba(3,7,9,.1),transparent 25%,transparent 72%,#05090c 100%)'}}/>
       <div style={{position:'absolute',left:isMobile?22:'6%',right:isMobile?22:'auto',top:isMobile?82:'33%',zIndex:5,pointerEvents:'none',textAlign:isMobile?'center':'left',maxWidth:isMobile?'none':330}}>
-        <div style={{fontFamily:sans,fontSize:14,letterSpacing:'.24em',color:GOLD,marginBottom:isMobile?10:22}}>PROPERTY GALLERY  /  EXPLORE</div>
+        <div style={{fontFamily:sans,fontSize:14,letterSpacing:'.24em',color:GOLD,marginBottom:isMobile?10:22}}>Property Gallery / Explore</div>
         <AnimatePresence mode="wait" initial={false}>
           <motion.div key={current?.name||'intro'} initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-12}} transition={{duration:.28}}>
             <h2 style={{fontFamily:serif,fontSize:isMobile?'clamp(28px,7vw,39px)':'clamp(42px,4vw,68px)',fontWeight:400,lineHeight:1.1,margin:0,textShadow:'0 3px 22px rgba(0,0,0,.65)'}}>{current?.name||'India to Dubai'}</h2>
@@ -1020,7 +1020,7 @@ function PortalScene({ reveal, isMobile, onExplore, insidePhone = false, nativeP
       <motion.div
         style={{
           opacity: textO, fontFamily: serif, color: CREAM, letterSpacing: '0.42em', paddingLeft: '0.42em',
-          fontSize: insidePhone ? '1em' : isMobile ? 14 : 'clamp(15px, 1.5vw, 22px)', textTransform: 'uppercase',
+          fontSize: insidePhone ? '1em' : isMobile ? 14 : 'clamp(15px, 1.5vw, 22px)', textTransform: 'capitalize',
         }}
       >
         Property Gallery
@@ -1029,7 +1029,7 @@ function PortalScene({ reveal, isMobile, onExplore, insidePhone = false, nativeP
       <motion.div
         style={{
           opacity: textO, fontFamily: sans, color: GOLD, letterSpacing: '0.3em', paddingLeft: '0.3em',
-          fontSize: insidePhone ? '0.65em' : isMobile ? 10.5 : 12, textTransform: 'uppercase', marginTop: insidePhone ? '0.8em' : 14,
+          fontSize: insidePhone ? '0.65em' : isMobile ? 10.5 : 12, textTransform: 'capitalize', marginTop: insidePhone ? '0.8em' : 14,
         }}
       >
         Delhi NCR · Mumbai · Goa · Noida · Alibaug · Nagpur · Ahmedabad · Dubai
@@ -1206,7 +1206,7 @@ function StackText({ sections, progress, isMobile }) {
               <span style={{ fontFamily: sans, fontSize: 12, letterSpacing: '0.22em', color: GOLD_DARK }}>
                 {String(active + 1).padStart(2, '0')} / {String(n).padStart(2, '0')}
               </span>
-              <div style={{ fontFamily: sans, fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', color: GOLD, marginTop: 10 }}>
+              <div style={{ fontFamily: sans, fontSize: 12, letterSpacing: '0.22em', textTransform: 'capitalize', color: GOLD, marginTop: 10 }}>
                 {sec.sub}
               </div>
               <h3 style={{ fontFamily: serif, fontWeight: 400, fontSize: isMobile ? STACK.titlePxMobile : STACK.titlePx, margin: '10px 0 0', color: '#fff', lineHeight: 1.15 }}>
@@ -1272,7 +1272,7 @@ function Footer({ isMobile, footerRef, onProjects, onAbout, pageVisible }) {
     transition: { duration: 0.8, delay, ease: outSoft },
   });
 
-  const head = { fontFamily: serif, color: GOLD, fontSize: 15, letterSpacing: '0.22em', textTransform: 'uppercase', margin: '0 0 16px', fontWeight: 400 };
+  const head = { fontFamily: serif, color: GOLD, fontSize: 15, letterSpacing: '0.22em', textTransform: 'capitalize', margin: '0 0 16px', fontWeight: 400 };
   const linkStyle = { display: 'block', color: CREAM, opacity: 0.85, fontFamily: sans, fontSize: 15, lineHeight: 2.1, textDecoration: 'none', cursor: 'pointer', wordBreak: 'break-word' };
   const hover = { x: isMobile ? 0 : 6, color: GOLD };
 
@@ -1312,7 +1312,7 @@ function Footer({ isMobile, footerRef, onProjects, onAbout, pageVisible }) {
               alt="Property Gallery"
               style={{ height: isMobile ? 56 : 68, width: 'auto', display: 'block', margin: isMobile ? '0 auto' : 0, mixBlendMode: 'screen' }}
             />
-            <div style={{ fontFamily: serif, letterSpacing: '0.18em', fontSize: 17, marginTop: 14 }}>PROPERTY GALLERY</div>
+            <div style={{ fontFamily: serif, letterSpacing: '0.18em', fontSize: 17, marginTop: 14 }}>Property Gallery</div>
             <p style={{ fontFamily: sans, fontSize: 14.5, lineHeight: 1.8, opacity: 0.75, margin: '10px auto 0', maxWidth: 340, marginLeft: isMobile ? 'auto' : 0 }}>
               Curated real estate across India and Dubai. Developments, destinations and opportunities worth exploring.
             </p>
@@ -1409,7 +1409,7 @@ const PROJECTS = [
     specs: '3, 3.5 & 4 BHK Luxury Apartments',
     desc: 'Premium high-rise living with world-class architecture, expansive green landscapes, and elite connectivity in Sector 88A Gurgaon.',
     image: EXP_IMG,
-    tag: 'READY TO MOVE',
+    tag: 'Ready To Move',
     sections: [
       {
         title: 'Experion Emerelle Reserve',
@@ -1439,7 +1439,7 @@ const PROJECTS = [
     specs: 'Luxury Villas & Convention Centre',
     desc: 'A sprawling convention centre spread across 1,50,000 sq. ft. equipped with exotic resort-style pools, sunken bars, and themed spas.',
     image: ALI_IMG,
-    tag: 'READY TO MOVE',
+    tag: 'Ready To Move',
     sections: [
       {
         title: 'Alibaug Estates',
@@ -1463,7 +1463,7 @@ const PROJECTS = [
     specs: 'Penthouses & High-Rise Apartments',
     desc: 'High-rise architectural masterpieces featuring striking geometric design, elite urban convenience, and panoramic views in the capital.',
     image: DEL_IMG,
-    tag: 'RERA APPROVED',
+    tag: 'Rera Approved',
     sections: [
       {
         title: 'Delhi Skyline',
@@ -1487,7 +1487,7 @@ const PROJECTS = [
     specs: '3 & 4 BHK (1,126 - 2,534 Sq. Ft.)',
     desc: 'Sprawling luxury residences featuring exclusive clubhouses with swimming pools, gymnasiums, and 80% dedicated open green spaces.',
     image: MUM_IMG,
-    tag: 'UNDER CONSTRUCTION',
+    tag: 'Under Construction',
     sections: [
       {
         title: 'DLF Luxury Apartments',
@@ -1511,7 +1511,7 @@ const PROJECTS = [
     specs: '3, 3.5 & 4.5 BHK · 2,355–3,270 sq. ft.',
     desc: 'Luxury apartments in Sector 69, Gurugram, with a clubhouse, rooftop jogging track, and infinity pool.',
     image: '/Smart_world_sky.png',
-    tag: 'UNDER CONSTRUCTION',
+    tag: 'Under Construction',
     sections: [
       {
         title: 'Smart World Sky Arc',
@@ -1639,7 +1639,7 @@ function ProjectCoverFlow({ onOpen }) {
 
         .pg-cover-caption h3 { font: 700 clamp(16px, 2.7vw, 34px)/1.1 system-ui, sans-serif; margin: 0 0 6px; }
         .pg-cover-caption span { font: 500 clamp(11px, 1.1vw, 14px)/1.3 system-ui, sans-serif; }
-        .pg-cover-tag { position: absolute; top: 12px; left: 12px; padding: 5px 9px; background: #fff0cc; color: #111; border-radius: 20px; font: 700 10px/1.2 system-ui, sans-serif; text-transform: uppercase; }
+        .pg-cover-tag { position: absolute; top: 12px; left: 12px; padding: 5px 9px; background: #fff0cc; color: #111; border-radius: 20px; font: 700 10px/1.2 system-ui, sans-serif; text-transform: capitalize; }
         .pg-cover-side { position: absolute; inset: 0; border: 0; background: transparent; cursor: pointer; }
         .pg-cover-side:focus-visible { outline: 2px solid #fff0cc; outline-offset: -4px; }
         .pg-cover-arrow {
@@ -1841,7 +1841,7 @@ const ADDITIONAL_PROPERTIES = [
     photos: ['centralpark', 'centralpark1', 'centralpark2'],
     title: 'Central Park Delphine',
     subtitle: 'Central Park · Sector 104, Dwarka Expressway',
-    tag: 'READY TO MOVE',
+    tag: 'Ready To Move',
     specs: '4,242–4,281 sq. ft.',
     desc: 'Luxury apartments by Central Park in Sector 104, Gurugram, along Dwarka Expressway.',
   },
@@ -1850,7 +1850,7 @@ const ADDITIONAL_PROPERTIES = [
     photos: ['Dlfcamellias', 'Dlfcamellias1', 'Dlfcamellias2'],
     title: 'DLF The Camellias',
     subtitle: 'DLF · Golf Course Road, Gurugram',
-    tag: 'READY TO MOVE',
+    tag: 'Ready To Move',
     specs: '7,000–16,000 sq. ft.',
     desc: 'Luxury apartments by DLF on Golf Course Road in Gurugram.',
   },
@@ -1859,7 +1859,7 @@ const ADDITIONAL_PROPERTIES = [
     photos: ['Amaryllis_versace', 'Amaryllis_versace1', 'Amaryllis_versace2'],
     title: 'Unity The Amaryllis Versace',
     subtitle: 'Unity Group · Karol Bagh, New Delhi',
-    tag: 'READY TO MOVE',
+    tag: 'Ready To Move',
     specs: '5,800–7,171 sq. ft.',
     desc: 'Luxury apartments by Unity Group in Karol Bagh, New Delhi, with interiors designed in collaboration with Versace Home.',
   },
@@ -1868,7 +1868,7 @@ const ADDITIONAL_PROPERTIES = [
     photos: ['Elan_emperor', 'elan_emperor1', 'elan_emperor2'],
     title: 'Elan The Emperor',
     subtitle: 'Elan · Sector 106, Dwarka Expressway',
-    tag: 'UNDER CONSTRUCTION',
+    tag: 'Under Construction',
     specs: '4,223–10,347 sq. ft.',
     desc: 'Luxury apartments by Elan in Sector 106, Gurugram, along Dwarka Expressway.',
   },
@@ -1906,8 +1906,78 @@ function FeaturedProjects({ isMobile, onOpen, headingAs: Heading = 'h2', style }
   );
 }
 
-const SHOWCASE_PROJECTS = PROJECTS.slice(0, 4);
-const SHOWCASE_ROTATION_MS = 3000;
+const SHOWCASE_IMAGE_NAMES = {
+  experion: 'Experionn',
+  alibaug: 'Aalibuagg',
+  delhi: 'Delhi',
+  dlf: 'DLff',
+};
+
+const SHOWCASE_PROJECTS = PROJECTS.slice(0, 4).map((project) => ({
+  ...project,
+  showcaseImage: `${import.meta.env.BASE_URL}showcase/${SHOWCASE_IMAGE_NAMES[project.id]}.${PROJECT_PHOTO_EXTENSIONS[0]}`,
+}));
+
+function tryNextShowcasePhoto(event) {
+  const image = event.currentTarget;
+  const original = image.dataset.originalSrc;
+  const current = image.getAttribute('src');
+  if (current === original) return;
+  tryNextProjectPhoto(event);
+  if (image.getAttribute('src') === current) image.src = original;
+}
+const SHOWCASE_ROTATION_MS = 2500;
+
+function RollingNavLabel({ children }) {
+  return (
+    <span className="pg-nav-roll-label">
+      <span className="pg-nav-roll-name">{children}</span>
+      <span className="pg-nav-roll-visual" aria-hidden="true">
+        {Array.from(children, (letter, index) => (
+          <span className="pg-nav-roll-slot" key={index}>
+            <span className="pg-nav-roll-track" style={{ '--pg-letter-delay': `${index * 16}ms` }}>
+              <span>{letter}</span>
+              <span>{letter}</span>
+            </span>
+          </span>
+        ))}
+      </span>
+    </span>
+  );
+}
+
+const TITLE_LETTER_ROLL = {
+  enter: { y: '105%' },
+  active: (index) => ({
+    y: '0%',
+    transition: { duration: .38, delay: Math.min(index * .017, .24), ease: [.22, .85, .28, 1] },
+  }),
+  leave: (index) => ({
+    y: '-105%',
+    transition: { duration: .3, delay: Math.min(index * .012, .18), ease: [.22, .85, .28, 1] },
+  }),
+};
+
+function RollingShowcaseTitle({ title }) {
+  let letterIndex = 0;
+  return (
+    <span aria-hidden="true">
+      {title.split(/(\s+)/).map((part, partIndex) => (
+        /^\s+$/.test(part) ? part : (
+          <span key={partIndex} style={{ display: 'inline-block', whiteSpace: 'nowrap' }}>
+            {Array.from(part, (letter, index) => (
+              <span key={index} style={{ display: 'inline-block', overflow: 'hidden', verticalAlign: 'bottom' }}>
+                <motion.span variants={TITLE_LETTER_ROLL} custom={letterIndex++} style={{ display: 'inline-block' }}>
+                  {letter}
+                </motion.span>
+              </span>
+            ))}
+          </span>
+        )
+      ))}
+    </span>
+  );
+}
 
 function ProjectShowcaseReveal({ reveal, onExplore, isMobile, enabled }) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -1962,17 +2032,22 @@ function ProjectShowcaseReveal({ reveal, onExplore, isMobile, enabled }) {
     return reveal.on('change', update);
   }, [reveal]);
 
-  const projectTitle = (item) => (
-    <h2 style={{
-      font: isMobile ? '700 clamp(30px, 8vw, 48px)/1.06 system-ui, sans-serif'
-        : '800 clamp(34px, 5.3vw, 90px)/.98 system-ui, sans-serif',
-      textTransform: isMobile ? 'none' : 'uppercase', margin: '0 0 14px', textWrap: 'balance',
-    }}>
-      {item.title}
-    </h2>
-  );
+  const projectTitle = (item, rolling = false) => {
+    const title = ['delhi', 'alibaug', 'dlf'].includes(item.id)
+      ? item.title.toLowerCase().trim().split(/\s+/).join('\n')
+      : item.title.toLowerCase();
+    return (
+      <h2 aria-label={rolling ? item.title : undefined} style={{
+        font: isMobile ? '700 clamp(30px, 8vw, 48px)/1.06 system-ui, sans-serif'
+          : '800 clamp(34px, 5.3vw, 90px)/.98 system-ui, sans-serif',
+        textTransform: 'capitalize', margin: '0 0 14px', textWrap: 'balance', whiteSpace: 'pre-line',
+      }}>
+        {rolling ? <RollingShowcaseTitle title={title} /> : title}
+      </h2>
+    );
+  };
   const projectSubtitle = (item) => (
-    <p style={{ fontFamily: sans, fontSize: isMobile ? 13 : 16, color: GOLD, margin: '0 0 20px' }}>{item.subtitle}</p>
+    <p style={{ fontFamily: sans, fontSize: isMobile ? 13 : 16, color: GOLD, margin: isMobile ? '0 0 8px' : '0 0 20px' }}>{item.subtitle}</p>
   );
 
   return (
@@ -1987,7 +2062,8 @@ function ProjectShowcaseReveal({ reveal, onExplore, isMobile, enabled }) {
       }}
     >
       <AnimatePresence initial={false}>
-        <motion.img key={project.id} src={project.image} alt="" decoding="async"
+        <motion.img key={project.id} src={project.showcaseImage} data-original-src={project.image}
+          onError={tryNextShowcasePhoto} alt="" decoding="async"
           initial={animated
             ? {
               opacity: isMobile ? .55 : 1, scale: isMobile ? 1.12 : 1,
@@ -1996,7 +2072,7 @@ function ProjectShowcaseReveal({ reveal, onExplore, isMobile, enabled }) {
             : { opacity: 0 }}
           animate={{ opacity: 1, scale: 1, clipPath: 'inset(0% 0% 0% 0% round 0px)' }}
           exit={{ opacity: animated ? .99 : 0 }}
-          transition={{ duration: reducedMotion ? 0 : 2.2, ease }}
+          transition={{ duration: reducedMotion ? 0 : .8, ease }}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
             transformOrigin: '62% 50%' }}
         />
@@ -2022,6 +2098,9 @@ function ProjectShowcaseReveal({ reveal, onExplore, isMobile, enabled }) {
                 transition={{ duration: animated ? .36 : 0, ease }}>
                 {projectTitle(project)}
                 {projectSubtitle(project)}
+                <p style={{ fontFamily: sans, fontSize: 13, lineHeight: 1.45, color: CREAM, margin: '0 0 12px' }}>
+                  {project.desc}
+                </p>
               </motion.div>
             </AnimatePresence>
           ) : (
@@ -2035,12 +2114,11 @@ function ProjectShowcaseReveal({ reveal, onExplore, isMobile, enabled }) {
                 ))}
                 <AnimatePresence initial={false}>
                   <motion.div key={project.id}
-                    initial={animated ? { y: '100%' } : false}
-                    animate={{ y: '0%' }}
-                    exit={animated ? { y: '-100%' } : undefined}
-                    transition={{ duration: animated ? .8 : 0, ease }}
+                    initial={animated ? 'enter' : false}
+                    animate={animated ? 'active' : undefined}
+                    exit={animated ? 'leave' : undefined}
                     style={{ position: 'absolute', inset: 0 }}>
-                    {projectTitle(project)}
+                    {projectTitle(project, animated)}
                   </motion.div>
                 </AnimatePresence>
               </div>
@@ -2048,9 +2126,15 @@ function ProjectShowcaseReveal({ reveal, onExplore, isMobile, enabled }) {
                 {projects.map((item) => (
                   <motion.div key={item.id} aria-hidden={item.id !== project.id}
                     initial={false} animate={{ opacity: item.id === project.id ? 1 : 0 }}
-                    transition={{ duration: animated ? .35 : 0, ease }}
+                    transition={{ duration: animated ? .28 : 0, ease }}
                     style={{ gridArea: '1 / 1', minWidth: 0 }}>
                     {projectSubtitle(item)}
+                    <p style={{
+                      fontFamily: sans, fontWeight: 400, fontSize: 'clamp(14px, 1.25vw, 18px)',
+                      lineHeight: 1.5, maxWidth: '44ch', color: CREAM, margin: '0 0 20px',
+                    }}>
+                      {item.desc}
+                    </p>
                   </motion.div>
                 ))}
               </div>
@@ -2084,29 +2168,30 @@ function ProjectShowcaseReveal({ reveal, onExplore, isMobile, enabled }) {
                     position: 'relative', padding: 0, overflow: 'hidden', borderRadius: 8, background: BG, cursor: 'pointer',
                     border: '2px solid rgba(255,255,255,.3)',
                   }}>
-                  <img src={item.image} alt="" loading="lazy" decoding="async"
+                  <img src={item.showcaseImage} data-original-src={item.image}
+                    onError={tryNextShowcasePhoto} alt="" loading="lazy" decoding="async"
                     style={{ display: 'block', width: '100%',
                       height: isMobile ? 'clamp(64px, 23vw, 120px)' : slot === 0
                         ? 'clamp(230px, 49svh, 480px)' : 'clamp(195px, 41svh, 405px)',
                       objectFit: 'cover', transition: animated && !isMobile ? 'height 650ms cubic-bezier(.22,.85,.28,1)' : undefined,
                     }} />
-                  {!isMobile && (
+                  <span style={{
+                    position: 'absolute', inset: 'auto 0 0', display: 'block', textAlign: 'left',
+                    padding: isMobile ? '16px 5px 5px' : '38px 12px 14px', color: CREAM, pointerEvents: 'none',
+                    background: 'linear-gradient(transparent, rgba(0,0,0,.87) 70%)',
+                  }}>
                     <span style={{
-                      position: 'absolute', inset: 'auto 0 0', display: 'block', textAlign: 'left',
-                      padding: '38px 12px 14px', color: CREAM, pointerEvents: 'none',
-                      background: 'linear-gradient(transparent, rgba(0,0,0,.87) 70%)',
+                      display: 'block', color: GOLD, font: isMobile ? '700 8px/1.15 system-ui, sans-serif' : '700 10px/1.3 system-ui, sans-serif',
+                      letterSpacing: isMobile ? '0' : '.08em', textTransform: 'capitalize', marginBottom: isMobile ? 2 : 5,
+                      whiteSpace: isMobile ? 'nowrap' : undefined, overflow: isMobile ? 'hidden' : undefined,
+                      textOverflow: isMobile ? 'ellipsis' : undefined,
                     }}>
-                      <span style={{
-                        display: 'block', color: GOLD, font: '700 10px/1.3 system-ui, sans-serif',
-                        letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 5,
-                      }}>
-                        {item.subtitle.split(' · ')[0]}
-                      </span>
-                      <span style={{ display: 'block', font: '700 clamp(13px, 1.25vw, 20px)/1.14 system-ui, sans-serif' }}>
-                        {item.title}
-                      </span>
+                      {item.subtitle.split(' · ')[0]}
                     </span>
-                  )}
+                    <span style={{ display: 'block', font: isMobile ? '700 10px/1.12 system-ui, sans-serif' : '700 clamp(13px, 1.25vw, 20px)/1.14 system-ui, sans-serif' }}>
+                      {item.title}
+                    </span>
+                  </span>
                 </motion.button>
               ))}
             </AnimatePresence>
@@ -2466,6 +2551,19 @@ export default function App() {
 
   return (
     <>
+      <style>{`
+        .pg-nav-roll-label { position: relative; display: inline-block; line-height: inherit; }
+        .pg-nav-roll-name { display: block; opacity: 0; }
+        .pg-nav-roll-visual { position: absolute; inset: 0; display: flex; overflow: hidden; }
+        .pg-nav-roll-slot { display: block; height: 100%; }
+        .pg-nav-roll-track { display: block; height: 100%; transform: translateY(0); transition: transform .54s cubic-bezier(.22,.85,.28,1) var(--pg-letter-delay); }
+        .pg-nav-roll-track > span { display: block; height: 100%; }
+        .pg-nav-roll:is(:hover, :focus-visible) .pg-nav-roll-track { transform: translateY(-100%); }
+        @media (prefers-reduced-motion: reduce) {
+          .pg-nav-roll-track { transition: none; }
+          .pg-nav-roll:is(:hover, :focus-visible) .pg-nav-roll-track { transform: none; }
+        }
+      `}</style>
       <header
         style={{
           position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
@@ -2516,22 +2614,25 @@ export default function App() {
           }}
         >
           {isMobile ? (
-            <button type="button" onClick={() => setMenuOpen(true)} aria-label="Open menu" style={menuBtn}>
-              Menu
+            <button className="pg-nav-roll" type="button" onClick={() => setMenuOpen(true)} aria-label="Open menu" style={menuBtn}>
+              <RollingNavLabel>Menu</RollingNavLabel>
             </button>
           ) : (
             <>
-              <button type="button" onClick={goProjects} aria-current={projectsOpen ? 'page' : undefined}
+              <button className="pg-nav-roll" type="button" onClick={goProjects} aria-current={projectsOpen ? 'page' : undefined}
                 style={{ background: 'none', border: 0, color: 'inherit', font: 'inherit', cursor: 'pointer', padding: '12px 0' }}>
-                Projects
+                <RollingNavLabel>Projects</RollingNavLabel>
               </button>
-              <span onClick={goAbout} style={{ cursor: 'pointer', paddingBlock: 12 }}>About</span>
-              <span
+              <button className="pg-nav-roll" type="button" onClick={goAbout}
+                style={{ background: 'none', border: 0, color: 'inherit', font: 'inherit', cursor: 'pointer', padding: '12px 0' }}>
+                <RollingNavLabel>About</RollingNavLabel>
+              </button>
+              <button className="pg-nav-roll" type="button"
                 onClick={goFooter}
-                style={{ background: CREAM, color: '#000', padding: '12px 25px', lineHeight: '20px', borderRadius: 6, fontWeight: 500, cursor: 'pointer' }}
+                style={{ background: CREAM, border: 0, font: 'inherit', color: '#000', padding: '12px 25px', lineHeight: '20px', borderRadius: 6, fontWeight: 500, cursor: 'pointer' }}
               >
-                Contact
-              </span>
+                <RollingNavLabel>Contact</RollingNavLabel>
+              </button>
             </>
           )}
         </motion.nav>
@@ -2617,7 +2718,7 @@ export default function App() {
             </button>
 
             <div style={{ textAlign: 'center', marginBottom: '6vh' }}>
-              <span style={{ fontFamily: sans, fontSize: 12, letterSpacing: '0.25em', textTransform: 'uppercase', color: GOLD }}>
+              <span style={{ fontFamily: sans, fontSize: 12, letterSpacing: '0.25em', textTransform: 'capitalize', color: GOLD }}>
                 {selectedProject.subtitle}
               </span>
               <h1 style={{ fontFamily: serif, fontWeight: 400, fontSize: isMobile ? 32 : 52, margin: '10px 0 0', color: '#fff' }}>
