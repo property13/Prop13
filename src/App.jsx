@@ -1741,6 +1741,30 @@ function ProjectCoverFlow({ onOpen }) {
           .pg-cover-card[data-position="-1"] .pg-cover-card-surface { translate: calc(var(--pg-card-width) * -0.015) 0; }
           .pg-cover-card[data-position="1"] .pg-cover-card-surface { translate: calc(var(--pg-card-width) * 0.015) 0; }
         }
+        @media (max-width: 700px) {
+          .pg-cover-stage {
+            --pg-card-width: calc(46vw - 6px);
+            --pg-side-shrink: .52;
+            --pg-card-height: clamp(225px, 59vw, 320px);
+          }
+          .pg-cover-arrow { display: none; }
+          .pg-cover-card:is([data-position="-1"], [data-position="1"]) { top: 12%; }
+          .pg-cover-card:is([data-position="-1"], [data-position="1"]) .pg-cover-card-surface {
+            scale: var(--pg-side-shrink);
+            filter: brightness(.85);
+          }
+          .pg-cover-card:is([data-position="-1"], [data-position="1"]) img,
+          .pg-cover-stage:has(.pg-cover-card[data-position="0"]:hover)
+            .pg-cover-card:is([data-position="-1"], [data-position="1"]) img { scale: 1; }
+          .pg-cover-card[data-position="-1"] {
+            left: calc(50% - var(--pg-card-width) - var(--pg-card-gap));
+          }
+          .pg-cover-card[data-position="1"] {
+            left: calc(50% + var(--pg-card-width) + var(--pg-card-gap));
+          }
+          .pg-cover-card[data-position="0"] .pg-cover-card-surface,
+          .pg-cover-card[data-position="0"]:hover .pg-cover-card-surface { scale: 1; }
+        }
       `}</style>
 
       <motion.div ref={stageRef} className="pg-cover-stage" style={{ '--pg-stagger': stagger }}
@@ -2245,7 +2269,11 @@ export default function App() {
           }}
         />
         <motion.div
-          style={{ opacity: projectsOpen ? 1 : logoOpacity, y: projectsOpen ? 0 : logoY, display: 'flex', alignItems: 'center', pointerEvents: 'auto', cursor: 'pointer' }}
+          style={{
+            opacity: projectsOpen ? 1 : logoOpacity, y: projectsOpen ? 0 : logoY,
+            display: 'flex', alignItems: 'center', pointerEvents: 'auto', cursor: 'pointer',
+            position: 'relative', top: isMobile ? menuBtn.top : undefined,
+          }}
           onClick={() => {
             setProjectsOpen(false);
             setSelectedProject(null);
