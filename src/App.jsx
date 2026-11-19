@@ -1,8 +1,9 @@
-import { lazy, Suspense, useState, useEffect, useRef, useId } from 'react';
+import { lazy, Suspense, useState, useEffect, useRef, useId, useCallback } from 'react';
 import {
   motion,
   AnimatePresence,
   useScroll,
+  useReducedMotion,
   useInView,
   useTransform,
   useSpring,
@@ -440,10 +441,13 @@ function desktopPhonePose(t, { w, h, width, height, dx, dy, header }) {
   const originY = height / 2 - dy;
   const gutter = 12;
   const top = Math.max(gutter, Math.min(header + gutter, originY - h / 2));
+  // Lift the phone during the turn and bring it back to center for fullscreen.
+  const lift = Math.min(48, height * 0.07) * Math.sin(Math.PI * t);
+  const centerY = Math.max(top + 1, Math.min(height - gutter - 1, originY + dy * t - lift));
   const maxScale = Math.min(
     (width / 2 - gutter) / halfWidth,
-    (height - top - gutter) / (2 * halfHeight),
-    (height / 2 - top) / halfHeight + (1 - t) * 0.5,
+    (centerY - top) / halfHeight,
+    (height - gutter - centerY) / halfHeight,
   );
   const target = 1 + 0.48 * t;
   // Soften the scale limit to avoid a change in velocity as the bounds meet.
@@ -451,10 +455,9 @@ function desktopPhonePose(t, { w, h, width, height, dx, dy, header }) {
   const overlap = Math.max(0, band - Math.abs(target - maxScale));
   const scale = Math.min(target, maxScale) - (band ? overlap ** 2 / (4 * band) : 0);
   const insetX = halfWidth * scale;
-  const insetY = halfHeight * scale;
   return {
     x: Math.max(gutter + insetX, Math.min(width - gutter - insetX, originX + dx * t)) - originX,
-    y: Math.max(top + insetY, Math.min(height - gutter - insetY, originY + dy * t)) - originY,
+    y: centerY - originY,
     scale,
   };
 }
@@ -716,7 +719,7 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
   const desktopFade = useTransform(center, [0, 0.75], [1, 0]);
   const mobileFade = useTransform(expansion, [0, 0.2], [1, 0]);
   const fadeOut = small ? mobileFade : desktopFade;
-  const mobileScreenFade = useTransform(expansion, [0.5, 0.85], [0, 1]);
+  const mobileScreenFade = useTransform(expansion, [0.79, 0.96], [0, 1]);
 
   const shadowX = useTransform(rotY, (v) => v * -0.9);
 
@@ -1903,6 +1906,217 @@ function FeaturedProjects({ isMobile, onOpen, headingAs: Heading = 'h2', style }
   );
 }
 
+const SHOWCASE_PROJECTS = PROJECTS.slice(0, 4);
+const SHOWCASE_ROTATION_MS = 3000;
+
+function ProjectShowcaseReveal({ reveal, onExplore, isMobile, enabled }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [interactive, setInteractive] = useState(false);
+  const [cardInset, setCardInset] = useState('inset(24% 31% 24% 53% round 12px)');
+  const showcaseRef = useRef(null);
+  const visible = useInView(showcaseRef, { amount: .4 });
+  const reducedMotion = useReducedMotion();
+  const projects = SHOWCASE_PROJECTS;
+  const currentIndex = activeIndex % projects.length;
+  const project = projects[currentIndex];
+  const cards = projects.slice(currentIndex + 1).concat(projects.slice(0, currentIndex));
+  const animated = !reducedMotion;
+  const projectCount = projects.length;
+  const ease = [.22, .85, .28, 1];
+
+  const selectProject = useCallback((index) => {
+    if (!isMobile && animated) {
+      const stage = showcaseRef.current;
+      const card = stage?.querySelector(`[data-showcase-index="${index}"]`);
+      if (card) {
+        const frame = stage.getBoundingClientRect();
+        const bounds = card.getBoundingClientRect();
+        if (frame.width && frame.height) {
+          const top = 100 * (bounds.top - frame.top) / frame.height;
+          const right = 100 * (frame.right - bounds.right) / frame.width;
+          const bottom = 100 * (frame.bottom - bounds.bottom) / frame.height;
+          const left = 100 * (bounds.left - frame.left) / frame.width;
+          setCardInset(`inset(${top}% ${right}% ${bottom}% ${left}% round 8px)`);
+        }
+      }
+    }
+    setActiveIndex(index);
+  }, [animated, isMobile]);
+
+  useEffect(() => {
+    if (!animated || !enabled || !visible || !interactive) return undefined;
+    const timer = window.setTimeout(() => {
+      selectProject((currentIndex + 1) % projectCount);
+    }, SHOWCASE_ROTATION_MS);
+    return () => window.clearTimeout(timer);
+  }, [currentIndex, animated, enabled, visible, interactive, projectCount, selectProject]);
+  const opacity = useTransform(reveal, [.78, .96], [0, 1]);
+  const clipPath = useTransform(reveal, [.78, .96], [
+    'inset(16% 20% 16% 20% round 30px)',
+    'inset(0% 0% 0% 0% round 0px)',
+  ]);
+
+  useEffect(() => {
+    const update = (value) => setInteractive(value >= .95);
+    update(reveal.get());
+    return reveal.on('change', update);
+  }, [reveal]);
+
+  const projectTitle = (item) => (
+    <h2 style={{
+      font: isMobile ? '700 clamp(30px, 8vw, 48px)/1.06 system-ui, sans-serif'
+        : '800 clamp(34px, 5.3vw, 90px)/.98 system-ui, sans-serif',
+      textTransform: isMobile ? 'none' : 'uppercase', margin: '0 0 14px', textWrap: 'balance',
+    }}>
+      {item.title}
+    </h2>
+  );
+  const projectSubtitle = (item) => (
+    <p style={{ fontFamily: sans, fontSize: isMobile ? 13 : 16, color: GOLD, margin: '0 0 20px' }}>{item.subtitle}</p>
+  );
+
+  return (
+    <motion.section ref={showcaseRef}
+      aria-label="Project showcase" aria-hidden={!interactive}
+      style={{
+        position: 'absolute', inset: 0, zIndex: 50, overflow: 'hidden',
+        opacity, clipPath: reducedMotion ? undefined : clipPath,
+        background: BG, color: CREAM, pointerEvents: interactive ? 'auto' : 'none',
+        display: 'flex', flexDirection: 'column', justifyContent: isMobile ? 'flex-end' : 'center',
+        padding: isMobile ? `${MOBILE_HEADER_HEIGHT + 16}px 6vw 5svh` : '108px 6vw 6vh',
+      }}
+    >
+      <AnimatePresence initial={false}>
+        <motion.img key={project.id} src={project.image} alt="" decoding="async"
+          initial={animated
+            ? {
+              opacity: isMobile ? .55 : 1, scale: isMobile ? 1.12 : 1,
+              clipPath: isMobile ? 'inset(24% 31% 24% 53% round 12px)' : cardInset,
+            }
+            : { opacity: 0 }}
+          animate={{ opacity: 1, scale: 1, clipPath: 'inset(0% 0% 0% 0% round 0px)' }}
+          exit={{ opacity: animated ? .99 : 0 }}
+          transition={{ duration: reducedMotion ? 0 : 2.2, ease }}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+            transformOrigin: '62% 50%' }}
+        />
+      </AnimatePresence>
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: isMobile
+          ? 'linear-gradient(180deg, rgba(0,0,0,.12) 15%, rgba(0,0,0,.83) 72%, #080808 100%)'
+          : 'linear-gradient(90deg, rgba(0,0,0,.79), rgba(0,0,0,.35) 50%, rgba(0,0,0,.12)), linear-gradient(0deg, rgba(0,0,0,.44), transparent 58%)',
+      }} />
+      <div style={{
+        position: 'relative', display: 'grid', alignItems: 'center',
+        gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1fr) minmax(0, 1.05fr)',
+        gap: isMobile ? 18 : '5vw',
+      }}>
+        <div>
+          {isMobile ? (
+            <AnimatePresence initial={false} mode={animated ? 'wait' : 'sync'}>
+              <motion.div key={project.id}
+                initial={animated ? { opacity: 0, y: 22 } : false}
+                animate={{ opacity: 1, y: 0 }}
+                exit={animated ? { opacity: 0, y: -14, transition: { duration: .16 } } : undefined}
+                transition={{ duration: animated ? .36 : 0, ease }}>
+                {projectTitle(project)}
+                {projectSubtitle(project)}
+              </motion.div>
+            </AnimatePresence>
+          ) : (
+            <div>
+              <div style={{ position: 'relative', display: 'grid', overflow: 'hidden' }}>
+                {projects.map((item) => (
+                  <div key={item.id} aria-hidden="true"
+                    style={{ gridArea: '1 / 1', minWidth: 0, visibility: 'hidden' }}>
+                    {projectTitle(item)}
+                  </div>
+                ))}
+                <AnimatePresence initial={false}>
+                  <motion.div key={project.id}
+                    initial={animated ? { y: '100%' } : false}
+                    animate={{ y: '0%' }}
+                    exit={animated ? { y: '-100%' } : undefined}
+                    transition={{ duration: animated ? .8 : 0, ease }}
+                    style={{ position: 'absolute', inset: 0 }}>
+                    {projectTitle(project)}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+              <div style={{ display: 'grid' }}>
+                {projects.map((item) => (
+                  <motion.div key={item.id} aria-hidden={item.id !== project.id}
+                    initial={false} animate={{ opacity: item.id === project.id ? 1 : 0 }}
+                    transition={{ duration: animated ? .35 : 0, ease }}
+                    style={{ gridArea: '1 / 1', minWidth: 0 }}>
+                    {projectSubtitle(item)}
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
+          <button type="button" tabIndex={interactive ? 0 : -1} onClick={onExplore}
+            style={{ border: 0, borderRadius: 6, padding: '10px 14px', background: CREAM, color: BG, fontWeight: 700 }}>
+            Explore Projects
+          </button>
+        </div>
+        <div style={isMobile ? undefined : { marginRight: '-6vw', overflow: 'hidden' }}>
+          <div style={{
+            position: 'relative', display: 'grid', alignItems: 'center',
+            gridTemplateColumns: isMobile ? 'repeat(3, minmax(0, 1fr))' : 'repeat(3, minmax(0, 41%))',
+            gap: isMobile ? 8 : 14,
+          }}>
+            <AnimatePresence initial={false} mode={animated ? 'popLayout' : 'sync'}>
+              {cards.map((item, slot) => (
+                <motion.button key={item.id} type="button" tabIndex={interactive ? 0 : -1}
+                  layout={animated ? 'position' : false}
+                  initial={animated ? { opacity: 0, x: isMobile ? 44 : '100%', scale: isMobile ? .94 : 1 } : false}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  exit={animated ? (isMobile
+                    ? { opacity: 0, x: -26, scale: 1.06 }
+                    : { opacity: 0, pointerEvents: 'none', transition: { duration: .24 } }) : undefined}
+                  transition={{ duration: animated ? (isMobile ? .55 : .65) : 0, ease }}
+                  aria-label={`Show ${item.title}`}
+                  data-showcase-index={projects.indexOf(item)}
+                  onClick={() => selectProject(projects.indexOf(item))}
+                  style={{
+                    position: 'relative', padding: 0, overflow: 'hidden', borderRadius: 8, background: BG, cursor: 'pointer',
+                    border: '2px solid rgba(255,255,255,.3)',
+                  }}>
+                  <img src={item.image} alt="" loading="lazy" decoding="async"
+                    style={{ display: 'block', width: '100%',
+                      height: isMobile ? 'clamp(64px, 23vw, 120px)' : slot === 0
+                        ? 'clamp(230px, 49svh, 480px)' : 'clamp(195px, 41svh, 405px)',
+                      objectFit: 'cover', transition: animated && !isMobile ? 'height 650ms cubic-bezier(.22,.85,.28,1)' : undefined,
+                    }} />
+                  {!isMobile && (
+                    <span style={{
+                      position: 'absolute', inset: 'auto 0 0', display: 'block', textAlign: 'left',
+                      padding: '38px 12px 14px', color: CREAM, pointerEvents: 'none',
+                      background: 'linear-gradient(transparent, rgba(0,0,0,.87) 70%)',
+                    }}>
+                      <span style={{
+                        display: 'block', color: GOLD, font: '700 10px/1.3 system-ui, sans-serif',
+                        letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 5,
+                      }}>
+                        {item.subtitle.split(' · ')[0]}
+                      </span>
+                      <span style={{ display: 'block', font: '700 clamp(13px, 1.25vw, 20px)/1.14 system-ui, sans-serif' }}>
+                        {item.title}
+                      </span>
+                    </span>
+                  )}
+                </motion.button>
+              ))}
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+    </motion.section>
+  );
+}
+
 function ProjectsView({ isMobile, onOpen }) {
   return (
     <main style={{
@@ -2039,6 +2253,7 @@ export default function App() {
   const desktopLandscapeGrowth = useTransform(phoneProgress, [DESKTOP_PHONE_END, 1], [0, 1], { ease: smoothStep });
   const desktopFullscreen = useTransform(phoneProgress, [DESKTOP_PHONE_END, 0.96], [0, 1], { ease: smoothStep });
   const reveal = useTransform(phoneProgress, [0.91, 1], [0, 1], { ease: smoothStep });
+  const desktopShowcase = useTransform(phoneProgress, [0.78, 0.97], [0, 1]);
   const mobileZoomRaw = useTransform(stmtRaw, [stmtA, MOBILE_ZOOM_END], [0, isMobile ? 1 : 0]);
   const mobileZoom = useSpring(mobileZoomRaw, MOBILE_ZOOM_SPRING);
   const mobileCenter = useTransform(mobileZoom, (z) => smoothStep(Math.max(0, Math.min(1, z))));
@@ -2595,7 +2810,12 @@ export default function App() {
               )}
             </motion.div>
 
-            {isMobile && <PortalScene reveal={mobileZoom} isMobile onExplore={goProjects} />}
+            <ProjectShowcaseReveal
+              reveal={isMobile ? mobileZoom : desktopShowcase}
+              isMobile={isMobile}
+              enabled={landingActive}
+              onExplore={goProjects}
+            />
           </div>
         </section>
 
