@@ -13,7 +13,9 @@ import {
 } from 'framer-motion';
 
 const MinimalEarthCanvas = lazy(() => import('./MinimalEarthCanvas.jsx'));
-const IPhoneModel = lazy(() => import('./IPhoneModel.jsx'));
+const loadIPhoneModel = () => import('./IPhoneModel.jsx');
+const IPhoneModel = lazy(loadIPhoneModel);
+const SHOWCASE_HOLD_VH = 75;
 
 /* ================= 1. CONSTANTS ================= */
 const HERO_IMG = '/pic1.png';
@@ -55,8 +57,19 @@ const YOUTUBE_URL = 'https://www.youtube.com/@PropertyGalleryVlogs';
 
 const ABOUT = {
   heading: 'About',
-  text:
-    "Add your founder story here. Share why you started Property Gallery, what you believe about real estate, and how you help buyers find the right home. Keep it to a few short lines so it stays easy to read.",
+  text: (
+    <>
+      <a href="https://www.google.com/search?kgmid=%2Fg%2F11gxpzrq4g&q=harpreet+singh+ghulati"
+        target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>Harpreet Singh Ghulati</a>
+      {' is a '}<strong>real estate consultant, entrepreneur, and social media influencer</strong>
+      {' based in Gurugram (Gurgaon), Haryana. He is the founder/CEO of '}
+      <a href="https://propertygallery.in/" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>
+        <strong>Property Gallery</strong>
+      </a>
+      {' and creator of the '}<em>Property Gallery Vlogs</em>
+      {' YouTube channel, which features walkthroughs and insights on residential and commercial properties.'}
+    </>
+  ),
   logos: ['ig', 'in', 'wa', 'yt', 'em'],
   headingSize: 'clamp(38px, min(5.6vw, 10.5vh), 88px)',
   textSize: 'clamp(15px, min(1.7vw, 3.1vh), 27px)',
@@ -550,7 +563,7 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
   const layoutRef = useRef(null);
   const displayRef = useRef(null);
   const inView = useInView(layoutRef);
-  const nearViewport = useInView(layoutRef, { once: true, margin: '250px 0px' });
+  const nearViewport = useInView(layoutRef, { once: true, margin: '600px 0px' });
   const [modelReady, setModelReady] = useState(false);
   const interactive = enabled && inView && modelReady;
   const { yaw, pitch, dragging, handlers } = usePhoneDrag(interactive);
@@ -776,9 +789,6 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
 
         {/* Phone stays invisible until the 3D model is ready, then fades in. */}
         <motion.div
-          initial={false}
-          animate={{ opacity: modelReady ? 1 : 0 }}
-          transition={{ duration: 0.5 }}
           style={{
             position: 'relative', zIndex: 2, transformStyle: 'flat',
             transformPerspective: 1400, rotate: turnRot, rotateY: rotY, rotateX: rotX, scale: turnScale,
@@ -798,6 +808,12 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
               userSelect: interactive ? 'none' : undefined,
             }}
           >
+            {!modelReady && (
+              <div aria-hidden="true" style={{
+                position: 'absolute', inset: 0, borderRadius: PHONE_RADIUS,
+                background: '#101113', border: '1px solid #666', pointerEvents: 'none',
+              }} />
+            )}
             {nearViewport && (
               <Suspense fallback={null}>
                 <IPhoneModel displayRef={displayRef} image={image} onReady={setModelReady} ready={modelReady} zoom={small ? zs : desktopScale} yaw={yaw} pitch={pitch} />
@@ -1523,7 +1539,7 @@ const PROJECTS = [
   },
 ];
 
-const PROJECT_SLIDE_DURATION = 6000;
+const PROJECT_SLIDE_DURATION = 4000;
 
 function ProjectCoverFlow({ onOpen }) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -2270,7 +2286,7 @@ export default function App() {
   const landingActive = pageVisible && !projectsOpen;
 
   const stmtRef = useRef(null);
-  const aboutNearby = useInView(stmtRef, { once: true, margin: '350px 0px' });
+  const phoneScrollRef = useRef(null);
   const footerRef = useRef(null);
   const heroVideoRef = useRef(null);
   const propRef = useRef(null);
@@ -2312,9 +2328,10 @@ export default function App() {
     setTimeout(() => {
       const el = stmtRef.current;
       if (!el) return;
-      const stageH = el.firstElementChild?.offsetHeight || window.innerHeight;
+      const stageH = el.children[1]?.offsetHeight || window.innerHeight;
+      const animationHeight = phoneScrollRef.current?.offsetHeight ?? el.offsetHeight;
       const top = el.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({ top: top + (el.offsetHeight - stageH) * stmtA * 0.9, behavior: 'smooth' });
+      window.scrollTo({ top: top + (animationHeight - stageH) * stmtA * 0.9, behavior: 'smooth' });
     }, 80);
   };
 
@@ -2326,7 +2343,7 @@ export default function App() {
   const logoOpacity = useTransform(ep, [0.55, 0.95], [0, 1]);
   const logoY = useTransform(ep, [0.55, 0.95], [-12, 0]);
 
-  const { scrollYProgress: stmtRaw } = useScroll({ target: stmtRef, offset: ['start start', 'end end'] });
+  const { scrollYProgress: stmtRaw } = useScroll({ target: phoneScrollRef, offset: ['start start', 'end end'] });
   const stmtOld = useTransform(stmtRaw, [0, stmtA], [0, 1]);
   const sp = useSpring(stmtOld, SPRING);
 
@@ -2376,11 +2393,9 @@ export default function App() {
     };
   }, []);
 
-  // Warm the model as the user approaches About, after the hero's first load.
   useEffect(() => {
-    if (!aboutNearby) return;
-    import('./IPhoneModel.jsx').then((m) => m.preloadIPhoneModel?.()).catch(() => {});
-  }, [aboutNearby]);
+    loadIPhoneModel().then((module) => module.preloadIPhoneModel?.()).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const img = new Image();
@@ -2824,7 +2839,10 @@ export default function App() {
           <motion.div style={{ position: 'absolute', inset: 0, background: '#000', opacity: introDim, pointerEvents: 'none', zIndex: 5 }} />
         </div>
 
-        <section ref={stmtRef} style={{ position: 'relative', zIndex: 1, height: V(stmtVh), background: BG }}>
+        <section ref={stmtRef} style={{ position: 'relative', zIndex: 1, height: V(stmtVh + SHOWCASE_HOLD_VH), background: BG }}>
+          <div ref={phoneScrollRef} aria-hidden="true" style={{
+            position: 'absolute', top: 0, left: 0, width: 0, height: V(stmtVh), pointerEvents: 'none',
+          }} />
           <div style={{ position: 'sticky', top: 0, height: V(100), overflow: 'hidden', background: BG }}>
             <motion.div
               style={{
