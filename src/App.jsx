@@ -2310,21 +2310,60 @@ export default function App() {
   const stmtVh = STMT_VH + turnVh;
   const stmtA = STMT_BASE_VH / (stmtVh - 100);
 
-  const goProjects = () => {
-    setProjectsOpen(true);
-    setSelectedProject(null);
-    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
-  };
-  const openProject = (project, phoneImage = project.image) => {
-    setProjectsOpen(true);
+  useEffect(() => {
+    const restoreView = (state) => {
+      const view = state?.propertyGallery;
+      const project = PROJECTS.find(({ id }) => id === view?.projectId)
+        ?? ADDITIONAL_PROPERTIES.find(({ id }) => id === view?.projectId)
+        ?? null;
+      setProjectsOpen(Boolean(view?.projectsOpen));
+      setSelectedProject(project);
+      if (view?.phoneImage) setPhoneScreenImage(view.phoneImage);
+    };
+    const onPopState = (event) => restoreView(event.state);
+    restoreView(window.history.state);
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  const navigateProjectView = (showProjects, project = null, phoneImage) => {
+    const { history } = window;
+    const current = history.state?.propertyGallery;
+    const projectId = project?.id ?? null;
+    if (Boolean(current?.projectsOpen) !== showProjects || (current?.projectId ?? null) !== projectId) {
+      history.pushState({
+        ...history.state,
+        propertyGallery: {
+          projectsOpen: showProjects,
+          projectId,
+          fromProjects: showProjects && Boolean(project) && projectsOpen && !selectedProject,
+          phoneImage: phoneImage || current?.phoneImage,
+        },
+      }, '');
+    }
+    setProjectsOpen(showProjects);
     setSelectedProject(project);
     if (phoneImage) setPhoneScreenImage(phoneImage);
+  };
+
+  const goProjects = () => {
+    navigateProjectView(true);
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
+  };
+  const backToProjects = () => {
+    if (window.history.state?.propertyGallery?.fromProjects) {
+      window.history.back();
+      return;
+    }
+    goProjects();
+  };
+  const openProject = (project, phoneImage = project.image) => {
+    navigateProjectView(true, project, phoneImage);
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
   };
   const goFooter = () => footerRef.current?.scrollIntoView({ behavior: 'smooth' });
   const goAbout = () => {
-    setProjectsOpen(false);
-    setSelectedProject(null);
+    navigateProjectView(false);
     setTimeout(() => {
       const el = stmtRef.current;
       if (!el) return;
@@ -2603,8 +2642,7 @@ export default function App() {
             position: 'relative', top: isMobile ? menuBtn.top : undefined,
           }}
           onClick={() => {
-            setProjectsOpen(false);
-            setSelectedProject(null);
+            navigateProjectView(false);
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
         >
@@ -2722,7 +2760,7 @@ export default function App() {
         >
           <div style={{ maxWidth: STACK.maxWidth, margin: '0 auto' }}>
             <button
-              onClick={goProjects}
+              onClick={backToProjects}
               style={{
                 background: 'rgba(0,0,0,0)', border: `1px solid ${GOLD_DARK}`, color: GOLD,
                 padding: '10px 20px', borderRadius: 8, cursor: 'pointer', fontFamily: sans, fontWeight: 600,
