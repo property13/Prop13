@@ -120,7 +120,7 @@ const UNLOCK_AFTER = 3.6;
 const STMT_VH = 340;
 const STMT_BASE_VH = 140;
 const MOBILE_HEADER_HEIGHT = 68;
-const MOBILE_ZOOM_END = 0.94;
+const MOBILE_ZOOM_END = 0.79;
 const MOBILE_ZOOM_SPRING = { stiffness: 60, damping: 28, mass: 0.6 };
 const TURN_VH = 45;
 const TURN_DEG = -90;
@@ -936,7 +936,7 @@ function PropertyLocationMap({isMobile,enabled}) {
     };update(progress.get());return progress.on('change',update);
   },[progress,activeRendering]);
   const current=active<0?null:EARTH_STOPS[active];
-  return <section ref={section} aria-label="Scroll through Property Gallery locations in India and Dubai" style={{position:'relative',height:reduced?'100svh':isMobile?'700svh':'800svh',background:'#05090c',color:CREAM}}>
+  return <section ref={section} aria-label="Scroll through Property Gallery locations in India and Dubai" style={{position:'relative',height:reduced?'100svh':isMobile?'600svh':'680svh',background:'#05090c',color:CREAM}}>
     <div ref={sticky} style={{position:'sticky',top:0,height:'100svh',overflow:'hidden',isolation:'isolate',background:'#05090c'}}>
       {fallback?<div style={{position:'absolute',inset:0,display:'grid',placeItems:'center',color:CREAM}}>Explore India & Dubai</div>:nearby&&(
         <Suspense fallback={null}>
@@ -1391,6 +1391,7 @@ function Footer({ isMobile, footerRef, onProjects, onAbout, pageVisible }) {
 const PROJECTS = [
   {
     id: 'experion',
+    category: 'high-rise',
     title: 'Experion Emerelle Reserve',
     subtitle: 'Experion Developers · Sector 88A, Gurgaon',
     price: '₹3.50 Cr Onwards',
@@ -1421,6 +1422,7 @@ const PROJECTS = [
   },
   {
     id: 'alibaug',
+    category: 'villas',
     title: 'Alibaug Estates',
     subtitle: 'Resort Living · Alibaug, Maharashtra',
     price: '₹5.20 Cr Onwards',
@@ -1445,6 +1447,7 @@ const PROJECTS = [
   },
   {
     id: 'delhi',
+    category: 'high-rise',
     title: 'Delhi Skyline',
     subtitle: 'Metropolitan · Central Delhi NCR',
     price: '₹4.80 Cr Onwards',
@@ -1469,6 +1472,7 @@ const PROJECTS = [
   },
   {
     id: 'dlf',
+    category: 'high-rise',
     title: 'DLF Luxury Apartments',
     subtitle: 'DLF Limited · Andheri West, Mumbai',
     price: '₹2.90 Cr Onwards',
@@ -1493,6 +1497,7 @@ const PROJECTS = [
   },
   {
     id: 'smart-world-sky-arc',
+    category: 'high-rise',
     title: 'Smart World Sky Arc',
     subtitle: 'Smart World · Sector 69, Gurugram',
     price: 'Price on request',
@@ -1513,7 +1518,7 @@ const PROJECTS = [
 
 const PROJECT_SLIDE_DURATION = 4000;
 
-function ProjectCoverFlow({ onOpen }) {
+function ProjectCoverFlow({ onSelectCategory }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const touchStart = useRef(null);
   const stageRef = useRef(null);
@@ -1523,7 +1528,7 @@ function ProjectCoverFlow({ onOpen }) {
   });
   const staggerRaw = useTransform(scrollYProgress, [0, 1], [1, 0]);
   const stagger = useSpring(staggerRaw, { stiffness: 120, damping: 25, mass: 0.4 });
-  const count = PROJECTS.length;
+  const count = PROJECT_CATEGORIES.length;
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -1538,7 +1543,7 @@ function ProjectCoverFlow({ onOpen }) {
   };
 
   return (
-    <div className="pg-cover" aria-label="Featured projects carousel" onKeyDown={(event) => {
+    <div className="pg-cover" aria-label="Property categories carousel" onKeyDown={(event) => {
       if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
         event.preventDefault();
         step(event.key === 'ArrowLeft' ? -1 : 1);
@@ -1777,25 +1782,27 @@ function ProjectCoverFlow({ onOpen }) {
           }
         }}
       >
-        {PROJECTS.map((project, index) => {
+        {PROJECT_CATEGORIES.map((category, index) => {
           const offset = (index - activeIndex + count) % count;
           const position = offset === count - 1 ? -1 : offset;
           const isSide = Math.abs(position) === 1;
           return (
-            <article className="pg-cover-card" key={project.id} data-position={position} aria-hidden={position > 1}>
+            <article className="pg-cover-card" key={category.id} data-position={position} aria-hidden={position > 1}>
               <div className="pg-cover-card-surface">
-                <img src={project.image} alt={project.title} loading="lazy" decoding="async" draggable={false} />
-                <span className="pg-cover-tag">{project.tag}</span>
+                {category.image && (
+                  <img src={category.image} data-original-src={category.fallback ?? category.image}
+                    onError={tryNextShowcasePhoto} alt="" loading="lazy" decoding="async" draggable={false} />
+                )}
                 <div className="pg-cover-caption">
-                  <h3>{project.title}</h3>
-                  <span>{project.subtitle}</span>
+                  <h3>{category.title}</h3>
+                  <span>Browse properties →</span>
                 </div>
                 {(isSide || position === 0) && (
                   <button
                     className="pg-cover-side"
                     type="button"
-                    aria-label={isSide ? `Show ${project.title}` : `View details for ${project.title}`}
-                    onClick={() => isSide ? setActiveIndex(index) : onOpen(project)}
+                    aria-label={`Browse ${category.title} properties`}
+                    onClick={() => onSelectCategory(category.id)}
                   />
                 )}
               </div>
@@ -1803,9 +1810,9 @@ function ProjectCoverFlow({ onOpen }) {
           );
         })}
         <button type="button" className="pg-cover-arrow pg-cover-arrow--prev"
-          aria-label="Previous project" onClick={() => step(-1)} />
+          aria-label="Previous category" onClick={() => step(-1)} />
         <button type="button" className="pg-cover-arrow pg-cover-arrow--next"
-          aria-label="Next project" onClick={() => step(1)} />
+          aria-label="Next category" onClick={() => step(1)} />
       </motion.div>
 
     </div>
@@ -1826,6 +1833,7 @@ function tryNextProjectPhoto(event) {
 const ADDITIONAL_PROPERTIES = [
   {
     id: 'central-park-delphine',
+    category: 'high-rise',
     photos: ['centralpark', 'centralpark1', 'centralpark2'],
     title: 'Central Park Delphine',
     subtitle: 'Central Park · Sector 104, Dwarka Expressway',
@@ -1835,6 +1843,7 @@ const ADDITIONAL_PROPERTIES = [
   },
   {
     id: 'dlf-the-camellias',
+    category: 'high-rise',
     photos: ['Dlfcamellias', 'Dlfcamellias1', 'Dlfcamellias2'],
     title: 'DLF The Camellias',
     subtitle: 'DLF · Golf Course Road, Gurugram',
@@ -1844,6 +1853,7 @@ const ADDITIONAL_PROPERTIES = [
   },
   {
     id: 'unity-the-amaryllis-versace',
+    category: 'high-rise',
     photos: ['Amaryllis_versace', 'Amaryllis_versace1', 'Amaryllis_versace2'],
     title: 'Unity The Amaryllis Versace',
     subtitle: 'Unity Group · Karol Bagh, New Delhi',
@@ -1853,6 +1863,7 @@ const ADDITIONAL_PROPERTIES = [
   },
   {
     id: 'elan-the-emperor',
+    category: 'high-rise',
     photos: ['Elan_emperor', 'elan_emperor1', 'elan_emperor2'],
     title: 'Elan The Emperor',
     subtitle: 'Elan · Sector 106, Dwarka Expressway',
@@ -1879,17 +1890,17 @@ const ADDITIONAL_PROPERTIES = [
   };
 });
 
-function FeaturedProjects({ isMobile, onOpen, headingAs: Heading = 'h2', style }) {
+function FeaturedProjects({ isMobile, onSelectCategory, style }) {
   const headingId = useId();
   return (
-    <section aria-labelledby={headingId} style={style}>
-      <Heading id={headingId} style={{
+    <section id="featured-projects" aria-labelledby={headingId} style={{ ...style, scrollMarginTop: 68 }}>
+      <h2 id={headingId} style={{
         fontFamily: sans, fontSize: isMobile ? 32 : 52, textAlign: 'center',
         fontWeight: 400, margin: '0 0 6vh',
       }}>
         Featured Projects
-      </Heading>
-      <ProjectCoverFlow onOpen={onOpen} />
+      </h2>
+      <ProjectCoverFlow onSelectCategory={onSelectCategory} />
     </section>
   );
 }
@@ -2190,27 +2201,164 @@ function ProjectShowcaseReveal({ reveal, onExplore, isMobile, enabled }) {
   );
 }
 
-function ProjectsView({ isMobile, onOpen }) {
+const PROJECT_CATEGORIES = [
+  { id: 'builder-floor', title: 'Builder Floor', image: SHOWCASE_PROJECTS[0].showcaseImage, fallback: EXP_IMG },
+  { id: 'high-rise', title: 'High Rise', image: MUM_IMG },
+  { id: 'plots', title: 'Plots', image: `${import.meta.env.BASE_URL}featured/Plots.jpg` },
+  { id: 'villas', title: 'Villas', image: SHOWCASE_PROJECTS[1].showcaseImage, fallback: ALI_IMG },
+  { id: 'farm-house', title: 'Farm House', image: `${import.meta.env.BASE_URL}featured/farm-house.jpg` },
+  { id: 'commercial', title: 'Commercial', image: `${import.meta.env.BASE_URL}featured/commercial.jpg` },
+];
+
+const PROJECT_CATALOG = [...PROJECTS, ...ADDITIONAL_PROPERTIES];
+
+// Budget bands use lakh as the unit, with the upper bound excluded.
+const PROPERTY_BUDGETS = [
+  { label: 'Under ₹50L', min: 0, max: 50 },
+  { label: '₹50L–₹1Cr', min: 50, max: 100 },
+  { label: '₹1Cr–₹3Cr', min: 100, max: 300 },
+  { label: '₹3Cr–₹5Cr', min: 300, max: 500 },
+  { label: '₹5Cr+', min: 500, max: Infinity },
+];
+
+function propertyPriceInLakh(price) {
+  const match = price?.match(/^₹?\s*([\d,]+(?:\.\d+)?)\s*(cr|lakh|l)\b/i);
+  if (!match) return NaN;
+  const amount = Number(match[1].replaceAll(',', ''));
+  return match[2].toLowerCase() === 'cr' ? amount * 100 : amount;
+}
+
+function AllProjectsView({ isMobile, onOpen }) {
+  const reveal = useMotionValue(1);
+  const listingsRef = useRef(null);
+  const filterId = useId();
+  const reducedMotion = useReducedMotion();
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [propertyType, setPropertyType] = useState('');
+  const [status, setStatus] = useState('');
+  const [budget, setBudget] = useState('');
+  const selectedBudget = PROPERTY_BUDGETS.find(({ label }) => label === budget);
+  const activeFilterCount = [propertyType, status, budget].filter(Boolean).length;
+  const statuses = [...new Set(PROJECT_CATALOG.map(({ tag }) => tag))];
+  const properties = PROJECT_CATALOG.filter((property) => {
+    const price = propertyPriceInLakh(property.price);
+    return (!propertyType || property.category === propertyType)
+      && (!status || property.tag === status)
+      && (!selectedBudget || (price >= selectedBudget.min && price < selectedBudget.max));
+  });
   return (
     <main style={{
       position: 'relative', zIndex: 10, background: BG, color: CREAM,
-      minHeight: V(100), padding: isMobile ? '100px 0 64px' : '140px 0 96px',
+      minHeight: V(100), paddingBottom: isMobile ? 64 : 96,
     }}>
-      <FeaturedProjects isMobile={isMobile} onOpen={onOpen} headingAs="h1" />
+      <style>{`
+        .pg-filters-glass {
+          display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+          padding: 5px; border-radius: 16px;
+          border: 1px solid rgba(251,239,202,.20);
+          background: linear-gradient(125deg, rgba(251,239,202,.12), rgba(183,155,116,.045));
+          backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 8px 22px rgba(0,0,0,.28);
+        }
+        .pg-filters-glass select, .pg-filters-toggle, .pg-filters-reset {
+          color: inherit; color-scheme: dark; font: inherit; font-size: 13px;
+          min-height: 36px; cursor: pointer;
+        }
+        .pg-filters-glass select {
+          border: 1px solid transparent; border-radius: 10px;
+          background: rgba(255,255,255,.06); padding: 5px 9px;
+        }
+        .pg-budget-filter {
+          display: inline-flex; align-items: center; gap: 6px; padding-left: 10px;
+          border: 1px solid rgba(251,239,202,.28); border-radius: 10px;
+          background: rgba(251,239,202,.08); white-space: nowrap;
+          color: #fbefca; font-size: 13px;
+        }
+        .pg-budget-filter select { background: transparent; }
+        .pg-filters-glass option { background: #211f1b; color: #fbefca; }
+        .pg-filters-toggle {
+          display: inline-flex; align-items: center; gap: 8px; align-self: flex-start;
+          padding: 0 14px; min-height: 48px; border-radius: 16px;
+          border: 1px solid rgba(251,239,202,.28); background: rgba(251,239,202,.08);
+          backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+        }
+        .pg-filters-toggle[aria-expanded="true"], .pg-filters-toggle:hover,
+        .pg-filters-glass select:hover { background: rgba(251,239,202,.16); }
+        .pg-filters-reset { border: 0; background: transparent; padding: 0 8px; text-decoration: underline; }
+        .pg-filters-glass :focus-visible, .pg-filters-toggle:focus-visible { outline: 2px solid #fbefca; outline-offset: 2px; }
+        @media (max-width: 480px) {
+          .pg-filters-toggle { min-height: 44px; }
+          .pg-filters-glass { border-radius: 12px; }
+        }
+      `}</style>
+      <div style={{ position: 'relative', height: '100svh' }}>
+        <ProjectShowcaseReveal
+          reveal={reveal}
+          isMobile={isMobile}
+          enabled
+          onExplore={() => listingsRef.current?.scrollIntoView({ behavior: 'smooth' })}
+        />
+      </div>
 
-      <section aria-labelledby="properties-heading" style={{
-        maxWidth: 1760, margin: '64px auto 0', padding: isMobile ? '0 4vw' : '0 2vw',
+      <section ref={listingsRef} aria-labelledby="properties-heading" style={{
+        scrollMarginTop: 96, maxWidth: 1760, margin: '64px auto 0', padding: isMobile ? '0 4vw' : '0 2vw',
       }}>
-        <h2 id="properties-heading" style={{
-          fontFamily: sans, fontSize: isMobile ? 30 : 42, fontWeight: 400, margin: '0 0 24px',
-        }}>
-          More Properties
-        </h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
+          <h2 id="properties-heading" style={{
+            fontFamily: sans, fontSize: isMobile ? 'clamp(23px, 6.4vw, 30px)' : 42, fontWeight: 400, margin: 0,
+          }}>
+            More Properties
+          </h2>
+          <div style={{ marginLeft: 'auto', display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 8, maxWidth: '100%' }}>
+            <div id={filterId} hidden={!filtersOpen}>
+              {filtersOpen && (
+                <motion.div
+                  initial={reducedMotion ? false : { clipPath: 'inset(0 0 0 100%)' }}
+                  animate={{ clipPath: 'inset(0 0 0 0%)' }}
+                  transition={{ duration: reducedMotion ? 0 : .24, ease: 'easeOut' }}
+                  className="pg-filters-glass"
+                >
+                  <select aria-label="Property type" value={propertyType} onChange={(event) => setPropertyType(event.target.value)}>
+                    <option value="">All property types</option>
+                    {PROJECT_CATEGORIES.map(({ id, title }) => <option key={id} value={id}>{title}</option>)}
+                  </select>
+                  <select aria-label="Property status" value={status} onChange={(event) => setStatus(event.target.value)}>
+                    <option value="">All statuses</option>
+                    {statuses.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
+                  </select>
+                  <label className="pg-budget-filter">
+                    <span>Budget</span>
+                    <select value={budget} onChange={(event) => setBudget(event.target.value)}>
+                      <option value="">Any budget</option>
+                      {PROPERTY_BUDGETS.map(({ label }) => <option key={label} value={label}>{label}</option>)}
+                    </select>
+                  </label>
+                  {activeFilterCount > 0 && (
+                    <button type="button" onClick={() => { setPropertyType(''); setStatus(''); setBudget(''); }}
+                      className="pg-filters-reset">
+                      Reset
+                    </button>
+                  )}
+                </motion.div>
+              )}
+            </div>
+            <button type="button" aria-expanded={filtersOpen} aria-controls={filterId} onClick={() => setFiltersOpen(!filtersOpen)}
+              className="pg-filters-toggle">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+                <path d="M4 7h5m4 0h7M4 17h9m4 0h3" />
+                <circle cx="11" cy="7" r="2" />
+                <circle cx="15" cy="17" r="2" />
+              </svg>
+              {filtersOpen ? 'Close filters' : `Filters${activeFilterCount ? ' (' + activeFilterCount + ')' : ''}`}
+            </button>
+          </div>
+        </div>
+        {properties.length === 0 && <p role="status">No properties match these filters.</p>}
         <div style={{
           display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, minmax(0, 1fr))',
           gap: isMobile ? 12 : 20,
         }}>
-          {ADDITIONAL_PROPERTIES.map((property) => (
+          {properties.map((property) => (
             <button key={property.id} type="button" onClick={(event) => {
               const cover = event.currentTarget.querySelector('img');
               onOpen(property, cover?.naturalWidth ? cover.getAttribute('src') : null);
@@ -2246,6 +2394,67 @@ function ProjectsView({ isMobile, onOpen }) {
   );
 }
 
+function ProjectsView({ isMobile, onOpen, categoryId, onBackToCategories }) {
+  const category = PROJECT_CATEGORIES.find(({ id }) => id === categoryId);
+  if (!category) return <AllProjectsView isMobile={isMobile} onOpen={onOpen} />;
+  const properties = PROJECT_CATALOG.filter((property) => property.category === category.id);
+
+  return (
+    <main style={{
+      position: 'relative', zIndex: 10, background: BG, color: CREAM,
+      minHeight: V(100), padding: isMobile ? '100px 0 64px' : '140px 0 96px',
+    }}>
+      <section aria-labelledby="properties-heading" style={{ maxWidth: 1520, margin: 'auto', padding: '0 6vw' }}>
+        {category && <button type="button" onClick={onBackToCategories}
+          style={{ background: 'transparent', color: CREAM, border: '1px solid currentColor', borderRadius: 6, padding: '8px 12px', cursor: 'pointer' }}>
+          ← Back to Categories
+        </button>}
+        <h1 id="properties-heading"
+          style={{ fontFamily: sans, fontSize: isMobile ? 32 : 52, fontWeight: 400, margin: '0 0 24px' }}>
+          {category?.title ?? 'All Projects'}
+        </h1>
+        {category && properties.length === 0 && <p>No properties listed in this category yet.</p>}
+        <div style={{
+          display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, minmax(0, 1fr))',
+          gap: isMobile ? 12 : 20,
+        }}>
+          {properties.map((property) => (
+            <button key={property.id} type="button" onClick={(event) => {
+              const cover = event.currentTarget.querySelector('img');
+              onOpen(property, cover?.naturalWidth ? cover.getAttribute('src') : null);
+            }}
+              aria-label={`View details for ${property.title}`}
+              style={{
+                position: 'relative', display: 'block', textAlign: 'left', color: CREAM,
+                background: '#151410', border: '1px solid rgba(244,211,94,.23)', borderRadius: 12,
+                height: isMobile ? 'clamp(225px, 59vw, 320px)' : 'clamp(300px, 32vw, 480px)',
+                padding: 0, overflow: 'hidden', cursor: 'pointer',
+              }}>
+              <img src={property.image} onError={tryNextProjectPhoto} alt="" loading="lazy" decoding="async"
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+              <span style={{ position: 'absolute', background: '#fff0cc', color: '#111', borderRadius: 20, padding: '5px 9px', fontWeight: 700, top: isMobile ? 8 : 12, left: isMobile ? 8 : 12, fontSize: isMobile ? 8 : 10 }}>
+                {property.tag}
+              </span>
+              <span style={{
+                position: 'absolute', inset: 'auto 0 0', background: 'linear-gradient(transparent, rgba(0,0,0,.92))',
+                display: 'block', padding: isMobile ? '56px 10px 12px' : '96px 16px 18px',
+              }}>
+                <span style={{
+                  display: 'block', fontWeight: 700, fontSize: isMobile ? 17 : 'clamp(20px, 2.25vw, 32px)',
+                  lineHeight: 1.1, overflowWrap: 'anywhere', marginBottom: 6,
+                }}>
+                  {property.title}
+                </span>
+                <span style={{ display: 'block', fontSize: isMobile ? 11 : 13 }}>{property.subtitle}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
+    </main>
+  );
+}
+
 export default function App() {
   const isMobile = useIsMobile();
   const pageVisible = usePageVisible();
@@ -2253,6 +2462,7 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
   const [projectsOpen, setProjectsOpen] = useState(false);
+  const [projectCategory, setProjectCategory] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
   const [phoneScreenImage, setPhoneScreenImage] = useState(DEFAULT_PHONE_SCREEN_IMAGE);
   const landingActive = pageVisible && !projectsOpen;
@@ -2284,11 +2494,11 @@ export default function App() {
   useEffect(() => {
     const restoreView = (state) => {
       const view = state?.propertyGallery;
-      const project = PROJECTS.find(({ id }) => id === view?.projectId)
-        ?? ADDITIONAL_PROPERTIES.find(({ id }) => id === view?.projectId)
+      const project = PROJECT_CATALOG.find(({ id }) => id === view?.projectId)
         ?? null;
       setProjectsOpen(Boolean(view?.projectsOpen));
       setSelectedProject(project);
+      setProjectCategory(view?.categoryId ?? null);
       if (view?.phoneImage) setPhoneScreenImage(view.phoneImage);
     };
     const onPopState = (event) => restoreView(event.state);
@@ -2297,26 +2507,36 @@ export default function App() {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  const navigateProjectView = (showProjects, project = null, phoneImage) => {
+  const navigateProjectView = (showProjects, project = null, phoneImage, categoryId = showProjects && project ? projectCategory : null) => {
     const { history } = window;
     const current = history.state?.propertyGallery;
     const projectId = project?.id ?? null;
-    if (Boolean(current?.projectsOpen) !== showProjects || (current?.projectId ?? null) !== projectId) {
+    if (Boolean(current?.projectsOpen) !== showProjects || (current?.projectId ?? null) !== projectId || (current?.categoryId ?? null) !== categoryId) {
       history.pushState({
         ...history.state,
         propertyGallery: {
           projectsOpen: showProjects,
           projectId,
+          categoryId,
           fromProjects: showProjects && Boolean(project) && projectsOpen && !selectedProject,
           phoneImage: phoneImage || current?.phoneImage,
         },
       }, '');
     }
     setProjectsOpen(showProjects);
+    setProjectCategory(categoryId);
     setSelectedProject(project);
     if (phoneImage) setPhoneScreenImage(phoneImage);
   };
 
+  const openProjectCategory = (categoryId) => {
+    navigateProjectView(true, null, undefined, categoryId);
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
+  };
+  const goFeaturedProjects = () => {
+    navigateProjectView(false);
+    requestAnimationFrame(() => document.getElementById('featured-projects')?.scrollIntoView());
+  };
   const goProjects = () => {
     navigateProjectView(true);
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
@@ -2362,10 +2582,11 @@ export default function App() {
   const settle = useTransform(stmtRaw, [stmtA * 0.7, stmtA], [0, 1], { ease: smoothStep });
   // One eased value keeps desktop translation, rotation, and scale in lockstep in both directions.
   const desktopMotion = useTransform(phoneProgress, [0, DESKTOP_PHONE_END], [0, 1], { ease: smoothStep });
-  const desktopLandscapeGrowth = useTransform(phoneProgress, [DESKTOP_PHONE_END, 1], [0, 1], { ease: smoothStep });
-  const desktopFullscreen = useTransform(phoneProgress, [DESKTOP_PHONE_END, 0.96], [0, 1], { ease: smoothStep });
-  const reveal = useTransform(phoneProgress, [0.91, 1], [0, 1], { ease: smoothStep });
-  const desktopShowcase = useTransform(phoneProgress, [0.78, 0.97], [0, 1]);
+  const desktopLandscapeGrowth = useTransform(phoneProgress, [0.88, 1], [0, 1], { ease: smoothStep });
+  const desktopFullscreen = useTransform(phoneProgress, [0.88, 0.96], [0, 1], { ease: smoothStep });
+  const reveal = useTransform(phoneProgress, [0.93, 1], [0, 1], { ease: smoothStep });
+  const desktopShowcase = useTransform(phoneProgress, [0.93, 1], [0, 1]);
+  const mobileShowcase = useTransform(stmtRaw, [0.92, 1], [0, 1]);
   const mobileZoomRaw = useTransform(stmtRaw, [stmtA, MOBILE_ZOOM_END], [0, isMobile ? 1 : 0]);
   const mobileZoom = useSpring(mobileZoomRaw, MOBILE_ZOOM_SPRING);
   const mobileCenter = useTransform(mobileZoom, (z) => smoothStep(Math.max(0, Math.min(1, z))));
@@ -2764,7 +2985,7 @@ export default function App() {
         </div>
       )}
 
-      {projectsOpen && !selectedProject && <ProjectsView isMobile={isMobile} onOpen={openProject} />}
+      {projectsOpen && !selectedProject && <ProjectsView isMobile={isMobile} onOpen={openProject} categoryId={projectCategory} onBackToCategories={goFeaturedProjects} />}
 
       <div style={{ display: projectsOpen ? 'none' : 'block' }}>
         <div style={{ position: 'sticky', top: 0, height: V(100), zIndex: 0, overflow: 'hidden', background: BG }}>
@@ -2904,7 +3125,7 @@ export default function App() {
                     <div style={{ fontFamily: sans, fontWeight: 400, fontSize: statementFontSize(isMobile), letterSpacing: '0.02em', lineHeight: 1 }}>{ABOUT.heading}</div>
                     <p
                       style={{
-                        margin: '8px 0 0', fontSize: 18, fontWeight: 400, lineHeight: 1.5, color: 'rgba(20,22,28,.82)',
+                        margin: '8px 0 0', fontSize: ABOUT.textSize, fontWeight: 400, lineHeight: 1.5, color: 'rgba(20,22,28,.82)',
                       }}
                     >
                       {ABOUT.text}
@@ -2935,7 +3156,7 @@ export default function App() {
             </motion.div>
 
             <ProjectShowcaseReveal
-              reveal={isMobile ? mobileZoom : desktopShowcase}
+              reveal={isMobile ? mobileShowcase : desktopShowcase}
               isMobile={isMobile}
               enabled={landingActive}
               onExplore={goProjects}
@@ -2944,7 +3165,7 @@ export default function App() {
         </section>
 
         {!projectsOpen && (
-          <FeaturedProjects isMobile={isMobile} onOpen={openProject} style={{
+          <FeaturedProjects isMobile={isMobile} onSelectCategory={openProjectCategory} style={{
             position: 'relative', zIndex: 10, background: BG, color: CREAM,
             padding: isMobile ? '9vh 1vw' : '12vh 1.5vw',
           }} />
