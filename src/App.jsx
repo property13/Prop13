@@ -37,10 +37,7 @@ const GOLD = '#f4d35e';
 const GOLD_DARK = '#c9971c';
 const INK = '#14161c';
 
-const serif = '"Marcellus", Georgia, serif';
-const sans = 'Inter, "Helvetica Neue", Arial, sans-serif';
-const mont = '"Montserrat", Inter, "Helvetica Neue", Arial, sans-serif';
-const script = '"Kaushan Script", "Brush Script MT", cursive';
+const sans = 'Arial, sans-serif';
 
 const V = (n) => `calc(var(--vh) * ${n})`;
 
@@ -54,6 +51,9 @@ const WHATSAPP = '+91 8851678180';
 const EMAIL = 'info@propertygallery.com';
 const YOUTUBE = 'Property Gallery Vlogs';
 const YOUTUBE_URL = 'https://www.youtube.com/@PropertyGalleryVlogs';
+
+const aboutFont = '"Lay Grotesk", Arial, sans-serif';
+const aboutFontPath = `${import.meta.env.BASE_URL}laygrotesk-trial-regular`;
 
 const ABOUT = {
   heading: 'About',
@@ -70,19 +70,12 @@ const ABOUT = {
       {' YouTube channel, which features walkthroughs and insights on residential and commercial properties.'}
     </>
   ),
-  logos: ['ig', 'in', 'wa', 'yt', 'em'],
-  headingSize: 'clamp(38px, min(5.6vw, 10.5vh), 88px)',
-  textSize: 'clamp(15px, min(1.7vw, 3.1vh), 27px)',
+  headingSize: 57,
+  textSize: 24,
   textMaxWidth: 800,
   textGapTop: '2.6vh',
-  logoSize: 'clamp(48px, min(4.4vw, 8.5vh), 76px)',
-  logoGap: 'clamp(50px, 2vw, 32px)',
-  logoGapTop: '4.5vh',
   phoneHeight: 'clamp(320px, calc(var(--vh) * 72), 720px)',
   columns: '1.2fr 0.8fr',
-  headingSizeMobile: 24,
-  textSizeMobile: 12,
-  logoSizeMobile: 24,
 };
 
 const WA_URL = `https://wa.me/${WHATSAPP.replace(/[^0-9]/g, '')}`;
@@ -223,27 +216,6 @@ function Icon({ name, size = 34 }) {
   );
 }
 
-function SocialLogo({ c, size }) {
-  return (
-    <motion.a
-      href={c.href}
-      {...(c.href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-      aria-label={c.name}
-      title={c.name}
-      whileHover={{ y: -5, scale: 1.1 }}
-      whileTap={{ scale: 0.95 }}
-      style={{ display: 'block', width: size, height: size, flex: 'none', cursor: 'pointer' }}
-    >
-      <img
-        src={ICON_IMG[c.icon]}
-        alt={c.name}
-        draggable={false}
-        style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
-      />
-    </motion.a>
-  );
-}
-
 const fill = { position: 'absolute', inset: 0 };
 
 function ProfileScreen({ image }) {
@@ -254,7 +226,7 @@ function ProfileScreen({ image }) {
     backgroundPosition: pos,
   });
   return (
-    <div style={{ ...fill, background: '#000', color: '#fff', fontFamily: mont, padding: '3.6em 0.9em 0.9em' }}>
+    <div style={{ ...fill, background: '#000', color: '#fff', fontFamily: sans, padding: '3.6em 0.9em 0.9em' }}>
       <div style={{ fontWeight: 700, fontSize: '1.05em', marginBottom: '0.9em' }}>{INSTAGRAM} ▾</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1em' }}>
         <div style={{ width: '4.6em', height: '4.6em', borderRadius: '50%', padding: 2, background: 'linear-gradient(45deg,#feda75,#d62976,#4f5bd5)' }}>
@@ -292,7 +264,7 @@ function ProfileScreen({ image }) {
 function ReelScreen({ image }) {
   const circle = { width: '2.6em', height: '2.6em', borderRadius: '50%', background: 'rgba(0,0,0,.35)', display: 'grid', placeItems: 'center' };
   return (
-    <div style={{ ...fill, background: '#000', overflow: 'hidden', fontFamily: mont, color: '#fff' }}>
+    <div style={{ ...fill, background: '#000', overflow: 'hidden', fontFamily: sans, color: '#fff' }}>
       <motion.div
         initial={{ scale: 1.05 }}
         animate={{ scale: 1.22 }}
@@ -391,7 +363,7 @@ function Badge({ icon, label, to, suffix, caption, show, active, small, from, de
           padding: small ? '7px 11px 7px 8px' : '11px 18px 11px 12px',
           borderRadius: small ? 13 : 18,
           color: '#fff',
-          fontFamily: mont,
+          fontFamily: sans,
           whiteSpace: 'nowrap',
           background: 'linear-gradient(145deg, rgba(34,37,46,.97), rgba(14,16,21,.97))',
           border: '1px solid rgba(244,211,94,.38)',
@@ -434,7 +406,7 @@ function DesktopPhoneDisplay({ image }) {
     <>
       <div style={{ ...fill, backgroundImage: `url(${image})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
       <div style={{ ...fill, background: 'linear-gradient(to bottom, rgba(0,0,0,.25), transparent 35%, transparent 60%, rgba(0,0,0,.65))' }} />
-      <div style={{ position: 'absolute', left: '4%', bottom: '8%', fontFamily: mont, color: '#fff', lineHeight: 1.35 }}>
+      <div style={{ position: 'absolute', left: '4%', bottom: '8%', fontFamily: sans, color: '#fff', lineHeight: 1.35 }}>
         <div style={{ fontWeight: 700, fontSize: '1.5em' }}>@{INSTAGRAM}</div>
         <div style={{ opacity: 0.9, fontSize: '1.15em' }}>Luxury homes tour · Delhi NCR</div>
       </div>
@@ -976,7 +948,7 @@ function PropertyLocationMap({isMobile,enabled}) {
         <div style={{fontFamily:sans,fontSize:14,letterSpacing:'.24em',color:GOLD,marginBottom:isMobile?10:22}}>Property Gallery / Explore</div>
         <AnimatePresence mode="wait" initial={false}>
           <motion.div key={current?.name||'intro'} initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-12}} transition={{duration:.28}}>
-            <h2 style={{fontFamily:serif,fontSize:isMobile?'clamp(28px,7vw,39px)':'clamp(42px,4vw,68px)',fontWeight:400,lineHeight:1.1,margin:0,textShadow:'0 3px 22px rgba(0,0,0,.65)'}}>{current?.name||'India to Dubai'}</h2>
+            <h2 style={{fontFamily:sans,fontSize:isMobile?'clamp(28px,7vw,39px)':'clamp(42px,4vw,68px)',fontWeight:400,lineHeight:1.1,margin:0,textShadow:'0 3px 22px rgba(0,0,0,.65)'}}>{current?.name||'India to Dubai'}</h2>
             <div style={{color:'#d7cba9',fontFamily:sans,fontSize:isMobile?11:13,letterSpacing:'.1em',marginTop:13}}>{current?.country||'A journey across destinations'}</div>
           </motion.div>
         </AnimatePresence>
@@ -1035,7 +1007,7 @@ function PortalScene({ reveal, isMobile, onExplore, insidePhone = false, nativeP
 
       <motion.div
         style={{
-          opacity: textO, fontFamily: serif, color: CREAM, letterSpacing: '0.42em', paddingLeft: '0.42em',
+          opacity: textO, fontFamily: sans, color: CREAM, letterSpacing: '0.42em', paddingLeft: '0.42em',
           fontSize: insidePhone ? '1em' : isMobile ? 14 : 'clamp(15px, 1.5vw, 22px)', textTransform: 'capitalize',
         }}
       >
@@ -1225,7 +1197,7 @@ function StackText({ sections, progress, isMobile }) {
               <div style={{ fontFamily: sans, fontSize: 12, letterSpacing: '0.22em', textTransform: 'capitalize', color: GOLD, marginTop: 10 }}>
                 {sec.sub}
               </div>
-              <h3 style={{ fontFamily: serif, fontWeight: 400, fontSize: isMobile ? STACK.titlePxMobile : STACK.titlePx, margin: '10px 0 0', color: '#fff', lineHeight: 1.15 }}>
+              <h3 style={{ fontFamily: sans, fontWeight: 400, fontSize: isMobile ? STACK.titlePxMobile : STACK.titlePx, margin: '10px 0 0', color: '#fff', lineHeight: 1.15 }}>
                 {sec.title}
               </h3>
               <p style={{ fontFamily: sans, fontSize: isMobile ? STACK.bodyPxMobile : STACK.bodyPx, lineHeight: 1.75, opacity: 0.85, margin: '14px 0 0' }}>
@@ -1288,7 +1260,7 @@ function Footer({ isMobile, footerRef, onProjects, onAbout, pageVisible }) {
     transition: { duration: 0.8, delay, ease: outSoft },
   });
 
-  const head = { fontFamily: serif, color: GOLD, fontSize: 15, letterSpacing: '0.22em', textTransform: 'capitalize', margin: '0 0 16px', fontWeight: 400 };
+  const head = { fontFamily: sans, color: GOLD, fontSize: 15, letterSpacing: '0.22em', textTransform: 'capitalize', margin: '0 0 16px', fontWeight: 400 };
   const linkStyle = { display: 'block', color: CREAM, opacity: 0.85, fontFamily: sans, fontSize: 15, lineHeight: 2.1, textDecoration: 'none', cursor: 'pointer', wordBreak: 'break-word' };
   const hover = { x: isMobile ? 0 : 6, color: GOLD };
 
@@ -1328,7 +1300,7 @@ function Footer({ isMobile, footerRef, onProjects, onAbout, pageVisible }) {
               alt="Property Gallery"
               style={{ height: isMobile ? 56 : 68, width: 'auto', display: 'block', margin: isMobile ? '0 auto' : 0, mixBlendMode: 'screen' }}
             />
-            <div style={{ fontFamily: serif, letterSpacing: '0.18em', fontSize: 17, marginTop: 14 }}>Property Gallery</div>
+            <div style={{ fontFamily: sans, letterSpacing: '0.18em', fontSize: 17, marginTop: 14 }}>Property Gallery</div>
             <p style={{ fontFamily: sans, fontSize: 14.5, lineHeight: 1.8, opacity: 0.75, margin: '10px auto 0', maxWidth: 340, marginLeft: isMobile ? 'auto' : 0 }}>
               Curated real estate across India and Dubai. Developments, destinations and opportunities worth exploring.
             </p>
@@ -1653,9 +1625,9 @@ function ProjectCoverFlow({ onOpen }) {
           mask-image: linear-gradient(to bottom, transparent 40%, #000 90%);
         }
 
-        .pg-cover-caption h3 { font: 700 clamp(16px, 2.7vw, 34px)/1.1 system-ui, sans-serif; margin: 0 0 6px; }
-        .pg-cover-caption span { font: 500 clamp(11px, 1.1vw, 14px)/1.3 system-ui, sans-serif; }
-        .pg-cover-tag { position: absolute; top: 12px; left: 12px; padding: 5px 9px; background: #fff0cc; color: #111; border-radius: 20px; font: 700 10px/1.2 system-ui, sans-serif; text-transform: capitalize; }
+        .pg-cover-caption h3 { font: 700 clamp(16px, 2.7vw, 34px)/1.1 Arial, sans-serif; margin: 0 0 6px; }
+        .pg-cover-caption span { font: 500 clamp(11px, 1.1vw, 14px)/1.3 Arial, sans-serif; }
+        .pg-cover-tag { position: absolute; top: 12px; left: 12px; padding: 5px 9px; background: #fff0cc; color: #111; border-radius: 20px; font: 700 10px/1.2 Arial, sans-serif; text-transform: capitalize; }
         .pg-cover-side { position: absolute; inset: 0; border: 0; background: transparent; cursor: pointer; }
         .pg-cover-side:focus-visible { outline: 2px solid #fff0cc; outline-offset: -4px; }
         .pg-cover-arrow {
@@ -1912,7 +1884,7 @@ function FeaturedProjects({ isMobile, onOpen, headingAs: Heading = 'h2', style }
   return (
     <section aria-labelledby={headingId} style={style}>
       <Heading id={headingId} style={{
-        fontFamily: serif, fontSize: isMobile ? 32 : 52, textAlign: 'center',
+        fontFamily: sans, fontSize: isMobile ? 32 : 52, textAlign: 'center',
         fontWeight: 400, margin: '0 0 6vh',
       }}>
         Featured Projects
@@ -2054,8 +2026,8 @@ function ProjectShowcaseReveal({ reveal, onExplore, isMobile, enabled }) {
       : item.title.toLowerCase();
     return (
       <h2 aria-label={rolling ? item.title : undefined} style={{
-        font: isMobile ? '700 clamp(30px, 8vw, 48px)/1.06 system-ui, sans-serif'
-          : '800 clamp(34px, 5.3vw, 90px)/.98 system-ui, sans-serif',
+        font: isMobile ? '700 clamp(30px, 8vw, 48px)/1.06 Arial, sans-serif'
+          : '800 clamp(34px, 5.3vw, 90px)/.98 Arial, sans-serif',
         textTransform: 'capitalize', margin: '0 0 14px', textWrap: 'balance', whiteSpace: 'pre-line',
       }}>
         {rolling ? <RollingShowcaseTitle title={title} /> : title}
@@ -2197,14 +2169,14 @@ function ProjectShowcaseReveal({ reveal, onExplore, isMobile, enabled }) {
                     background: 'linear-gradient(transparent, rgba(0,0,0,.87) 70%)',
                   }}>
                     <span style={{
-                      display: 'block', color: GOLD, font: isMobile ? '700 8px/1.15 system-ui, sans-serif' : '700 10px/1.3 system-ui, sans-serif',
+                      display: 'block', color: GOLD, font: isMobile ? '700 8px/1.15 Arial, sans-serif' : '700 10px/1.3 Arial, sans-serif',
                       letterSpacing: isMobile ? '0' : '.08em', textTransform: 'capitalize', marginBottom: isMobile ? 2 : 5,
                       whiteSpace: isMobile ? 'nowrap' : undefined, overflow: isMobile ? 'hidden' : undefined,
                       textOverflow: isMobile ? 'ellipsis' : undefined,
                     }}>
                       {item.subtitle.split(' · ')[0]}
                     </span>
-                    <span style={{ display: 'block', font: isMobile ? '700 10px/1.12 system-ui, sans-serif' : '700 clamp(13px, 1.25vw, 20px)/1.14 system-ui, sans-serif' }}>
+                    <span style={{ display: 'block', font: isMobile ? '700 10px/1.12 Arial, sans-serif' : '700 clamp(13px, 1.25vw, 20px)/1.14 Arial, sans-serif' }}>
                       {item.title}
                     </span>
                   </span>
@@ -2230,7 +2202,7 @@ function ProjectsView({ isMobile, onOpen }) {
         maxWidth: 1760, margin: '64px auto 0', padding: isMobile ? '0 4vw' : '0 2vw',
       }}>
         <h2 id="properties-heading" style={{
-          fontFamily: serif, fontSize: isMobile ? 30 : 42, fontWeight: 400, margin: '0 0 24px',
+          fontFamily: sans, fontSize: isMobile ? 30 : 42, fontWeight: 400, margin: '0 0 24px',
         }}>
           More Properties
         </h2>
@@ -2292,7 +2264,6 @@ export default function App() {
   const propRef = useRef(null);
   const galRef = useRef(null);
   const [startPos, setStartPos] = useState(null);
-  const aboutLogos = ABOUT.logos.map((id) => CONTACTS.find((c) => c.icon === id)).filter(Boolean);
 
   const fs = isMobile ? FONT_VW_MOBILE : FONT_VW;
   const startLeft = startPos
@@ -2440,16 +2411,10 @@ export default function App() {
     const img = new Image();
     img.src = HERO_IMG;
     const imgP = img.decode ? img.decode() : Promise.resolve();
-    const fontP = document.fonts
-      ? Promise.all([
-          document.fonts.load('400 100px MORSEO'),
-          document.fonts.load('400 100px Marcellus'),
-        ])
-      : Promise.resolve();
     let cancelled = false;
     let timer;
     const timeout = new Promise((resolve) => { timer = setTimeout(resolve, 1500); });
-    Promise.race([Promise.all([imgP, fontP]).catch(() => {}), timeout]).then(() => {
+    Promise.race([imgP.catch(() => {}), timeout]).then(() => {
       clearTimeout(timer);
       if (!cancelled) setReady(true);
     });
@@ -2581,7 +2546,7 @@ export default function App() {
   const wordBase = {
     position: 'absolute',
     margin: 0,
-    fontFamily: '"MORSEO", "Marcellus", Georgia, serif',
+    fontFamily: sans,
     fontWeight: 400,
     fontSize: `${fs}vw`,
     lineHeight: 1,
@@ -2606,6 +2571,18 @@ export default function App() {
   return (
     <>
       <style>{`
+        @font-face {
+          font-family: "Lay Grotesk";
+          src: url("${aboutFontPath}.otf") format("opentype"),
+               url("${aboutFontPath}.ttf") format("truetype"),
+               url("${aboutFontPath}.woff2") format("woff2"),
+               url("${aboutFontPath}.woff") format("woff");
+          font-weight: 400;
+          font-style: normal;
+          font-display: swap;
+        }
+        :root, body, #root { font-family: ${sans}; }
+        button, input, select, textarea { font-family: inherit; }
         .pg-nav-roll-label { position: relative; display: inline-block; line-height: inherit; }
         .pg-nav-roll-name { display: block; opacity: 0; }
         .pg-nav-roll-visual { position: absolute; inset: 0; display: flex; overflow: hidden; }
@@ -2774,7 +2751,7 @@ export default function App() {
               <span style={{ fontFamily: sans, fontSize: 12, letterSpacing: '0.25em', textTransform: 'capitalize', color: GOLD }}>
                 {selectedProject.subtitle}
               </span>
-              <h1 style={{ fontFamily: serif, fontWeight: 400, fontSize: isMobile ? 32 : 52, margin: '10px 0 0', color: '#fff' }}>
+              <h1 style={{ fontFamily: sans, fontWeight: 400, fontSize: isMobile ? 32 : 52, margin: '10px 0 0', color: '#fff' }}>
                 {selectedProject.title}
               </h1>
               <p style={{ fontFamily: sans, fontSize: 14, opacity: 0.8, maxWidth: 640, margin: '14px auto 0', lineHeight: 1.7 }}>
@@ -2912,7 +2889,7 @@ export default function App() {
                 borderTopLeftRadius: isMobile ? mobilePanelRadius : panelRadius,
                 borderTopRightRadius: isMobile ? mobilePanelRadius : panelRadius,
                 background: 'rgb(255, 255, 255)',
-                borderTop: '1px solid rgba(0,0,0,.08)', overflow: 'hidden', color: INK, fontFamily: mont,
+                borderTop: '1px solid rgba(0,0,0,.08)', overflow: 'hidden', color: INK, fontFamily: aboutFont,
               }}
             >
               {isMobile ? (
@@ -2924,19 +2901,14 @@ export default function App() {
                   }}
                 >
                   <motion.div style={{ position: 'relative', zIndex: 2, opacity: mobileAboutFade, x: mobileAboutShift }}>
-                    <div style={{ fontWeight: 800, fontSize: ABOUT.headingSizeMobile, letterSpacing: '0.02em', lineHeight: 1 }}>{ABOUT.heading}</div>
+                    <div style={{ fontWeight: 400, fontSize: ABOUT.headingSize, letterSpacing: '0.02em', lineHeight: 1 }}>{ABOUT.heading}</div>
                     <p
                       style={{
-                        margin: '8px 0 0', fontSize: ABOUT.textSizeMobile, fontWeight: 500, lineHeight: 1.5, color: 'rgba(20,22,28,.82)',
+                        margin: '8px 0 0', fontSize: ABOUT.textSize, fontWeight: 400, lineHeight: 1.5, color: 'rgba(20,22,28,.82)',
                       }}
                     >
                       {ABOUT.text}
                     </p>
-                    <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
-                      {aboutLogos.map((c) => (
-                        <SocialLogo key={c.icon} c={c} size={ABOUT.logoSizeMobile} />
-                      ))}
-                    </div>
                   </motion.div>
                   <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingRight: '2vw', paddingBottom: '2vh' }}>
                     <Phone small progress={sp} center={mobileCenter} expansion={mobileZoom} settle={mobileSettle} enabled={landingActive} image={phoneScreenImage} />
@@ -2950,15 +2922,10 @@ export default function App() {
                   }}
                 >
                   <motion.div style={{ position: 'relative', zIndex: 2, minWidth: 0, opacity: aboutFade, x: aboutShift }}>
-                    <div style={{ fontWeight: 800, fontSize: ABOUT.headingSize, letterSpacing: '0.02em', lineHeight: 1 }}>{ABOUT.heading}</div>
-                    <p style={{ margin: `${ABOUT.textGapTop} 0 0`, maxWidth: ABOUT.textMaxWidth, fontSize: ABOUT.textSize, fontWeight: 500, lineHeight: 1.75, color: 'rgba(20,22,28,.82)' }}>
+                    <div style={{ fontWeight: 400, fontSize: ABOUT.headingSize, letterSpacing: '0.02em', lineHeight: 1 }}>{ABOUT.heading}</div>
+                    <p style={{ margin: `${ABOUT.textGapTop} 0 0`, maxWidth: ABOUT.textMaxWidth, fontSize: ABOUT.textSize, fontWeight: 400, lineHeight: 1.75, color: 'rgba(20,22,28,.82)' }}>
                       {ABOUT.text}
                     </p>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: ABOUT.logoGap, marginTop: ABOUT.logoGapTop }}>
-                      {aboutLogos.map((c) => (
-                        <SocialLogo key={c.icon} c={c} size={ABOUT.logoSize} />
-                      ))}
-                    </div>
                   </motion.div>
                   <div style={{ justifySelf: 'center' }}>
                     <Phone progress={sp} center={desktopMotion} expansion={desktopMotion} landscapeGrowth={desktopLandscapeGrowth} fullscreen={desktopFullscreen} reveal={reveal} settle={settle} enabled={landingActive} image={phoneScreenImage} />
