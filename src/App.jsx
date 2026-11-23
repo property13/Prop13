@@ -41,6 +41,7 @@ const sans = 'Arial, sans-serif';
 
 const V = (n) => `calc(var(--vh) * ${n})`;
 
+const statementFontSize = (isMobile) => isMobile ? 'clamp(26px, 8vw, 44px)' : 'clamp(26px, min(6.2vw, 11.5vh), 110px)';
 const STATEMENT_FIRST = 'Real estate';
 const STATEMENT_REST =
   'Across India and Dubai. Developments, destinations and opportunities worth exploring, across markets that continue to evolve';
@@ -70,7 +71,6 @@ const ABOUT = {
       {' YouTube channel, which features walkthroughs and insights on residential and commercial properties.'}
     </>
   ),
-  headingSize: 35,
   textSize: 24,
   textMaxWidth: 800,
   textGapTop: '2.6vh',
@@ -2868,7 +2868,7 @@ export default function App() {
             >
               <div
                 style={{
-                  fontSize: isMobile ? 'clamp(26px, 8vw, 44px)' : 'clamp(26px, min(6.2vw, 11.5vh), 110px)',
+                  fontSize: statementFontSize(isMobile),
                   lineHeight: 1.12, letterSpacing: '-0.025em', fontWeight: 400,
                 }}
               >
@@ -2901,10 +2901,10 @@ export default function App() {
                   }}
                 >
                   <motion.div style={{ position: 'relative', zIndex: 2, opacity: mobileAboutFade, x: mobileAboutShift }}>
-                    <div style={{ fontWeight: 400, fontSize: ABOUT.headingSize, letterSpacing: '0.02em', lineHeight: 1 }}>{ABOUT.heading}</div>
+                    <div style={{ fontFamily: sans, fontWeight: 400, fontSize: statementFontSize(isMobile), letterSpacing: '0.02em', lineHeight: 1 }}>{ABOUT.heading}</div>
                     <p
                       style={{
-                        margin: '8px 0 0', fontSize: ABOUT.textSize, fontWeight: 400, lineHeight: 1.5, color: 'rgba(20,22,28,.82)',
+                        margin: '8px 0 0', fontSize: 18, fontWeight: 400, lineHeight: 1.5, color: 'rgba(20,22,28,.82)',
                       }}
                     >
                       {ABOUT.text}
@@ -2922,7 +2922,7 @@ export default function App() {
                   }}
                 >
                   <motion.div style={{ position: 'relative', zIndex: 2, minWidth: 0, opacity: aboutFade, x: aboutShift }}>
-                    <div style={{ fontWeight: 400, fontSize: ABOUT.headingSize, letterSpacing: '0.02em', lineHeight: 1 }}>{ABOUT.heading}</div>
+                    <div style={{ fontFamily: sans, fontWeight: 400, fontSize: statementFontSize(isMobile), letterSpacing: '0.02em', lineHeight: 1 }}>{ABOUT.heading}</div>
                     <p style={{ margin: `${ABOUT.textGapTop} 0 0`, maxWidth: ABOUT.textMaxWidth, fontSize: ABOUT.textSize, fontWeight: 400, lineHeight: 1.75, color: 'rgba(20,22,28,.82)' }}>
                       {ABOUT.text}
                     </p>
