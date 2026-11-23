@@ -70,7 +70,7 @@ const ABOUT = {
       {' YouTube channel, which features walkthroughs and insights on residential and commercial properties.'}
     </>
   ),
-  headingSize: 57,
+  headingSize: 35,
   textSize: 24,
   textMaxWidth: 800,
   textGapTop: '2.6vh',
