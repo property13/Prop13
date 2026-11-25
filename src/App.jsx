@@ -709,7 +709,7 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
   const shadowX = useTransform(rotY, (v) => v * -0.9);
 
   const height = small
-    ? 'clamp(260px, calc(var(--vh) * 52), 380px)'
+    ? 'min(350px, 75vw, 42svh)'
     : ABOUT.phoneHeight;
 
   const phone = (
@@ -909,17 +909,35 @@ const EARTH_STOPS = [
 ];
 const EARTH_MILESTONES=[.115,.195,.275,.355,.445,.535,.625,.705,.775,.97];
 const DEVELOPER_LOGOS = [
-  { name: 'Godrej Properties', file: 'Godrej.png', wide: true },
-  { region: 'Dubai', name: 'DAMAC', file: 'Damac.png' },
-  { name: 'M3M', file: 'M3M.png' },
-  { region: 'Dubai', name: 'Binghatti', file: 'Bhingatti.png' },
-  { region: 'Dubai', name: 'Emaar', file: 'Emaar.png', wide: true, invert: true },
+  { name: 'Godrej Properties', file: 'Godrej-properties(1).png', zoom: true, wide: true },
+  { region: 'Dubai', name: 'DAMAC', file: 'damac(2).png', zoom: true },
+  { name: 'M3M', file: 'm3m(2).png', zoom: true },
+  { region: 'Dubai', name: 'Binghatti', file: 'binghatti(1).png', zoom: true },
+  { region: 'Dubai', name: 'Emaar', file: 'Emaar(2).png', zoom: true, wide: true },
   { region: 'Dubai', name: 'Imtiaz Developments', file: 'Imtiaz.png' },
-  { region: 'Dubai', name: 'Sobha Realty', file: 'sobha.png' },
-  { name: 'DLF', file: 'Dlf.png' },
-  { name: 'Hero Realty', file: 'Hero-Reality.png' },
-  { name: 'Experion', file: 'Experion-logo.png' },
+  { region: 'Dubai', name: 'Sobha Realty', file: 'Sobha_Realty(1).png', zoom: true },
+  { name: 'DLF', file: 'DLF_Logo(1).png', zoom: true },
+  { name: 'Hero Realty', file: 'Hero-Reality.png', zoom: true },
+  { name: 'Experion', file: 'Experion.png', zoom: true, wide: true },
+  { name: 'Ganga Realty', file: 'g_Logo(1).png', zoom: true, wide: true },
+  { name: 'Birla Estates', file: 'birla-estates(1).png', zoom: true, wide: true },
+  { name: 'Krisumi', file: 'krisumi(1).png', zoom: true, wide: true },
 ];
+
+function developerLogoSources(file) {
+  const filenameWithoutCopyNumber = file.replace(/\s*\(\d+\)(?=\.png$)/i, '');
+  return [...new Set([file, filenameWithoutCopyNumber])].flatMap((filename) =>
+    ['Logos/', 'logos/', ''].map((folder) =>
+      `${import.meta.env.BASE_URL}${folder}${encodeURIComponent(filename)}`
+    )
+  );
+}
+
+function tryNextDeveloperLogo(event, sources) {
+  const image = event.currentTarget;
+  const next = sources[sources.indexOf(image.getAttribute('src')) + 1];
+  if (next) image.setAttribute('src', next);
+}
 
 function DeveloperLogoSlider() {
   return (
@@ -959,11 +977,12 @@ function DeveloperLogoSlider() {
         }
         .pg-logo-mark {
           display: grid; place-items: center; width: 124px; height: 72px;
-          padding: 5px; border-radius: 6px; background: rgba(255,255,255,.05);
+          padding: 5px;
           box-sizing: border-box;
         }
         .pg-logo-mark[data-wide="true"] { width: 156px; }
-        .pg-logo-mark img { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+        .pg-logo-mark img { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; scale: 1.12; }
+        .pg-logo-mark img[data-zoom="true"] { scale: 1.55; }
         .pg-logo-mark img[data-invert="true"] { filter: invert(1); }
         @media (max-width: 600px) {
           .pg-logo-item { min-height: 76px; padding: 8px; }
@@ -987,11 +1006,12 @@ function DeveloperLogoSlider() {
               <div className="pg-logo-track">
                 {[0, 1, 2, 3].map((copy) => (
                   <div key={copy} className="pg-logo-group" aria-hidden={copy > 0 || undefined}>
-                    {logos.map(({ name, file, wide, invert }) => (
+                    {logos.map(({ name, file, wide, invert, zoom }) => (
                       <div key={file} className="pg-logo-item">
                         <span className="pg-logo-mark" data-wide={wide}>
-                          <img src={`${import.meta.env.BASE_URL}${file}`}
-                            alt={copy === 0 ? name : ''} data-invert={invert} decoding="async" />
+                          <img src={developerLogoSources(file)[0]}
+                            onError={(event) => tryNextDeveloperLogo(event, developerLogoSources(file))}
+                            alt={copy === 0 ? name : ''} data-invert={invert} data-zoom={zoom} decoding="async" />
                         </span>
                       </div>
                     ))}
@@ -1620,21 +1640,30 @@ function ProjectCoverFlow({ onSelectCategory }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const touchStart = useRef(null);
   const stageRef = useRef(null);
+  const stageVisible = useInView(stageRef);
+  const [entranceComplete, setEntranceComplete] = useState(false);
   const { scrollYProgress } = useScroll({
     target: stageRef,
-    offset: ['start 1', 'start 0.3'],
+    offset: ['start 1', 'start 0.55'],
   });
   const staggerRaw = useTransform(scrollYProgress, [0, 1], [1, 0]);
   const stagger = useSpring(staggerRaw, { stiffness: 120, damping: 25, mass: 0.4 });
   const count = PROJECT_CATEGORIES.length;
 
   useEffect(() => {
+    const updateEntrance = (progress) => setEntranceComplete(progress >= 1);
+    updateEntrance(scrollYProgress.get());
+    return scrollYProgress.on('change', updateEntrance);
+  }, [scrollYProgress]);
+
+  useEffect(() => {
+    if (!stageVisible || !entranceComplete) return;
     const timer = window.setTimeout(() => {
       setActiveIndex((index) => (index + 1) % count);
     }, PROJECT_SLIDE_DURATION);
 
     return () => window.clearTimeout(timer);
-  }, [activeIndex, count]);
+  }, [activeIndex, count, entranceComplete, stageVisible]);
 
   const step = (direction) => {
     setActiveIndex((index) => (index + direction + count) % count);
@@ -1654,16 +1683,17 @@ function ProjectCoverFlow({ onSelectCategory }) {
           --pg-arrow-rail: clamp(44px, 5vw, 72px);
           --pg-card-space: calc(100% - 2 * var(--pg-arrow-rail) - 2 * var(--pg-card-gap));
           --pg-card-width: calc(var(--pg-card-space) / 3);
-          --pg-stagger-step: clamp(14px, 3vw, 48px);
+          --pg-stagger-step: clamp(12px, 2.4vw, 36px);
           --pg-card-height: clamp(215px, 42vw, 720px);
-          height: calc(var(--pg-card-height) + var(--pg-stagger-step));
+          height: calc(var(--pg-card-height) * var(--pg-center-scale));
+          --pg-center-scale: 1.03;
           position: relative;
           overflow: hidden;
           touch-action: pan-y;
         }
         .pg-cover-card {
           position: absolute;
-          top: 0;
+          top: calc(var(--pg-card-top, 0px) + var(--pg-row) * var(--pg-stagger) * var(--pg-stagger-step));
           left: 50%;
           width: var(--pg-card-width);
           height: var(--pg-card-height);
@@ -1682,12 +1712,8 @@ function ProjectCoverFlow({ onSelectCategory }) {
           overflow: hidden;
           border-radius: inherit;
           background: #191714;
-          --pg-local: clamp(0, calc((var(--pg-stagger) - var(--pg-settle, 0)) * 1.5), 1);
-          clip-path: inset(calc(var(--pg-local) * 100%) 0 0 0);
         }
-        .pg-cover-card[data-position="-1"] { --pg-settle: 0.30; }
-        .pg-cover-card[data-position="0"]  { --pg-settle: 0.15; }
-        .pg-cover-card[data-position="1"]  { --pg-settle: 0; }
+        .pg-cover-card[data-position="0"] { --pg-row: 1; }
         .pg-cover-card[data-position="-1"] { left: calc(var(--pg-arrow-rail) + var(--pg-card-width) / 2); }
         .pg-cover-card[data-position="1"] { left: calc(100% - var(--pg-arrow-rail) - var(--pg-card-width) / 2); --pg-row: 2; }
         .pg-cover-card[data-position="2"] { left: 130%; --pg-row: 2; }
@@ -1696,7 +1722,7 @@ function ProjectCoverFlow({ onSelectCategory }) {
           opacity: 1;
           pointer-events: auto;
         }
-        .pg-cover-card img { display: block; width: 100%; height: 100%; object-fit: cover; translate: 0 calc(var(--pg-local) * 18%); }
+        .pg-cover-card img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
         .pg-cover-caption {
           position: absolute;
@@ -1809,9 +1835,7 @@ function ProjectCoverFlow({ onSelectCategory }) {
           .pg-cover-card:not([data-position="0"]) .pg-cover-caption { display: none; }
         }
         @media (prefers-reduced-motion: reduce) {
-          .pg-cover-card { transition: none; }
-          .pg-cover-card-surface { clip-path: none; }
-          .pg-cover-card img { translate: none; }
+          .pg-cover-card { top: var(--pg-card-top, 0px); transition: none; }
         }
         /* Side cards: andar wala kinara fixed rahe, gap same rahe */
         .pg-cover-card[data-position="-1"] .pg-cover-card-surface,
@@ -1839,10 +1863,11 @@ function ProjectCoverFlow({ onSelectCategory }) {
           .pg-cover-stage {
             --pg-card-width: calc(46vw - 6px);
             --pg-side-shrink: .52;
+            --pg-center-scale: 1;
             --pg-card-height: clamp(225px, 59vw, 320px);
           }
           .pg-cover-arrow { display: none; }
-          .pg-cover-card:is([data-position="-1"], [data-position="1"]) { top: 12%; }
+          .pg-cover-card:is([data-position="-1"], [data-position="1"]) { --pg-card-top: 12%; }
           .pg-cover-card:is([data-position="-1"], [data-position="1"]) .pg-cover-card-surface {
             scale: var(--pg-side-shrink);
             filter: brightness(.85);
@@ -1994,7 +2019,7 @@ function FeaturedProjects({ isMobile, onSelectCategory, style }) {
     <section id="featured-projects" aria-labelledby={headingId} style={{ ...style, scrollMarginTop: 68 }}>
       <h2 id={headingId} style={{
         fontFamily: sans, fontSize: isMobile ? 32 : 52, textAlign: 'center',
-        fontWeight: 400, margin: '0 0 6vh',
+        fontWeight: 400, margin: '0 0 clamp(16px, 3vh, 28px)',
       }}>
         Featured Projects
       </h2>
@@ -3258,14 +3283,14 @@ export default function App() {
                   style={{
                     position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
                     padding: `${MOBILE_HEADER_HEIGHT + 8}px 5vw ${V(2)}`,
-                    justifyContent: 'space-between',
+                    justifyContent: 'space-between', gap: 12,
                   }}
                 >
                   <motion.div style={{ position: 'relative', zIndex: 2, opacity: mobileAboutFade, x: mobileAboutShift }}>
-                    <div style={{ fontFamily: sans, fontWeight: 400, fontSize: statementFontSize(isMobile), letterSpacing: '0.02em', lineHeight: 1 }}>{ABOUT.heading}</div>
+                    <div style={{ fontFamily: sans, fontWeight: 400, fontSize: 'clamp(23px, 6vw, 30px)', letterSpacing: '0.02em', lineHeight: 1.1 }}>{ABOUT.heading}</div>
                     <p
                       style={{
-                        margin: '8px 0 0', fontSize: ABOUT.textSize, fontWeight: 400, lineHeight: 1.5, color: 'rgba(20,22,28,.82)',
+                        margin: '8px 0 0', fontSize: 'clamp(14px, 4vw, 17px)', fontWeight: 400, lineHeight: 1.4, color: 'rgba(20,22,28,.82)',
                       }}
                     >
                       {ABOUT.text}
@@ -3307,7 +3332,7 @@ export default function App() {
         {!projectsOpen && (
           <FeaturedProjects isMobile={isMobile} onSelectCategory={openProjectCategory} style={{
             position: 'relative', zIndex: 10, background: BG, color: CREAM,
-            padding: isMobile ? '9vh 1vw' : '12vh 1.5vw',
+            padding: isMobile ? '9vh 1vw 20px' : '12vh 1.5vw 28px',
           }} />
         )}
 
