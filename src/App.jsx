@@ -917,11 +917,12 @@ const DEVELOPER_LOGOS = [
   { region: 'Dubai', name: 'Imtiaz Developments', file: 'Imtiaz.png' },
   { region: 'Dubai', name: 'Sobha Realty', file: 'Sobha_Realty(1).png', zoom: true },
   { name: 'DLF', file: 'DLF_Logo(1).png', zoom: true },
-  { name: 'Hero Realty', file: 'Hero-Reality.png', zoom: true },
+  { name: 'Hero Realty', file: 'Hero-Reality.png' },
   { name: 'Experion', file: 'Experion.png', zoom: true, wide: true },
   { name: 'Ganga Realty', file: 'g_Logo(1).png', zoom: true, wide: true },
   { name: 'Birla Estates', file: 'birla-estates(1).png', zoom: true, wide: true },
   { name: 'Krisumi', file: 'krisumi(1).png', zoom: true, wide: true },
+  { name: 'Reach', file: 'Reach.png', wide: true, zoom: true, },
 ];
 
 function developerLogoSources(file) {
@@ -981,8 +982,9 @@ function DeveloperLogoSlider() {
           box-sizing: border-box;
         }
         .pg-logo-mark[data-wide="true"] { width: 156px; }
+        .pg-logo-item[data-light="true"] { background: #eee8dd; }
         .pg-logo-mark img { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; scale: 1.12; }
-        .pg-logo-mark img[data-zoom="true"] { scale: 1.55; }
+        .pg-logo-mark img[data-zoom="true"] { scale: 1.70; }
         .pg-logo-mark img[data-invert="true"] { filter: invert(1); }
         @media (max-width: 600px) {
           .pg-logo-item { min-height: 76px; padding: 8px; }
@@ -1006,8 +1008,8 @@ function DeveloperLogoSlider() {
               <div className="pg-logo-track">
                 {[0, 1, 2, 3].map((copy) => (
                   <div key={copy} className="pg-logo-group" aria-hidden={copy > 0 || undefined}>
-                    {logos.map(({ name, file, wide, invert, zoom }) => (
-                      <div key={file} className="pg-logo-item">
+                    {logos.map(({ name, file, wide, invert, zoom, light }) => (
+                      <div key={file} className="pg-logo-item" data-light={light}>
                         <span className="pg-logo-mark" data-wide={wide}>
                           <img src={developerLogoSources(file)[0]}
                             onError={(event) => tryNextDeveloperLogo(event, developerLogoSources(file))}
@@ -3278,6 +3280,23 @@ export default function App() {
                 borderTop: '1px solid rgba(0,0,0,.08)', overflow: 'hidden', color: INK, fontFamily: aboutFont,
               }}
             >
+              <img
+                src={`${import.meta.env.BASE_URL}about-sketch.png`}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                style={{
+                  position: 'absolute', right: 0, bottom: 0,
+                  width: isMobile ? '100%' : '64%',
+                  height: isMobile ? '54%' : '100%',
+                  objectFit: 'contain', objectPosition: 'left bottom',
+                  opacity: isMobile ? 0.48 : 0.8,
+                  maskImage: isMobile
+                    ? 'linear-gradient(to bottom, transparent, black 40%)'
+                    : 'linear-gradient(to right, transparent, black 52%)',
+                  pointerEvents: 'none',
+                }}
+              />
               {isMobile ? (
                 <div
                   style={{
@@ -3335,6 +3354,7 @@ export default function App() {
             padding: isMobile ? '9vh 1vw 20px' : '12vh 1.5vw 28px',
           }} />
         )}
+
 
         <PropertyLocationMap isMobile={isMobile} enabled={landingActive} />
         {!projectsOpen && <DeveloperLogoSlider />}
