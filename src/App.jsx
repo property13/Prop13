@@ -908,6 +908,104 @@ const EARTH_STOPS = [
   {name:'Dubai',lat:25.2048,lon:55.2708,country:'United Arab Emirates'},
 ];
 const EARTH_MILESTONES=[.115,.195,.275,.355,.445,.535,.625,.705,.775,.97];
+const DEVELOPER_LOGOS = [
+  { name: 'Godrej Properties', file: 'Godrej.png', wide: true },
+  { region: 'Dubai', name: 'DAMAC', file: 'Damac.png' },
+  { name: 'M3M', file: 'M3M.png' },
+  { region: 'Dubai', name: 'Binghatti', file: 'Bhingatti.png' },
+  { region: 'Dubai', name: 'Emaar', file: 'Emaar.png', wide: true, invert: true },
+  { region: 'Dubai', name: 'Imtiaz Developments', file: 'Imtiaz.png' },
+  { region: 'Dubai', name: 'Sobha Realty', file: 'sobha.png' },
+  { name: 'DLF', file: 'Dlf.png' },
+  { name: 'Hero Realty', file: 'Hero-Reality.png' },
+  { name: 'Experion', file: 'Experion-logo.png' },
+];
+
+function DeveloperLogoSlider() {
+  return (
+    <section className="pg-logo-strip" aria-label="Property developer logos">
+      <style>{`
+        .pg-logo-strip {
+          position: relative; z-index: 1; isolation: isolate; overflow: hidden;
+          padding-block: clamp(32px, 4vw, 56px);
+          background: radial-gradient(ellipse at 50% 0%, #1d1914 0%, #11100e 55%, #0c0c0c 100%);
+          border-block: 1px solid rgba(220,190,137,.16);
+        }
+        .pg-logo-row + .pg-logo-row {
+          border-top: 1px solid rgba(220,190,137,.16);
+          margin-top: 26px; padding-top: 24px;
+        }
+        .pg-logo-heading {
+          margin: 0 0 14px; padding-inline: 6vw; color: #e3c594;
+          font: 600 13px/1.3 Arial, sans-serif; letter-spacing: .14em; text-transform: uppercase;
+        }
+        .pg-logo-window {
+          mask-image: linear-gradient(90deg, transparent, black 7%, black 93%, transparent);
+        }
+        .pg-logo-track { display: flex; width: max-content; animation: pg-logo-slide 22s linear infinite; }
+        .pg-logo-group {
+          --logo-gap: clamp(12px, 1.5vw, 22px);
+          display: flex; align-items: center; flex: none;
+          box-sizing: border-box;
+          gap: var(--logo-gap); padding-inline: calc(var(--logo-gap) / 2);
+        }
+        .pg-logo-item {
+          display: inline-flex; flex: none; align-items: center; justify-content: center;
+          min-height: 96px; padding: 10px; border-radius: 10px;
+          border: 1px solid rgba(235,210,169,.13);
+          background: linear-gradient(145deg, rgba(255,242,216,.055), rgba(255,242,216,.015));
+          box-shadow: inset 0 1px 0 rgba(255,255,255,.045);
+          box-sizing: border-box;
+        }
+        .pg-logo-mark {
+          display: grid; place-items: center; width: 124px; height: 72px;
+          padding: 5px; border-radius: 6px; background: rgba(255,255,255,.05);
+          box-sizing: border-box;
+        }
+        .pg-logo-mark[data-wide="true"] { width: 156px; }
+        .pg-logo-mark img { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+        .pg-logo-mark img[data-invert="true"] { filter: invert(1); }
+        @media (max-width: 600px) {
+          .pg-logo-item { min-height: 76px; padding: 8px; }
+          .pg-logo-mark { width: 94px; height: 58px; padding: 5px; }
+          .pg-logo-mark[data-wide="true"] { width: 114px; }
+        }
+        @keyframes pg-logo-slide { to { transform: translateX(-25%); } }
+        @media (prefers-reduced-motion: reduce) {
+          .pg-logo-track { animation: none; width: auto; }
+          .pg-logo-window { mask-image: none; }
+          .pg-logo-group { min-width: 0; width: 100%; flex-wrap: wrap; justify-content: center; box-sizing: border-box; }
+          .pg-logo-group[aria-hidden="true"] { display: none; }
+        }
+      `}</style>
+      {['India', 'Dubai'].map((region) => {
+        const logos = DEVELOPER_LOGOS.filter((logo) => (logo.region ?? 'India') === region);
+        return (
+          <div key={region} className="pg-logo-row">
+            <h2 className="pg-logo-heading">{region} Developers</h2>
+            <div className="pg-logo-window">
+              <div className="pg-logo-track">
+                {[0, 1, 2, 3].map((copy) => (
+                  <div key={copy} className="pg-logo-group" aria-hidden={copy > 0 || undefined}>
+                    {logos.map(({ name, file, wide, invert }) => (
+                      <div key={file} className="pg-logo-item">
+                        <span className="pg-logo-mark" data-wide={wide}>
+                          <img src={`${import.meta.env.BASE_URL}${file}`}
+                            alt={copy === 0 ? name : ''} data-invert={invert} decoding="async" />
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
 function PropertyLocationMap({isMobile,enabled}) {
   const section=useRef(null);
   const sticky=useRef(null);
@@ -2210,7 +2308,42 @@ const PROJECT_CATEGORIES = [
   { id: 'commercial', title: 'Commercial', image: `${import.meta.env.BASE_URL}featured/commercial.jpg` },
 ];
 
-const PROJECT_CATALOG = [...PROJECTS, ...ADDITIONAL_PROPERTIES];
+const DUBAI_PROPERTIES = [
+  {
+    id: 'dubai-mercedes-vision-iconic',
+    category: 'high-rise',
+    title: 'Vision Iconic at Mercedes-Benz Places',
+    subtitle: 'Binghatti · Meydan, Dubai',
+    tag: 'Under Construction',
+    image: `${import.meta.env.BASE_URL}Project/Dubai-Mercedes.png`,
+    specs: '1–5 bedroom residences',
+    referencePrice: 'Reference 1-bedroom price: AED 2,092,500–2,307,000',
+    budgetPriceInLakh: 528,
+    desc: 'Branded residences at Mercedes-Benz Places | Binghatti City in Meydan.',
+  },
+  {
+    id: 'dubai-bugatti-residences',
+    category: 'high-rise',
+    title: 'Bugatti Residences by Binghatti',
+    subtitle: 'Business Bay, Dubai',
+    tag: 'Under Construction',
+    image: `${import.meta.env.BASE_URL}Project/dubai-buggati.png`,
+    specs: '2 bedrooms · 4 bathrooms · 3,674 sq. ft.',
+    referencePrice: 'Reference 2-bedroom listing: AED 14,250,888',
+    budgetPriceInLakh: 3595.5,
+    desc: 'A two-bedroom residence at Bugatti Residences in Business Bay.',
+  },
+].map((property) => ({
+  ...property,
+  sections: [{
+    title: property.title,
+    sub: property.specs,
+    text: property.referencePrice,
+    image: property.image,
+  }],
+}));
+
+const PROJECT_CATALOG = [...PROJECTS, ...ADDITIONAL_PROPERTIES, ...DUBAI_PROPERTIES];
 
 // Budget bands use lakh as the unit, with the upper bound excluded.
 const PROPERTY_BUDGETS = [
@@ -2236,13 +2369,16 @@ function AllProjectsView({ isMobile, onOpen }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [propertyType, setPropertyType] = useState('');
   const [status, setStatus] = useState('');
+  const [location, setLocation] = useState('');
   const [budget, setBudget] = useState('');
   const selectedBudget = PROPERTY_BUDGETS.find(({ label }) => label === budget);
-  const activeFilterCount = [propertyType, status, budget].filter(Boolean).length;
+  const activeFilterCount = [propertyType, status, location, budget].filter(Boolean).length;
   const statuses = [...new Set(PROJECT_CATALOG.map(({ tag }) => tag))];
   const properties = PROJECT_CATALOG.filter((property) => {
-    const price = propertyPriceInLakh(property.price);
-    return (!propertyType || property.category === propertyType)
+    const price = property.budgetPriceInLakh ?? propertyPriceInLakh(property.price);
+    const propertyLocation = DUBAI_PROPERTIES.includes(property) ? 'Dubai' : 'India';
+    return (!location || propertyLocation === location)
+      && (!propertyType || property.category === propertyType)
       && (!status || property.tag === status)
       && (!selectedBudget || (price >= selectedBudget.min && price < selectedBudget.max));
   });
@@ -2326,6 +2462,11 @@ function AllProjectsView({ isMobile, onOpen }) {
                     <option value="">All statuses</option>
                     {statuses.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
                   </select>
+                  <select aria-label="Location" value={location} onChange={(event) => setLocation(event.target.value)}>
+                    <option value="">All locations</option>
+                    <option value="India">India</option>
+                    <option value="Dubai">Dubai</option>
+                  </select>
                   <label className="pg-budget-filter">
                     <span>Budget</span>
                     <select value={budget} onChange={(event) => setBudget(event.target.value)}>
@@ -2334,7 +2475,7 @@ function AllProjectsView({ isMobile, onOpen }) {
                     </select>
                   </label>
                   {activeFilterCount > 0 && (
-                    <button type="button" onClick={() => { setPropertyType(''); setStatus(''); setBudget(''); }}
+                    <button type="button" onClick={() => { setPropertyType(''); setStatus(''); setLocation(''); setBudget(''); }}
                       className="pg-filters-reset">
                       Reset
                     </button>
@@ -2354,41 +2495,40 @@ function AllProjectsView({ isMobile, onOpen }) {
           </div>
         </div>
         {properties.length === 0 && <p role="status">No properties match these filters.</p>}
-        <div style={{
-          display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, minmax(0, 1fr))',
-          gap: isMobile ? 12 : 20,
-        }}>
-          {properties.map((property) => (
-            <button key={property.id} type="button" onClick={(event) => {
-              const cover = event.currentTarget.querySelector('img');
-              onOpen(property, cover?.naturalWidth ? cover.getAttribute('src') : null);
-            }}
-              aria-label={`View details for ${property.title}`}
-              style={{
-                position: 'relative', display: 'block', textAlign: 'left', color: CREAM,
-                background: '#151410', border: '1px solid rgba(244,211,94,.23)', borderRadius: 12,
-                height: isMobile ? 'clamp(225px, 59vw, 320px)' : 'clamp(300px, 32vw, 480px)',
-                padding: 0, overflow: 'hidden', cursor: 'pointer',
-              }}>
-              <img src={property.image} onError={tryNextProjectPhoto} alt="" loading="lazy" decoding="async"
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-              <span className="pg-cover-tag" style={{ top: isMobile ? 8 : 12, left: isMobile ? 8 : 12, fontSize: isMobile ? 8 : 10 }}>
-                {property.tag}
-              </span>
-              <span className="pg-cover-caption" style={{
-                display: 'block', padding: isMobile ? '56px 10px 12px' : '96px 16px 18px',
-              }}>
-                <span style={{
-                  display: 'block', fontWeight: 700, fontSize: isMobile ? 17 : 'clamp(20px, 2.25vw, 32px)',
-                  lineHeight: 1.1, overflowWrap: 'anywhere', marginBottom: 6,
+        {properties.length > 0 && (
+          <div style={{
+            display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, minmax(0, 1fr))',
+            gap: isMobile ? 12 : 20,
+          }}>
+            {properties.map((property) => (
+              <button key={property.id} type="button" onClick={(event) => {
+                const cover = event.currentTarget.querySelector('img');
+                onOpen(property, cover?.naturalWidth ? cover.getAttribute('src') : null);
+              }}
+                aria-label={`View details for ${property.title}`}
+                style={{
+                  position: 'relative', display: 'block', textAlign: 'left', color: CREAM,
+                  background: '#151410', border: '1px solid rgba(244,211,94,.23)', borderRadius: 12,
+                  height: isMobile ? 'clamp(225px, 59vw, 320px)' : 'clamp(300px, 32vw, 480px)',
+                  padding: 0, overflow: 'hidden', cursor: 'pointer',
                 }}>
-                  {property.title}
+                <img src={property.image} onError={tryNextProjectPhoto} alt="" loading="lazy" decoding="async"
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                <span style={{
+                  position: 'absolute', inset: 'auto 0 0', background: 'linear-gradient(transparent, rgba(0,0,0,.94))',
+                  display: 'block', padding: isMobile ? '56px 10px 12px' : '96px 16px 18px',
+                }}>
+                  <span style={{
+                    display: 'block', fontWeight: 700, fontSize: isMobile ? 17 : 'clamp(20px, 2.25vw, 32px)',
+                    lineHeight: 1.1, overflowWrap: 'anywhere',
+                  }}>
+                    {property.title}
+                  </span>
                 </span>
-                <span style={{ display: 'block', fontSize: isMobile ? 11 : 13 }}>{property.subtitle}</span>
-              </span>
-            </button>
-          ))}
-        </div>
+              </button>
+            ))}
+          </div>
+        )}
       </section>
     </main>
   );
@@ -3172,6 +3312,7 @@ export default function App() {
         )}
 
         <PropertyLocationMap isMobile={isMobile} enabled={landingActive} />
+        {!projectsOpen && <DeveloperLogoSlider />}
       </div>
 
       <Footer isMobile={isMobile} footerRef={footerRef} onProjects={goProjects} onAbout={goAbout} pageVisible={pageVisible} />
