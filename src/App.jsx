@@ -3075,7 +3075,7 @@ export default function App() {
             backdropFilter: isMobile ? undefined : 'blur(8px)',
             WebkitBackdropFilter: isMobile ? undefined : 'blur(8px)',
             padding: isMobile ? 0 : '4px 5px 4px 14px',
-            borderRadius: 4,
+            borderRadius: 10,
           }}
         >
           {isMobile ? (
