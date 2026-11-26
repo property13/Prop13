@@ -3344,9 +3344,9 @@ export default function App() {
               <style>{`
                 .pg-about-cta {
                   display: inline-flex; align-items: center; gap: 8px;
-                  min-height: 44px; box-sizing: border-box; padding: 8px 14px;
+                  min-height: 44px; box-sizing: border-box; padding: 7px 11px;
                   background: #000000; color: #f8f8f8; border: 1px solid #b1a0a0; border-radius: 3px;
-                  font: inherit; font-size: 18px; text-decoration: none; cursor: pointer;
+                  font: inherit; font-size: 17px; text-decoration: none; cursor: pointer;
                 }
                 .pg-about-cta:hover { border-color: #777; }
                 .pg-about-cta:focus-visible { outline: 2px solid #15180c; outline-offset: 3px; }
