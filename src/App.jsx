@@ -3006,6 +3006,16 @@ export default function App() {
       ? { left: { duration: SPLIT_DUR, ease: inOut }, x: { duration: SPLIT_DUR, ease: inOut } }
       : { top: { duration: VERT_DUR, ease: inOut }, y: { duration: VERT_DUR, ease: inOut } };
 
+  const aboutCta = showFounder ? (
+    <a className="pg-about-cta pg-nav-roll" href={WA_URL} target="_blank" rel="noopener noreferrer">
+      <RollingNavLabel>Connect</RollingNavLabel> <span aria-hidden="true">↗</span>
+    </a>
+  ) : (
+    <button className="pg-about-cta pg-nav-roll" type="button" onClick={goProjects}>
+      <RollingNavLabel>Explore</RollingNavLabel> <span aria-hidden="true">↗</span>
+    </button>
+  );
+
   return (
     <>
       <style>{`
@@ -3351,6 +3361,11 @@ export default function App() {
                 >
                   <motion.div style={{ position: 'relative', zIndex: 2, opacity: mobileAboutFade, x: mobileAboutShift }}>
                     <AboutTitle key={isMobile ? "mobile-about" : "desktop-about"} isMobile={isMobile} enabled={landingActive} showFounder={showFounder} setShowFounder={setShowFounder} />
+                    {landingActive && (
+                      <motion.div style={{ marginTop: 16, visibility: aboutCtaVisibility }}>
+                        {aboutCta}
+                      </motion.div>
+                    )}
                   </motion.div>
                   <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-evenly', gap: 8, paddingBottom: '2vh' }}>
                     <Phone small progress={sp} center={mobileCenter} expansion={mobileZoom} settle={mobileSettle} enabled={landingActive} image={phoneScreenImage} />
@@ -3371,21 +3386,12 @@ export default function App() {
                   </div>
                 </div>
               )}
-              {landingActive && (
+              {landingActive && !isMobile && (
                 <motion.div style={{
-                  position: 'absolute', left: isMobile ? '5vw' : '7vw',
-                  bottom: isMobile ? 'max(20px, env(safe-area-inset-bottom))' : '14vh',
+                  position: 'absolute', left: '7vw', bottom: '14vh',
                   zIndex: 5, opacity: aboutCtaOpacity, visibility: aboutCtaVisibility,
                 }}>
-                  {showFounder ? (
-                    <a className="pg-about-cta pg-nav-roll" href={WA_URL} target="_blank" rel="noopener noreferrer">
-                      <RollingNavLabel>Connect</RollingNavLabel> <span aria-hidden="true">↗</span>
-                    </a>
-                  ) : (
-                    <button className="pg-about-cta pg-nav-roll" type="button" onClick={goProjects}>
-                      <RollingNavLabel>Explore</RollingNavLabel> <span aria-hidden="true">↗</span>
-                    </button>
-                  )}
+                  {aboutCta}
                 </motion.div>
               )}
             </motion.div>
