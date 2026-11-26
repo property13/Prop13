@@ -16,6 +16,7 @@ const MinimalEarthCanvas = lazy(() => import('./MinimalEarthCanvas.jsx'));
 const loadIPhoneModel = () => import('./IPhoneModel.jsx');
 const IPhoneModel = lazy(loadIPhoneModel);
 const SHOWCASE_HOLD_VH = 75;
+const SOCIAL_SCROLL_VH = 110;
 
 /* ================= 1. CONSTANTS ================= */
 const HERO_IMG = '/pic1.png';
@@ -527,7 +528,7 @@ function usePhoneDrag(enabled) {
   return { yaw, pitch, dragging, handlers };
 }
 
-function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen, reveal, settle, enabled, image }) {
+function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen, settle, enabled, image }) {
   const [i, setI] = useState(0);
   const [show, setShow] = useState(false);
   const [expanding, setExpanding] = useState(false);
@@ -689,18 +690,6 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
     const end = Math.max(dimensions.width / displaySize.width, dimensions.height / displaySize.height);
     return Math.pow(end / start, fullscreen.get());
   });
-  const nativeRevealOpacity = useTransform(() => {
-    const dimensions = geometry.get();
-    if (!dimensions || !displaySize?.width || !displaySize.height || !reveal) return 0;
-    const cover = Math.max(dimensions.width / displaySize.width, dimensions.height / displaySize.height);
-    const covered = (desktopScale.get() / cover - 1.04) / 0.04;
-    const front = Math.max(0, 1 - Math.hypot(Math.sin(yaw.get() * Math.PI / 360), Math.sin(pitch.get() * Math.PI / 360)) * 18);
-    return smoothStep(Math.max(0, Math.min(1, covered))) * reveal.get() * front;
-  });
-  const nativeRevealWidth = useTransform(desktopScale, (scale) => (displaySize?.width ?? 0) * scale);
-  const nativeRevealHeight = useTransform(desktopScale, (scale) => (displaySize?.height ?? 0) * scale);
-  const nativeRevealFont = useTransform(() => (geometry.get()?.h ?? 0) * 0.0205 * desktopScale.get());
-  const nativeRevealPadding = useTransform(() => (geometry.get()?.width ?? 0) * 0.06 * desktopScale.get());
   const desktopFade = useTransform(center, [0, 0.75], [1, 0]);
   const mobileFade = useTransform(expansion, [0, 0.2], [1, 0]);
   const fadeOut = small ? mobileFade : desktopFade;
@@ -830,7 +819,6 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
                       <motion.div style={{ ...fill, scale: screenScale }}>
                         <DesktopPhoneDisplay image={image} />
                       </motion.div>
-                      <PortalScene reveal={reveal} isMobile={false} insidePhone />
                   </motion.div>}
 
                   {small && <motion.div style={{ ...fill, zIndex: 3, opacity: mobileScreenFade, background: '#000', pointerEvents: 'none' }} />}
@@ -877,13 +865,6 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
           </motion.div>
         ) : phone}
       </motion.div>
-      {!small && displaySize && (
-        <div aria-hidden="true" style={{ ...fill, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 4 }}>
-          <motion.div style={{ position: 'relative', flexShrink: 0, width: nativeRevealWidth, height: nativeRevealHeight, fontSize: nativeRevealFont, opacity: nativeRevealOpacity }}>
-            <PortalScene reveal={reveal} isMobile={false} insidePhone nativePadding={nativeRevealPadding} />
-          </motion.div>
-        </div>
-      )}
     </div>
   );
 }
@@ -1080,70 +1061,6 @@ function PropertyLocationMap({isMobile,enabled}) {
       </div>
     </div>
   </section>;
-}
-
-function PortalScene({ reveal, isMobile, onExplore, insidePhone = false, nativePadding }) {
-  const [nat, setNat] = useState(0);
-  const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
-
-  const mobileOpacity = useTransform(reveal, [0.68, 0.92], [0, 1]);
-  const logoS = useTransform(reveal, [isMobile ? 0.7 : 0, 1], [0.94, 1]);
-  const lineS = useTransform(reveal, [isMobile ? 0.8 : 0.25, 1], [0, 1]);
-  const textO = useTransform(reveal, [isMobile ? 0.86 : 0.45, 1], [0, 1]);
-  const ctaO = useTransform(reveal, [isMobile ? 0.93 : 0.65, 1], [0, 1]);
-  const events = useTransform(reveal, (value) => (value > 0.92 ? 'auto' : 'none'));
-
-  const want = isMobile ? '46vw' : '20vw';
-  const logoW = nat
-    ? `min(${want}, ${V(32)}, ${Math.floor(nat / dpr)}px)`
-    : `min(${want}, ${V(32)})`;
-
-  return (
-    <motion.div
-      style={{
-        position: 'absolute', inset: 0, zIndex: 50, opacity: nativePadding ? 1 : isMobile ? mobileOpacity : reveal, pointerEvents: insidePhone ? 'none' : events,
-        background: 'radial-gradient(ellipse at 50% 40%, #171b0b 0%, #060704 52%, #000 100%)',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        textAlign: 'center', padding: nativePadding ? 0 : '0 6vw', paddingInline: nativePadding,
-      }}
-    >
-      <motion.img
-        src={LOGO}
-        alt="Property Gallery"
-        draggable={false}
-        onLoad={(e) => setNat(e.currentTarget.naturalWidth)}
-        style={{
-          scale: logoS, width: insidePhone ? '20%' : logoW, height: 'auto', display: 'block',
-          filter: 'drop-shadow(0 0 1.4em rgba(244,211,94,.2))',
-        }}
-      />
-
-      <motion.div
-        style={{
-          scaleX: lineS, width: insidePhone ? '56%' : 'min(320px, 56vw)', height: 1, margin: insidePhone ? '0.8em 0 0.6em' : `${V(4)} 0 ${V(3)}`,
-          background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)`,
-        }}
-      />
-
-      <motion.div
-        style={{
-          opacity: textO, fontFamily: sans, color: CREAM, letterSpacing: '0.42em', paddingLeft: '0.42em',
-          fontSize: insidePhone ? '1em' : isMobile ? 14 : 'clamp(15px, 1.5vw, 22px)', textTransform: 'capitalize',
-        }}
-      >
-        Property Gallery
-      </motion.div>
-
-      <motion.div
-        style={{
-          opacity: textO, fontFamily: sans, color: GOLD, letterSpacing: '0.3em', paddingLeft: '0.3em',
-          fontSize: insidePhone ? '0.65em' : isMobile ? 10.5 : 12, textTransform: 'capitalize', marginTop: insidePhone ? '0.8em' : 14,
-        }}
-      >
-        Delhi NCR · Mumbai · Goa · Noida · Alibaug · Nagpur · Ahmedabad · Dubai
-      </motion.div>
-    </motion.div>
-  );
 }
 
 function RevealWord({ children, progress, range, first }) {
@@ -2023,7 +1940,7 @@ function FeaturedProjects({ isMobile, onSelectCategory, style }) {
         fontFamily: sans, fontSize: isMobile ? 32 : 52, textAlign: 'center',
         fontWeight: 400, margin: '0 0 clamp(16px, 3vh, 28px)',
       }}>
-        Featured Projects
+        Our Segments
       </h2>
       <ProjectCoverFlow onSelectCategory={onSelectCategory} />
     </section>
@@ -2103,7 +2020,62 @@ function RollingShowcaseTitle({ title }) {
   );
 }
 
-function ProjectShowcaseReveal({ reveal, onExplore, isMobile, enabled }) {
+function SocialScrollScreen({ progress, enabled, slideY }) {
+  const [interactive, setInteractive] = useState(false);
+  const opacity = useTransform(progress, [0, .16], [0, 1]);
+  useEffect(() => {
+    const update = (value) => setInteractive(enabled && value >= .16 && value <= .72);
+    update(progress.get());
+    return progress.on('change', update);
+  }, [enabled, progress]);
+
+  return (
+    <motion.section className="pg-connect-screen" aria-labelledby="pg-connect-title" aria-hidden={!interactive}
+      style={{ opacity, y: slideY, pointerEvents: interactive ? 'auto' : 'none' }}>
+      <style>{`
+        .pg-connect-screen {
+          position: absolute; inset: 0; z-index: 45;
+          display: grid; place-content: center; justify-items: center;
+          padding: 56px 5vw 32px;
+          background: #080808;
+        }
+        .pg-connect-screen h2 {
+          margin: 0; font-size: clamp(32px, 6vw, 76px);
+          font-weight: 400; line-height: 1.05; text-align: center;
+        }
+        .pg-connect-screen h2::after {
+          content: ''; display: block; width: 40px; height: 1px;
+          margin: 18px auto 0; background: currentColor; opacity: .5;
+        }
+        .pg-connect-links {
+          display: flex; flex-wrap: wrap; justify-content: center;
+          gap: 12px clamp(12px, 3vw, 44px); margin-top: clamp(20px, 4vh, 40px);
+        }
+        .pg-connect-links a {
+          display: grid; justify-items: center; align-content: center;
+          gap: 8px; min-width: 50px; min-height: 48px;
+          padding: 6px 2px; color: inherit; text-decoration: none;
+          font-size: clamp(11px, 1.25vw, 14px);
+        }
+        .pg-connect-links a:hover { color: white; }
+        .pg-connect-links a:focus-visible { outline: 1px solid currentColor; outline-offset: 4px; }
+        .pg-connect-links img { display: block; width: 50px; height: 50px; object-fit: contain; }
+      `}</style>
+      <h2 id="pg-connect-title" style={{ fontFamily: sans, color: CREAM }}>Connect with us</h2>
+      <div className="pg-connect-links" style={{ fontFamily: sans, color: CREAM }}>
+        {CONTACTS.map(({ icon, name, href }) => (
+          <a key={icon} href={href} tabIndex={interactive ? 0 : -1}
+            {...(href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+            <img src={ICON_IMG[icon]} alt="" />
+            <span>{name}</span>
+          </a>
+        ))}
+      </div>
+    </motion.section>
+  );
+}
+
+function ProjectShowcaseReveal({ reveal, onExplore, isMobile, enabled, slideY }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [interactive, setInteractive] = useState(false);
   const [cardInset, setCardInset] = useState('inset(24% 31% 24% 53% round 12px)');
@@ -2144,11 +2116,8 @@ function ProjectShowcaseReveal({ reveal, onExplore, isMobile, enabled }) {
     }, SHOWCASE_ROTATION_MS);
     return () => window.clearTimeout(timer);
   }, [currentIndex, animated, enabled, visible, interactive, projectCount, selectProject]);
-  const opacity = useTransform(reveal, [.78, .96], [0, 1]);
-  const clipPath = useTransform(reveal, [.78, .96], [
-    'inset(16% 20% 16% 20% round 30px)',
-    'inset(0% 0% 0% 0% round 0px)',
-  ]);
+  const opacity = useTransform(reveal, [0, 1], [0, 1]);
+
 
   useEffect(() => {
     const update = (value) => setInteractive(value >= .95);
@@ -2157,14 +2126,17 @@ function ProjectShowcaseReveal({ reveal, onExplore, isMobile, enabled }) {
   }, [reveal]);
 
   const projectTitle = (item, rolling = false) => {
-    const title = ['delhi', 'alibaug', 'dlf'].includes(item.id)
-      ? item.title.toLowerCase().trim().split(/\s+/).join('\n')
-      : item.title.toLowerCase();
+    const words = item.title.trim().toLowerCase().split(/\s+/)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1));
+    const title = words.join(['delhi', 'alibaug', 'dlf'].includes(item.id) ? '\n' : ' ');
     return (
       <h2 aria-label={rolling ? item.title : undefined} style={{
-        font: isMobile ? '700 clamp(30px, 8vw, 48px)/1.06 Arial, sans-serif'
-          : '800 clamp(34px, 5.3vw, 90px)/.98 Arial, sans-serif',
-        textTransform: 'capitalize', margin: '0 0 14px', textWrap: 'balance', whiteSpace: 'pre-line',
+        fontFamily: sans,
+        fontSize: statementFontSize(isMobile),
+        fontWeight: 340,
+        lineHeight: 1.12,
+        letterSpacing: '-0.025em',
+        textTransform: 'none', margin: '0 0 14px', textWrap: 'balance', whiteSpace: 'pre-line',
       }}>
         {rolling ? <RollingShowcaseTitle title={title} /> : title}
       </h2>
@@ -2179,7 +2151,7 @@ function ProjectShowcaseReveal({ reveal, onExplore, isMobile, enabled }) {
       aria-label="Project showcase" aria-hidden={!interactive}
       style={{
         position: 'absolute', inset: 0, zIndex: 50, overflow: 'hidden',
-        opacity, clipPath: reducedMotion ? undefined : clipPath,
+        opacity: slideY ? 1 : opacity, y: slideY,
         background: BG, color: CREAM, pointerEvents: interactive ? 'auto' : 'none',
         display: 'flex', flexDirection: 'column', justifyContent: isMobile ? 'flex-end' : 'center',
         padding: isMobile ? `${MOBILE_HEADER_HEIGHT + 16}px 6vw 5svh` : '108px 6vw 6vh',
@@ -2241,7 +2213,7 @@ function ProjectShowcaseReveal({ reveal, onExplore, isMobile, enabled }) {
                     initial={animated ? 'enter' : false}
                     animate={animated ? 'active' : undefined}
                     exit={animated ? 'leave' : undefined}
-                    style={{ position: 'absolute', inset: 0 }}>
+                    style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
                     {projectTitle(project, animated)}
                   </motion.div>
                 </AnimatePresence>
@@ -2751,9 +2723,11 @@ export default function App() {
   const desktopMotion = useTransform(phoneProgress, [0, DESKTOP_PHONE_END], [0, 1], { ease: smoothStep });
   const desktopLandscapeGrowth = useTransform(phoneProgress, [0.88, 1], [0, 1], { ease: smoothStep });
   const desktopFullscreen = useTransform(phoneProgress, [0.88, 0.96], [0, 1], { ease: smoothStep });
-  const reveal = useTransform(phoneProgress, [0.93, 1], [0, 1], { ease: smoothStep });
-  const desktopShowcase = useTransform(phoneProgress, [0.93, 1], [0, 1]);
-  const mobileShowcase = useTransform(stmtRaw, [0.92, 1], [0, 1]);
+  const socialScrollRef = useRef(null);
+  const { scrollYProgress: socialProgress } = useScroll({ target: socialScrollRef, offset: ['start start', 'end start'] });
+  const homeShowcase = useTransform(socialProgress, [.72, .94], [0, 1]);
+  const socialSlideY = useTransform(homeShowcase, [0, 1], ['0%', '-100%']);
+  const projectsSlideY = useTransform(homeShowcase, [0, 1], ['100%', '0%']);
   const mobileZoomRaw = useTransform(stmtRaw, [stmtA, MOBILE_ZOOM_END], [0, isMobile ? 1 : 0]);
   const mobileZoom = useSpring(mobileZoomRaw, MOBILE_ZOOM_SPRING);
   const mobileCenter = useTransform(mobileZoom, (z) => smoothStep(Math.max(0, Math.min(1, z))));
@@ -3242,9 +3216,13 @@ export default function App() {
           <motion.div style={{ position: 'absolute', inset: 0, background: '#000', opacity: introDim, pointerEvents: 'none', zIndex: 5 }} />
         </div>
 
-        <section ref={stmtRef} style={{ position: 'relative', zIndex: 1, height: V(stmtVh + SHOWCASE_HOLD_VH), background: BG }}>
+        <section ref={stmtRef} style={{ position: 'relative', zIndex: 1, height: V(stmtVh + SOCIAL_SCROLL_VH + SHOWCASE_HOLD_VH), background: BG }}>
           <div ref={phoneScrollRef} aria-hidden="true" style={{
             position: 'absolute', top: 0, left: 0, width: 0, height: V(stmtVh), pointerEvents: 'none',
+          }} />
+          <div ref={socialScrollRef} aria-hidden="true" style={{
+            position: 'absolute', top: V(stmtVh - 100), left: 0, width: 0,
+            height: V(SOCIAL_SCROLL_VH), pointerEvents: 'none',
           }} />
           <div style={{ position: 'sticky', top: 0, height: V(100), overflow: 'hidden', background: BG }}>
             <motion.div
@@ -3276,24 +3254,21 @@ export default function App() {
                 position: 'absolute', inset: 0, zIndex: 40, y: panelY,
                 borderTopLeftRadius: isMobile ? mobilePanelRadius : panelRadius,
                 borderTopRightRadius: isMobile ? mobilePanelRadius : panelRadius,
-                background: 'rgb(255, 255, 255)',
+                background: '#f4f3e9',
                 borderTop: '1px solid rgba(0,0,0,.08)', overflow: 'hidden', color: INK, fontFamily: aboutFont,
               }}
             >
               <img
-                src={`${import.meta.env.BASE_URL}about-sketch.png`}
+                src={`${import.meta.env.BASE_URL}about-sage.png`}
                 alt=""
                 loading="lazy"
                 decoding="async"
                 style={{
                   position: 'absolute', right: 0, bottom: 0,
-                  width: isMobile ? '100%' : '64%',
-                  height: isMobile ? '54%' : '100%',
-                  objectFit: 'contain', objectPosition: 'left bottom',
-                  opacity: isMobile ? 0.48 : 0.8,
-                  maskImage: isMobile
-                    ? 'linear-gradient(to bottom, transparent, black 40%)'
-                    : 'linear-gradient(to right, transparent, black 52%)',
+                  width: '100%', height: isMobile ? '57%' : '100%',
+                  objectFit: isMobile ? 'cover' : 'fill',
+                  objectPosition: isMobile ? 'right bottom' : 'center',
+                  maskImage: isMobile ? 'linear-gradient(to bottom, transparent, black 35%)' : undefined,
                   pointerEvents: 'none',
                 }}
               />
@@ -3315,32 +3290,40 @@ export default function App() {
                       {ABOUT.text}
                     </p>
                   </motion.div>
-                  <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingRight: '2vw', paddingBottom: '2vh' }}>
+                  <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-evenly', gap: 8, paddingBottom: '2vh' }}>
                     <Phone small progress={sp} center={mobileCenter} expansion={mobileZoom} settle={mobileSettle} enabled={landingActive} image={phoneScreenImage} />
                   </div>
                 </div>
               ) : (
                 <div
                   style={{
-                    position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: '0.95fr 1.05fr',
-                    alignItems: 'center', gap: '3vw', padding: `${V(11)} 6vw ${V(4)} 7vw`,
+                    position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) auto minmax(0, 1fr)',
+                    alignItems: 'center', gap: '2vw', padding: `${V(11)} 6vw ${V(4)} 7vw`,
                   }}
                 >
                   <motion.div style={{ position: 'relative', zIndex: 2, minWidth: 0, opacity: aboutFade, x: aboutShift }}>
-                    <div style={{ fontFamily: sans, fontWeight: 400, fontSize: statementFontSize(isMobile), letterSpacing: '0.02em', lineHeight: 1 }}>{ABOUT.heading}</div>
-                    <p style={{ margin: `${ABOUT.textGapTop} 0 0`, maxWidth: ABOUT.textMaxWidth, fontSize: ABOUT.textSize, fontWeight: 400, lineHeight: 1.75, color: 'rgba(20,22,28,.82)' }}>
+                    <h2 style={{ margin: 0, fontFamily: 'Georgia, serif', fontWeight: 500, fontSize: 'clamp(44px, 5.6vw, 84px)', letterSpacing: '-0.045em', lineHeight: 1 }}>{ABOUT.heading}</h2>
+                    <div aria-hidden="true" style={{ width: 54, height: 2, background: '#927943', marginTop: 14 }} />
+                    <p style={{ margin: '16px 0 0', maxWidth: '43ch', fontSize: 'clamp(15px, 1.45vw, 22px)', fontWeight: 400, lineHeight: 1.48, color: 'rgba(20,22,28,.88)' }}>
                       {ABOUT.text}
                     </p>
                   </motion.div>
+                  <motion.div style={{ position: 'relative', left: '-20px', top: 'min(12vh, 100px)', width: 'min(27vw, 48svh, 300px)', flexShrink: 0, overflow: 'hidden', opacity: aboutFade }}>
+                      <img src={`${import.meta.env.BASE_URL}Owner-blackandwhite.png`}
+                        alt="Harpreet Singh Ghulati" loading="lazy" decoding="async"
+                        style={{ display: 'block', width: '172%', maxWidth: 'none', height: 'auto' }} />
+                    </motion.div>
                   <div style={{ justifySelf: 'center' }}>
-                    <Phone progress={sp} center={desktopMotion} expansion={desktopMotion} landscapeGrowth={desktopLandscapeGrowth} fullscreen={desktopFullscreen} reveal={reveal} settle={settle} enabled={landingActive} image={phoneScreenImage} />
+                    <Phone progress={sp} center={desktopMotion} expansion={desktopMotion} landscapeGrowth={desktopLandscapeGrowth} fullscreen={desktopFullscreen} settle={settle} enabled={landingActive} image={phoneScreenImage} />
                   </div>
                 </div>
               )}
             </motion.div>
 
+            <SocialScrollScreen progress={socialProgress} enabled={landingActive} slideY={socialSlideY} />
             <ProjectShowcaseReveal
-              reveal={isMobile ? mobileShowcase : desktopShowcase}
+              reveal={homeShowcase}
+              slideY={projectsSlideY}
               isMobile={isMobile}
               enabled={landingActive}
               onExplore={goProjects}
@@ -3354,7 +3337,6 @@ export default function App() {
             padding: isMobile ? '9vh 1vw 20px' : '12vh 1.5vw 28px',
           }} />
         )}
-
 
         <PropertyLocationMap isMobile={isMobile} enabled={landingActive} />
         {!projectsOpen && <DeveloperLogoSlider />}
