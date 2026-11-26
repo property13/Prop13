@@ -59,19 +59,8 @@ const aboutFontPath = `${import.meta.env.BASE_URL}laygrotesk-trial-regular`;
 
 const ABOUT = {
   heading: 'About',
-  text: (
-    <>
-      <a href="https://www.google.com/search?kgmid=%2Fg%2F11gxpzrq4g&q=harpreet+singh+ghulati"
-        target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>Harpreet Singh Ghulati</a>
-      {' is a '}<strong>real estate consultant, entrepreneur, and social media influencer</strong>
-      {' based in Gurugram (Gurgaon), Haryana. He is the founder/CEO of '}
-      <a href="https://propertygallery.in/" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>
-        <strong>Property Gallery</strong>
-      </a>
-      {' and creator of the '}<em>Property Gallery Vlogs</em>
-      {' YouTube channel, which features walkthroughs and insights on residential and commercial properties.'}
-    </>
-  ),
+  propertyText: 'Property Gallery brings together a curated selection of homes, investment opportunities, and new developments. Explore property walkthroughs, neighbourhood guides, and insights to help you find the right space.',
+  founderText: 'Harpreet Singh Ghulati is the founder of Property Gallery. Through property walkthroughs and market insights, he helps buyers explore residential and commercial properties and understand what each project offers.',
   textSize: 24,
   textMaxWidth: 800,
   textGapTop: '2.6vh',
@@ -1050,7 +1039,7 @@ function PropertyLocationMap({isMobile,enabled}) {
         <AnimatePresence mode="wait" initial={false}>
           <motion.div key={current?.name||'intro'} initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-12}} transition={{duration:.28}}>
             <h2 style={{fontFamily:sans,fontSize:isMobile?'clamp(28px,7vw,39px)':'clamp(42px,4vw,68px)',fontWeight:400,lineHeight:1.1,margin:0,textShadow:'0 3px 22px rgba(0,0,0,.65)'}}>{current?.name||'India to Dubai'}</h2>
-            <div style={{color:'#d7cba9',fontFamily:sans,fontSize:isMobile?11:13,letterSpacing:'.1em',marginTop:13}}>{current?.country||'A journey across destinations'}</div>
+            {/* <div style={{color:'#d7cba9',fontFamily:sans,fontSize:isMobile?11:13,letterSpacing:'.1em',marginTop:13}}>{current?.country||'A journey across destinations'}</div> */}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -1991,11 +1980,11 @@ const TITLE_LETTER_ROLL = {
   enter: { y: '105%' },
   active: (index) => ({
     y: '0%',
-    transition: { duration: .38, delay: Math.min(index * .017, .24), ease: [.22, .85, .28, 1] },
+    transition: { duration: .90 , delay: Math.min(index * .017, .24), ease: [.22, .85, .28, 1] },
   }),
   leave: (index) => ({
     y: '-105%',
-    transition: { duration: .3, delay: Math.min(index * .012, .18), ease: [.22, .85, .28, 1] },
+    transition: { duration: .87 , delay: Math.min(index * .012, .18), ease: [.22, .85, .28, 1] },
   }),
 };
 
@@ -2020,6 +2009,96 @@ function RollingShowcaseTitle({ title }) {
   );
 }
 
+function AboutTitle({ isMobile, enabled, showFounder, setShowFounder }) {
+  
+  const titleRef = useRef(null);
+  const inView = useInView(titleRef, { amount: 0.65 });
+  const reducedMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (!enabled || !inView) {
+      setShowFounder(false);
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setShowFounder((current) => !current);
+    }, 4000);
+
+    return () => window.clearInterval(timer);
+  }, [enabled, inView, setShowFounder]);
+
+  const titles = ['PROPERTY\nGALLERY', 'HARPREET SINGH\nGHULATI'];
+  const paragraphs = [ABOUT.propertyText, ABOUT.founderText];
+  const index = Number(showFounder);
+  const rollProps = {
+    initial: reducedMotion ? false : 'enter',
+    animate: reducedMotion ? undefined : 'active',
+    exit: reducedMotion ? undefined : 'leave',
+  };
+
+  return (
+    <div ref={titleRef} style={{ containerType: 'inline-size' }}>
+      <div style={{
+        fontFamily: sans,
+        fontSize: NAV_FONT,
+        fontWeight: 500,
+        margin: '0 0 10px 8px',
+      }}>
+        About
+      </div>
+
+      <h2 aria-label={titles[index].replace('\n', ' ')} style={{
+        display: 'grid',
+        overflow: 'hidden',
+        margin: 0,
+        fontFamily: 'Arial, sans-serif',
+        fontWeight: 700,
+        fontSize: isMobile
+          ? 'clamp(16px, 8cqw, 34px)'
+          : 'clamp(16px, 9cqw, 56px)',
+        lineHeight: 1.05,
+        letterSpacing: '-.025em',
+        minHeight: '2.1em',
+      }}>
+        {titles.map((text) => (
+          <span key={text} aria-hidden="true" style={{ gridArea: '1 / 1', visibility: 'hidden', whiteSpace: 'pre-line' }}>
+            {reducedMotion ? text : <RollingShowcaseTitle title={text} />}
+          </span>
+        ))}
+        <AnimatePresence initial={false}>
+          <motion.span key={titles[index]} {...rollProps} aria-hidden="true"
+            style={{ gridArea: '1 / 1', whiteSpace: 'pre-line' }}>
+            {reducedMotion ? titles[index] : <RollingShowcaseTitle title={titles[index]} />}
+          </motion.span>
+        </AnimatePresence>
+      </h2>
+      <p style={{
+        display: 'grid', margin: isMobile ? '8px 0 0' : `${ABOUT.textGapTop} 0 0`,
+        maxWidth: ABOUT.textMaxWidth, fontSize: isMobile ? 'clamp(14px, 4vw, 17px)' : ABOUT.textSize,
+        fontWeight: 400, lineHeight: isMobile ? 1.4 : 1.75, color: 'rgba(20,22,28,.82)',
+      }}>
+        <span style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)' }}>
+          {paragraphs[index]}
+        </span>
+        {paragraphs.map((text) => (
+          <span key={text} aria-hidden="true" style={{ gridArea: '1 / 1', visibility: 'hidden', whiteSpace: 'pre-line' }}>
+            {text}
+          </span>
+        ))}
+        <AnimatePresence initial={false}>
+          <motion.span key={paragraphs[index]} aria-hidden="true"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: reducedMotion ? 0 : 0.3 }}
+            style={{ gridArea: '1 / 1', whiteSpace: 'pre-line' }}>
+            {paragraphs[index]}
+          </motion.span>
+        </AnimatePresence>
+      </p>
+    </div>
+  );
+}
+
 function SocialScrollScreen({ progress, enabled, slideY }) {
   const [interactive, setInteractive] = useState(false);
   const opacity = useTransform(progress, [0, .16], [0, 1]);
@@ -2030,44 +2109,24 @@ function SocialScrollScreen({ progress, enabled, slideY }) {
   }, [enabled, progress]);
 
   return (
-    <motion.section className="pg-connect-screen" aria-labelledby="pg-connect-title" aria-hidden={!interactive}
-      style={{ opacity, y: slideY, pointerEvents: interactive ? 'auto' : 'none' }}>
-      <style>{`
-        .pg-connect-screen {
-          position: absolute; inset: 0; z-index: 45;
-          display: grid; place-content: center; justify-items: center;
-          padding: 56px 5vw 32px;
-          background: #080808;
-        }
-        .pg-connect-screen h2 {
-          margin: 0; font-size: clamp(32px, 6vw, 76px);
-          font-weight: 400; line-height: 1.05; text-align: center;
-        }
-        .pg-connect-screen h2::after {
-          content: ''; display: block; width: 40px; height: 1px;
-          margin: 18px auto 0; background: currentColor; opacity: .5;
-        }
-        .pg-connect-links {
-          display: flex; flex-wrap: wrap; justify-content: center;
-          gap: 12px clamp(12px, 3vw, 44px); margin-top: clamp(20px, 4vh, 40px);
-        }
-        .pg-connect-links a {
-          display: grid; justify-items: center; align-content: center;
-          gap: 8px; min-width: 50px; min-height: 48px;
-          padding: 6px 2px; color: inherit; text-decoration: none;
-          font-size: clamp(11px, 1.25vw, 14px);
-        }
-        .pg-connect-links a:hover { color: white; }
-        .pg-connect-links a:focus-visible { outline: 1px solid currentColor; outline-offset: 4px; }
-        .pg-connect-links img { display: block; width: 50px; height: 50px; object-fit: contain; }
-      `}</style>
-      <h2 id="pg-connect-title" style={{ fontFamily: sans, color: CREAM }}>Connect with us</h2>
-      <div className="pg-connect-links" style={{ fontFamily: sans, color: CREAM }}>
+    <motion.section aria-label="Connect with Property Gallery" aria-hidden={!interactive}
+      style={{
+        position: 'absolute', inset: 0, zIndex: 45, opacity, y: slideY, background: BG, color: CREAM,
+        display: 'grid', placeContent: 'center', justifyItems: 'center', gap: 22,
+        padding: '68px 6vw 24px', pointerEvents: interactive ? 'auto' : 'none',
+      }}>
+      <h2 style={{ fontFamily: sans, fontWeight: 500, fontSize: 'clamp(25px, 5vw, 46px)', margin: 0 }}>
+        Connect with us
+      </h2>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 'clamp(10px, 2vw, 20px)' }}>
         {CONTACTS.map(({ icon, name, href }) => (
-          <a key={icon} href={href} tabIndex={interactive ? 0 : -1}
-            {...(href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
-            <img src={ICON_IMG[icon]} alt="" />
-            <span>{name}</span>
+          <a key={icon} href={href} aria-label={name} title={name} tabIndex={interactive ? 0 : -1}
+            {...(href.startsWith('http') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+            style={{
+              display: 'grid', placeItems: 'center', width: 'clamp(42px, 9vw, 68px)', aspectRatio: '1',
+              borderRadius: 14, background: 'rgba(251,239,202,.08)', border: '1px solid rgba(251,239,202,.24)',
+            }}>
+            <img src={ICON_IMG[icon]} alt="" style={{ display: 'block', width: '55%', height: '55%', objectFit: 'contain' }} />
           </a>
         ))}
       </div>
@@ -2133,7 +2192,7 @@ function ProjectShowcaseReveal({ reveal, onExplore, isMobile, enabled, slideY })
       <h2 aria-label={rolling ? item.title : undefined} style={{
         fontFamily: sans,
         fontSize: statementFontSize(isMobile),
-        fontWeight: 340,
+        fontWeight: 400,
         lineHeight: 1.12,
         letterSpacing: '-0.025em',
         textTransform: 'none', margin: '0 0 14px', textWrap: 'balance', whiteSpace: 'pre-line',
@@ -2595,6 +2654,7 @@ function ProjectsView({ isMobile, onOpen, categoryId, onBackToCategories }) {
 }
 
 export default function App() {
+  const [showFounder, setShowFounder] = useState(false);
   const isMobile = useIsMobile();
   const pageVisible = usePageVisible();
   const [stage, setStage] = useState(0);
@@ -2735,10 +2795,27 @@ export default function App() {
   const mobileAboutFade = useTransform(mobileZoom, [0, 0.25], [1, 0]);
   const mobileAboutShift = useTransform(mobileZoom, [0, 0.35], [0, -50]);
   const aboutFade = useTransform(desktopMotion, [0, 0.65], [1, 0]);
+  const aboutCtaOpacity = isMobile ? mobileAboutFade : aboutFade;
+  const aboutCtaVisibility = useTransform(aboutCtaOpacity, (opacity) => opacity > .4 ? 'visible' : 'hidden');
   const aboutShift = useTransform(desktopMotion, [0, 0.8], [0, -50]);
 
 
   const panelY = useTransform(sp, [0.36, 0.62], ['100%', '0%']);
+  const headerExit = useTransform(phoneProgress, [0, .16], [0, 1], { ease: smoothStep });
+  const headerReturn = useTransform(socialProgress, [.12, .28], [0, 1], { ease: smoothStep });
+  const headerLogoY = useTransform([logoY, headerExit, headerReturn],
+    ([introY, exit, enter]) => introY - 26 * exit * (1 - enter));
+  const headerLogoOpacity = useTransform([logoOpacity, headerExit, headerReturn],
+    ([introOpacity, exit, enter]) => introOpacity * (1 - exit * (1 - enter)));
+  const phoneNavVisibility = useTransform(headerLogoOpacity,
+    (opacity) => opacity > .01 ? 'visible' : 'hidden');
+  const lightHeader = useTransform(
+    [panelY, socialProgress],
+    ([offset, social]) => parseFloat(offset) <= 2 && social < .12,
+  );
+  const headerText = useTransform(lightHeader, (light) => light ? '#000' : '#fff');
+  const headerLogo = useTransform(lightHeader, (light) => light ? 'brightness(0)' : 'drop-shadow(0 1px 3px rgba(0,0,0,.45))');
+  const headerMenuTint = useTransform(lightHeader, (light) => light ? 'rgba(0,0,0,.06)' : 'rgba(40,42,48,.55)');
   const radH = useTransform(sp, [0.36, 0.5, 0.62], [50, 6, 0]);
   const radV = useTransform(sp, [0.36, 0.5, 0.62], [70, 8, 0]);
   const panelRadius = useMotionTemplate`${radH}% ${radV}%`;
@@ -2748,7 +2825,6 @@ export default function App() {
   const mobilePanelRadius = useMotionTemplate`${mobileRadH}% ${mobileRadV}vw`;
   const stmtOpacity = useTransform(sp, [0.36, 0.62], [1, 0.25]);
   const stmtScale = useTransform(sp, [0.36, 0.62], [1, 0.94]);
-  const glass = useTransform(sp, [0.5, 0.6], [0, 1]);
 
   const rest = STATEMENT_REST.split(' ');
   const total = rest.length + 1;
@@ -2968,15 +3044,7 @@ export default function App() {
       >
         <motion.div
           style={{
-            position: 'absolute', inset: 0, zIndex: -1, opacity: projectsOpen ? 1 : glass,
-            background: 'rgba(40,42,48,.5)',
-            backdropFilter: `blur(${isMobile ? 8 : 14}px)`,
-            WebkitBackdropFilter: `blur(${isMobile ? 8 : 14}px)`,
-          }}
-        />
-        <motion.div
-          style={{
-            opacity: projectsOpen ? 1 : logoOpacity, y: projectsOpen ? 0 : logoY,
+            opacity: projectsOpen ? 1 : headerLogoOpacity, y: projectsOpen ? 0 : headerLogoY,
             display: 'flex', alignItems: 'center', pointerEvents: 'auto', cursor: 'pointer',
             position: 'relative', top: isMobile ? menuBtn.top : undefined,
           }}
@@ -2985,30 +3053,35 @@ export default function App() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
         >
-          <img
+          <motion.img
             src={LOGO}
             alt="Property Gallery"
             style={{
               height: isMobile ? 42 : 'clamp(52px, 4.8vw, 80px)', width: 'auto', display: 'block',
-              objectFit: 'contain', filter: 'drop-shadow(0 1px 3px rgba(0,0,0,.45))',
+              objectFit: 'contain', filter: projectsOpen ? 'drop-shadow(0 1px 3px rgba(0,0,0,.45))' : headerLogo,
             }}
           />
         </motion.div>
 
         <motion.nav
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 1.3 }}
           style={{
+            opacity: projectsOpen ? 1 : headerLogoOpacity,
+            y: projectsOpen ? 0 : headerLogoY,
             display: 'flex', alignItems: 'center', gap: isMobile ? 12 : NAV_GAP,
             fontFamily: sans, fontSize: isMobile ? 13 : NAV_FONT, fontWeight: 500,
-            color: '#fff', pointerEvents: 'auto',
+            color: projectsOpen ? '#fff' : headerText, pointerEvents: 'auto',
+            visibility: projectsOpen ? 'visible' : phoneNavVisibility,
+            background: isMobile ? 'transparent' : 'rgba(118, 108, 77, .22)',
+            backdropFilter: isMobile ? undefined : 'blur(8px)',
+            WebkitBackdropFilter: isMobile ? undefined : 'blur(8px)',
+            padding: isMobile ? 0 : '4px 5px 4px 14px',
+            borderRadius: 4,
           }}
         >
           {isMobile ? (
-            <button className="pg-nav-roll" type="button" onClick={() => setMenuOpen(true)} aria-label="Open menu" style={menuBtn}>
+            <motion.button className="pg-nav-roll" type="button" onClick={() => setMenuOpen(true)} aria-label="Open menu" style={{ ...menuBtn, background: projectsOpen ? menuBtn.background : headerMenuTint, color: projectsOpen ? menuBtn.color : headerText }}>
               <RollingNavLabel>Menu</RollingNavLabel>
-            </button>
+            </motion.button>
           ) : (
             <>
               <button className="pg-nav-roll" type="button" onClick={goProjects} aria-current={projectsOpen ? 'page' : undefined}
@@ -3254,24 +3327,20 @@ export default function App() {
                 position: 'absolute', inset: 0, zIndex: 40, y: panelY,
                 borderTopLeftRadius: isMobile ? mobilePanelRadius : panelRadius,
                 borderTopRightRadius: isMobile ? mobilePanelRadius : panelRadius,
-                background: '#f4f3e9',
+                background: 'rgb(255, 255, 255)',
                 borderTop: '1px solid rgba(0,0,0,.08)', overflow: 'hidden', color: INK, fontFamily: aboutFont,
               }}
             >
-              <img
-                src={`${import.meta.env.BASE_URL}about-sage.png`}
-                alt=""
-                loading="lazy"
-                decoding="async"
-                style={{
-                  position: 'absolute', right: 0, bottom: 0,
-                  width: '100%', height: isMobile ? '57%' : '100%',
-                  objectFit: isMobile ? 'cover' : 'fill',
-                  objectPosition: isMobile ? 'right bottom' : 'center',
-                  maskImage: isMobile ? 'linear-gradient(to bottom, transparent, black 35%)' : undefined,
-                  pointerEvents: 'none',
-                }}
-              />
+              <style>{`
+                .pg-about-cta {
+                  display: inline-flex; align-items: center; gap: 8px;
+                  min-height: 44px; box-sizing: border-box; padding: 8px 14px;
+                  background: #000000; color: #f8f8f8; border: 1px solid #b1a0a0; border-radius: 3px;
+                  font: inherit; font-size: 18px; text-decoration: none; cursor: pointer;
+                }
+                .pg-about-cta:hover { border-color: #777; }
+                .pg-about-cta:focus-visible { outline: 2px solid #15180c; outline-offset: 3px; }
+              `}</style>
               {isMobile ? (
                 <div
                   style={{
@@ -3281,14 +3350,7 @@ export default function App() {
                   }}
                 >
                   <motion.div style={{ position: 'relative', zIndex: 2, opacity: mobileAboutFade, x: mobileAboutShift }}>
-                    <div style={{ fontFamily: sans, fontWeight: 400, fontSize: 'clamp(23px, 6vw, 30px)', letterSpacing: '0.02em', lineHeight: 1.1 }}>{ABOUT.heading}</div>
-                    <p
-                      style={{
-                        margin: '8px 0 0', fontSize: 'clamp(14px, 4vw, 17px)', fontWeight: 400, lineHeight: 1.4, color: 'rgba(20,22,28,.82)',
-                      }}
-                    >
-                      {ABOUT.text}
-                    </p>
+                    <AboutTitle key={isMobile ? "mobile-about" : "desktop-about"} isMobile={isMobile} enabled={landingActive} showFounder={showFounder} setShowFounder={setShowFounder} />
                   </motion.div>
                   <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-evenly', gap: 8, paddingBottom: '2vh' }}>
                     <Phone small progress={sp} center={mobileCenter} expansion={mobileZoom} settle={mobileSettle} enabled={landingActive} image={phoneScreenImage} />
@@ -3297,26 +3359,34 @@ export default function App() {
               ) : (
                 <div
                   style={{
-                    position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) auto minmax(0, 1fr)',
+                    position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr)',
                     alignItems: 'center', gap: '2vw', padding: `${V(11)} 6vw ${V(4)} 7vw`,
                   }}
                 >
-                  <motion.div style={{ position: 'relative', zIndex: 2, minWidth: 0, opacity: aboutFade, x: aboutShift }}>
-                    <h2 style={{ margin: 0, fontFamily: 'Georgia, serif', fontWeight: 500, fontSize: 'clamp(44px, 5.6vw, 84px)', letterSpacing: '-0.045em', lineHeight: 1 }}>{ABOUT.heading}</h2>
-                    <div aria-hidden="true" style={{ width: 54, height: 2, background: '#927943', marginTop: 14 }} />
-                    <p style={{ margin: '16px 0 0', maxWidth: '43ch', fontSize: 'clamp(15px, 1.45vw, 22px)', fontWeight: 400, lineHeight: 1.48, color: 'rgba(20,22,28,.88)' }}>
-                      {ABOUT.text}
-                    </p>
+                  <motion.div style={{ position: 'relative', zIndex: 2, minWidth: 0, minHeight: ABOUT.phoneHeight, opacity: aboutFade, x: aboutShift }}>
+                    <AboutTitle key={isMobile ? "mobile-about" : "desktop-about"} isMobile={isMobile} enabled={landingActive} showFounder={showFounder} setShowFounder={setShowFounder} />
                   </motion.div>
-                  <motion.div style={{ position: 'relative', left: '-20px', top: 'min(12vh, 100px)', width: 'min(27vw, 48svh, 300px)', flexShrink: 0, overflow: 'hidden', opacity: aboutFade }}>
-                      <img src={`${import.meta.env.BASE_URL}Owner-blackandwhite.png`}
-                        alt="Harpreet Singh Ghulati" loading="lazy" decoding="async"
-                        style={{ display: 'block', width: '172%', maxWidth: 'none', height: 'auto' }} />
-                    </motion.div>
                   <div style={{ justifySelf: 'center' }}>
                     <Phone progress={sp} center={desktopMotion} expansion={desktopMotion} landscapeGrowth={desktopLandscapeGrowth} fullscreen={desktopFullscreen} settle={settle} enabled={landingActive} image={phoneScreenImage} />
                   </div>
                 </div>
+              )}
+              {landingActive && (
+                <motion.div style={{
+                  position: 'absolute', left: isMobile ? '5vw' : '7vw',
+                  bottom: isMobile ? 'max(20px, env(safe-area-inset-bottom))' : '14vh',
+                  zIndex: 5, opacity: aboutCtaOpacity, visibility: aboutCtaVisibility,
+                }}>
+                  {showFounder ? (
+                    <a className="pg-about-cta pg-nav-roll" href={WA_URL} target="_blank" rel="noopener noreferrer">
+                      <RollingNavLabel>Connect</RollingNavLabel> <span aria-hidden="true">↗</span>
+                    </a>
+                  ) : (
+                    <button className="pg-about-cta pg-nav-roll" type="button" onClick={goProjects}>
+                      <RollingNavLabel>Explore</RollingNavLabel> <span aria-hidden="true">↗</span>
+                    </button>
+                  )}
+                </motion.div>
               )}
             </motion.div>
 
@@ -3328,6 +3398,7 @@ export default function App() {
               enabled={landingActive}
               onExplore={goProjects}
             />
+
           </div>
         </section>
 
