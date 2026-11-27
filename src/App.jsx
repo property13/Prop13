@@ -2186,7 +2186,7 @@ function ProjectShowcaseReveal({ reveal, onExplore, isMobile, enabled, slideY })
 
   const projectTitle = (item, rolling = false) => {
     const words = item.title.trim().toLowerCase().split(/\s+/)
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1));
+      .map((word) => word === 'dlf' ? 'DLF' : word.charAt(0).toUpperCase() + word.slice(1));
     const title = words.join(['delhi', 'alibaug', 'dlf'].includes(item.id) ? '\n' : ' ');
     return (
       <h2 aria-label={rolling ? item.title : undefined} style={{
