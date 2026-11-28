@@ -20,7 +20,6 @@ const SOCIAL_SCROLL_VH = 110;
 
 /* ================= 1. CONSTANTS ================= */
 const HERO_IMG = '/pic1.png';
-const DEFAULT_PHONE_SCREEN_IMAGE = HERO_IMG;
 const HERO_VIDEO = '/Website-Landscape.mp4';
 const LOGO = '/logo.png';
 const EXP_IMG = '/Signature.png';
@@ -69,6 +68,11 @@ const ABOUT = {
 };
 
 const WA_URL = `https://wa.me/${WHATSAPP.replace(/[^0-9]/g, '')}`;
+
+function projectEnquiryUrl(title) {
+  const message = `Hi Property Gallery, I'm interested in ${title}. Could you share more details about pricing, availability, and how to schedule a site visit? Thank you!`;
+  return `${WA_URL}?text=${encodeURIComponent(message)}`;
+}
 
 const CONTACTS = [
   { icon: 'ig', name: 'Instagram', label: INSTAGRAM, short: INSTAGRAM, href: `https://instagram.com/${INSTAGRAM}` },
@@ -206,107 +210,6 @@ function Icon({ name, size = 34 }) {
   );
 }
 
-const fill = { position: 'absolute', inset: 0 };
-
-function ProfileScreen({ image }) {
-  const tile = (pos) => ({
-    aspectRatio: '1',
-    backgroundImage: `url(${image})`,
-    backgroundSize: '260%',
-    backgroundPosition: pos,
-  });
-  return (
-    <div style={{ ...fill, background: '#000', color: '#fff', fontFamily: sans, padding: '3.6em 0.9em 0.9em' }}>
-      <div style={{ fontWeight: 700, fontSize: '1.05em', marginBottom: '0.9em' }}>{INSTAGRAM} ▾</div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1em' }}>
-        <div style={{ width: '4.6em', height: '4.6em', borderRadius: '50%', padding: 2, background: 'linear-gradient(45deg,#feda75,#d62976,#4f5bd5)' }}>
-          <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: `#111 url(${LOGO}) center/60% no-repeat`, border: '2px solid #000' }} />
-        </div>
-        <div style={{ display: 'flex', flex: 1, justifyContent: 'space-around', textAlign: 'center', fontSize: '0.9em' }}>
-          {[['609', 'posts'], ['169k', 'followers'], ['188', 'following']].map(([n, l]) => (
-            <div key={l}><div style={{ fontWeight: 700 }}>{n}</div><div style={{ opacity: 0.7, fontSize: '0.85em' }}>{l}</div></div>
-          ))}
-        </div>
-      </div>
-      <div style={{ marginTop: '0.8em', fontSize: '0.9em', lineHeight: 1.4 }}>
-        <div style={{ fontWeight: 700 }}>Property Gallery</div>
-        <div style={{ opacity: 0.8 }}>Luxury real estate · Delhi NCR</div>
-      </div>
-      <div style={{ display: 'flex', gap: '0.5em', marginTop: '0.8em' }}>
-        {['Following', 'Message'].map((t) => (
-          <div key={t} style={{ flex: 1, textAlign: 'center', background: '#262626', borderRadius: 6, padding: '0.5em 0', fontSize: '0.85em', fontWeight: 600 }}>{t}</div>
-        ))}
-      </div>
-      <div style={{ display: 'flex', gap: '0.8em', margin: '1em 0 0.8em' }}>
-        {['20% 30%', '70% 30%', '30% 80%', '80% 80%'].map((p) => (
-          <div key={p} style={{ width: '3.4em', height: '3.4em', borderRadius: '50%', border: '1.5px solid #555', backgroundImage: `url(${image})`, backgroundSize: '300%', backgroundPosition: p }} />
-        ))}
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 2 }}>
-        {['0% 0%', '50% 0%', '100% 0%', '0% 100%', '50% 100%', '100% 100%'].map((p) => (
-          <div key={p} style={tile(p)} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ReelScreen({ image }) {
-  const circle = { width: '2.6em', height: '2.6em', borderRadius: '50%', background: 'rgba(0,0,0,.35)', display: 'grid', placeItems: 'center' };
-  return (
-    <div style={{ ...fill, background: '#000', overflow: 'hidden', fontFamily: sans, color: '#fff' }}>
-      <motion.div
-        initial={{ scale: 1.05 }}
-        animate={{ scale: 1.22 }}
-        transition={{ duration: 3.4, ease: 'linear' }}
-        style={{ ...fill, backgroundImage: `url(${image})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
-      />
-      <div style={{ ...fill, background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.35), transparent 30%, transparent 55%, rgba(0,0,0,.75))' }} />
-      <div style={{ position: 'absolute', top: '3.5em', left: '0.8em', right: '0.8em', height: 3, background: 'rgba(255,255,255,.3)', borderRadius: 2 }}>
-        <motion.div initial={{ width: '0%' }} animate={{ width: '100%' }} transition={{ duration: 3.1, ease: 'linear' }} style={{ height: '100%', background: '#fff', borderRadius: 2 }} />
-      </div>
-      <div style={{ position: 'absolute', right: '0.8em', bottom: '5.5em', display: 'flex', flexDirection: 'column', gap: '0.9em' }}>
-        <div style={circle}><svg viewBox="0 0 24 24" width="55%" height="55%"><path d="M12 21s-7-4.6-9.5-9C1 8.8 2.6 5 6 5c2 0 3.4 1.1 4 2.2C10.6 6.1 12 5 14 5c3.4 0 5 3.8 3.5 7C19 16.4 12 21 12 21z" fill="#ff3b5c" /></svg></div>
-        <div style={circle}><svg viewBox="0 0 24 24" width="55%" height="55%"><circle cx="12" cy="12" r="8" fill="none" stroke="#fff" strokeWidth="2" /></svg></div>
-        <div style={circle}><svg viewBox="0 0 24 24" width="55%" height="55%"><path d="M3 11l18-8-8 18-2-8z" fill="none" stroke="#fff" strokeWidth="2" strokeLinejoin="round" /></svg></div>
-      </div>
-      <div style={{ position: 'absolute', left: '0.9em', bottom: '2.6em', right: '4.5em', fontSize: '0.9em', lineHeight: 1.35 }}>
-        <div style={{ fontWeight: 700 }}>@{INSTAGRAM}</div>
-        <div style={{ opacity: 0.9 }}>Luxury homes tour · Delhi NCR</div>
-      </div>
-    </div>
-  );
-}
-
-function StatusBar({ o }) {
-  return (
-    <motion.div
-      style={{
-        position: 'absolute', top: '1.25em', left: 0, right: 0, padding: '0 9%',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        color: '#fff', fontFamily: sans, fontSize: '0.95em', fontWeight: 600,
-        zIndex: 4, pointerEvents: 'none', textShadow: '0 0 6px rgba(0,0,0,.35)',
-        opacity: o,
-      }}
-    >
-      <span>9:41</span>
-      <span style={{ display: 'flex', alignItems: 'center', gap: '0.35em' }}>
-        <svg viewBox="0 0 18 12" style={{ width: '1.5em', height: '1em' }}>
-          <rect x="0" y="8" width="3" height="4" rx="1" fill="#fff" />
-          <rect x="5" y="5.5" width="3" height="6.5" rx="1" fill="#fff" />
-          <rect x="10" y="3" width="3" height="9" rx="1" fill="#fff" />
-          <rect x="15" y="0" width="3" height="12" rx="1" fill="#fff" />
-        </svg>
-        <svg viewBox="0 0 27 12" style={{ width: '2.1em', height: '1em' }}>
-          <rect x="0.5" y="0.5" width="22" height="11" rx="3.2" fill="none" stroke="#fff" opacity=".55" />
-          <rect x="2" y="2" width="19" height="8" rx="2" fill="#fff" />
-          <rect x="24" y="4" width="2" height="4" rx="1" fill="#fff" opacity=".6" />
-        </svg>
-      </span>
-    </motion.div>
-  );
-}
-
 const PHONE_RADIUS = '17% / 7.9%';
 
 const PHONE_TURN_DEG = 30;
@@ -328,13 +231,26 @@ function CountUp({ to, run, suffix = '' }) {
   return <motion.span>{text}</motion.span>;
 }
 
-function Badge({ icon, label, to, suffix, caption, show, active, small, from, delay = 0, style }) {
-  const float = show && active;
+function Badge({ icon, label, to, suffix, caption, show, active, small, from, delay = 0, style, tucked = false, reducedMotion }) {
+  const float = show && active && !tucked && !reducedMotion;
+  const tuckX = icon === 'ig' ? '-72%' : '72%';
+  const tuckDelay = icon === 'ig' ? 0 : 0.08;
+  const transition = reducedMotion
+    ? { duration: 0 }
+    : tucked
+      ? {
+          duration: 0.54, delay: tuckDelay, ease: [0.4, 0, 0.2, 1],
+          opacity: { duration: 0.32, delay: tuckDelay + 0.17, ease: 'easeIn' },
+        }
+      : { duration: show ? BADGE_DUR : 0.5, delay: show ? delay : 0, ease: outExpo };
+
   return (
     <motion.div
       initial={{ opacity: 0, x: from }}
-      animate={show ? { opacity: 1, x: 0 } : { opacity: 0, x: from }}
-      transition={{ duration: show ? BADGE_DUR : 0.5, delay: show ? delay : 0, ease: outExpo }}
+      animate={tucked
+        ? { opacity: 0, x: reducedMotion ? 0 : tuckX, scale: reducedMotion ? 1 : 0.72 }
+        : { opacity: show ? 1 : 0, x: show ? 0 : from, scale: 1 }}
+      transition={transition}
       style={{ position: 'absolute', pointerEvents: 'none', ...style }}
     >
       <motion.div
@@ -388,21 +304,6 @@ function Badge({ icon, label, to, suffix, caption, show, active, small, from, de
 const PH_IN = 0.42;
 const PH_OUT = 0.62;
 const PH_SHOW_ON = 0.55;
-
-const LAND_R = (19.3 - 0.633) / (9 - 0.633);
-
-function DesktopPhoneDisplay({ image }) {
-  return (
-    <>
-      <div style={{ ...fill, backgroundImage: `url(${image})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-      <div style={{ ...fill, background: 'linear-gradient(to bottom, rgba(0,0,0,.25), transparent 35%, transparent 60%, rgba(0,0,0,.65))' }} />
-      <div style={{ position: 'absolute', left: '4%', bottom: '8%', fontFamily: sans, color: '#fff', lineHeight: 1.35 }}>
-        <div style={{ fontWeight: 700, fontSize: '1.5em' }}>@{INSTAGRAM}</div>
-        <div style={{ opacity: 0.9, fontSize: '1.15em' }}>Luxury homes tour · Delhi NCR</div>
-      </div>
-    </>
-  );
-}
 
 function desktopPhonePose(t, { w, h, width, height, dx, dy, header }) {
   const angle = Math.PI * t / 2;
@@ -517,8 +418,8 @@ function usePhoneDrag(enabled) {
   return { yaw, pitch, dragging, handlers };
 }
 
-function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen, settle, enabled, image }) {
-  const [i, setI] = useState(0);
+function Phone({ small, progress, center, expansion, landscapeGrowth, settle, enabled, showFounder }) {
+  const reducedMotion = useReducedMotion();
   const [show, setShow] = useState(false);
   const [expanding, setExpanding] = useState(false);
   const showRef = useRef(false);
@@ -548,12 +449,6 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
   const [displaySize, setDisplaySize] = useState(null);
 
   useEffect(() => {
-    if (!active || expanding) return undefined;
-    const t = setInterval(() => setI((v) => (v + 1) % 2), 3300);
-    return () => clearInterval(t);
-  }, [active, expanding]);
-
-  useEffect(() => {
     if (small || !active || expanding) return undefined;
     const controls = runAnimation(floatY, [0, -8, 0], { duration: 4.5, repeat: Infinity, ease: 'easeInOut' });
     return () => controls.stop();
@@ -573,7 +468,6 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
       if (nextZooming !== previousZooming) {
         previousZooming = nextZooming;
         setExpanding(nextZooming);
-        if (nextZooming) setI(1);
       }
     };
     update();
@@ -651,14 +545,23 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
   const rotY = useTransform([scrollRotY, smx, settle], ([a, b, rest]) => (a + b * 9) * (1 - rest));
   const rotX = useTransform([scrollRotX, smy, settle], ([a, b, rest]) => (a - b * 6) * (1 - rest));
   const turnRot = useTransform(expansion, (t) => small ? 0 : TURN_DEG * t);
-  const landO = useTransform(expansion, [0.3, 0.7], [0, 1]);
-  const statusO = useTransform(landO, (v) => small ? 1 : 1 - v);
-
   const zx = useTransform([center, dxMV], ([t, dx]) => t * dx);
   const zy = useTransform([center, dyMV, floatY, settle], ([t, dy, bob, rest]) => t * dy + (small ? 0 : bob * (1 - rest)));
   const zs = useTransform([expansion, sMV], ([t, scale]) => Math.pow(scale, Math.max(0, Math.min(1, t))));
   const pose = useTransform([expansion, geometry], ([t, dimensions]) => dimensions ? desktopPhonePose(t, dimensions) : { x: 0, y: 0, scale: 1 });
   const desktopX = useTransform(pose, ({ x }) => x);
+  const founderOffset = useSpring(0, { stiffness: 160, damping: 24 });
+  useEffect(() => {
+    const offset = showFounder ? (small ? -80 : -110) : 0;
+    if (reducedMotion) founderOffset.jump(offset);
+    else founderOffset.set(offset);
+  }, [showFounder, small, reducedMotion, founderOffset]);
+
+  const phoneX = small ? zx : desktopX;
+  const aboutPhoneX = useTransform(
+    [phoneX, founderOffset, expansion],
+    ([x, offset, zoom]) => x + offset * (1 - Math.min(1, Math.max(0, zoom))),
+  );
   const desktopY = useTransform([pose, floatY, settle], ([{ y }, bob, rest]) => y + bob * (1 - rest));
   const desktopScale = useTransform(() => {
     const { scale } = pose.get();
@@ -672,17 +575,13 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
     const target = Math.max(scale, cover * 1.1);
     return scale * Math.pow(target / scale, growth);
   });
-  const screenScale = useTransform(() => {
-    const dimensions = geometry.get();
-    if (!fullscreen || !dimensions || !displaySize?.width || !displaySize.height) return 1;
-    const start = desktopPhonePose(1, dimensions).scale;
-    const end = Math.max(dimensions.width / displaySize.width, dimensions.height / displaySize.height);
-    return Math.pow(end / start, fullscreen.get());
-  });
+  // Switch the display as the handset settles into its final orientation.
+  const logoScreenOpacity = useTransform(expansion, small ? [0.79, 0.96] : [0.965, 1], [0, 1]);
+  const logoScreenRotation = useTransform(turnRot, (rotation) => -rotation);
+  const logoScreenScale = useTransform(small ? zs : desktopScale, (scale) => 1 / Math.max(1, scale));
   const desktopFade = useTransform(center, [0, 0.75], [1, 0]);
   const mobileFade = useTransform(expansion, [0, 0.2], [1, 0]);
   const fadeOut = small ? mobileFade : desktopFade;
-  const mobileScreenFade = useTransform(expansion, [0.79, 0.96], [0, 1]);
 
   const shadowX = useTransform(rotY, (v) => v * -0.9);
 
@@ -727,13 +626,25 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
         <motion.div style={{ position: 'absolute', inset: 0, zIndex: 3, pointerEvents: 'none', opacity: fadeOut }}>
           <Badge
             icon="ig" label="Instagram" to={169} suffix="k" caption="Followers"
-            show={show && modelReady} active={active} small={small} from={small ? -70 : -150} delay={IG_DELAY}
+            show={show && modelReady} active={active} small={small} tucked={showFounder} reducedMotion={reducedMotion} from={small ? -70 : -150} delay={IG_DELAY}
             style={{ top: small ? '6%' : '8%', left: 'calc(100% - 40px)', zIndex: 3 }}
           />
           <Badge
             icon="yt" label="YouTube" to={128} suffix="k+" caption="Subscribers"
-            show={show && modelReady} active={active} small={small} from={small ? -60 : 150} delay={YT_DELAY}
+            show={show && modelReady} active={active} small={small} tucked={showFounder} reducedMotion={reducedMotion} from={small ? -60 : 150} delay={YT_DELAY}
             style={{ bottom: small ? '14%' : '18%', right: 'calc(100% - 40px)', zIndex: 3 }}
+          />
+        </motion.div>
+
+        <motion.div style={{ position: 'absolute', inset: 0, zIndex: 1, opacity: fadeOut, pointerEvents: 'none' }}>
+          <motion.img
+            src={`${import.meta.env.BASE_URL}owner-property-gallery.png`}
+            alt="" loading="lazy" decoding="async" draggable={false}
+            initial={false}
+            animate={{ x: showFounder ? (small ? '160%' : '175%') : 0,
+              opacity: showFounder && modelReady && !expanding ? 1 : 0 }}
+            transition={{ duration: reducedMotion ? 0 : 0.65, ease: [0.22, 1, 0.36, 1] }}
+            style={{ position: 'absolute', left: 0, bottom: 15, width: '73%', maxWidth:'none', height: 'auto' }}
           />
         </motion.div>
 
@@ -766,7 +677,7 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
             )}
             {nearViewport && (
               <Suspense fallback={null}>
-                <IPhoneModel displayRef={displayRef} image={image} onReady={setModelReady} ready={modelReady} zoom={small ? zs : desktopScale} yaw={yaw} pitch={pitch} />
+                <IPhoneModel displayRef={displayRef} onReady={setModelReady} ready={modelReady} zoom={small ? zs : desktopScale} yaw={yaw} pitch={pitch} />
               </Suspense>
             )}
 
@@ -783,37 +694,15 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
                   borderRadius: '16.2% / 7.5%', padding: '0.3em',
                 }}
               >
-                <div ref={displayRef} style={{ position: 'relative', width: '100%', height: '100%', borderRadius: '15% / 6.9%', overflow: 'hidden', isolation: 'isolate' }}>
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, y: 28 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -28 }}
-                      transition={{ duration: 0.55, ease: outSoft }}
-                      style={fill}
-                    >
-                      {i === 0 ? <ProfileScreen image={image} /> : <ReelScreen image={image} />}
-                    </motion.div>
-                  </AnimatePresence>
-
-                  {!small && <motion.div
-                      style={{
-                        position: 'absolute', top: '50%', left: '50%',
-                        width: `${LAND_R * 100}%`, height: `${100 / LAND_R}%`,
-                        x: '-50%', y: '-50%', rotate: 90,
-                        opacity: landO, zIndex: 2, overflow: 'hidden', background: '#000', pointerEvents: 'none',
-                      }}
-                    >
-                      <motion.div style={{ ...fill, scale: screenScale }}>
-                        <DesktopPhoneDisplay image={image} />
-                      </motion.div>
-                  </motion.div>}
-
-                  {small && <motion.div style={{ ...fill, zIndex: 3, opacity: mobileScreenFade, background: '#000', pointerEvents: 'none' }} />}
-
-                  <StatusBar o={statusO} />
-
+                <div ref={displayRef} style={{ position: 'relative', width: '100%', height: '100%', borderRadius: '15% / 6.9%', overflow: 'hidden', isolation: 'isolate', background: '#141416' }}>
+                  <video
+                    src={`${import.meta.env.BASE_URL}ownervideo.mp4`}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    style={{ position: 'absolute', top: '-3%', left: 0, display: 'block', width: '100%', height: '103%', objectFit: 'fill', pointerEvents: 'none' }}
+                  />
                   <div
                     aria-hidden="true"
                     style={{
@@ -829,10 +718,22 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
                       boxShadow: '0 0 0 0.09em #111216',
                     }} />
                   </div>
-
-                  <div style={{ position: 'absolute', bottom: '0.55em', left: '50%', transform: 'translateX(-50%)', width: '34%', height: '0.36em', borderRadius: 999, background: 'rgba(255,255,255,.85)', zIndex: 4, pointerEvents: 'none' }} />
-
-                  <div style={{ position: 'absolute', inset: 0, zIndex: 6, pointerEvents: 'none', background: 'radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 62%, rgba(0,0,0,.28) 100%)' }} />
+                  <motion.div
+                    aria-hidden="true"
+                    style={{
+                      position: 'absolute', inset: 0, zIndex: 8, display: 'grid', placeItems: 'center',
+                      background: BG, opacity: logoScreenOpacity, pointerEvents: 'none',
+                    }}
+                  >
+                    <motion.img
+                      src={LOGO}
+                      alt=""
+                      style={{
+                        display: 'block', width: '7.5em', height: 'auto', objectFit: 'contain',
+                        rotate: logoScreenRotation, scale: logoScreenScale, filter: 'brightness(0) invert(1)',
+                      }}
+                    />
+                  </motion.div>
                 </div>
               </div>
             </motion.div>
@@ -843,7 +744,7 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
 
   return (
     <div ref={layoutRef}>
-      <motion.div style={{ position: 'relative', x: small ? zx : desktopX, y: small ? zy : desktopY, scale: small ? zs : desktopScale }}>
+      <motion.div style={{ position: 'relative', x: aboutPhoneX, y: small ? zy : desktopY, scale: small ? zs : desktopScale }}>
         {small ? (
           <motion.div
             style={{ position: 'relative', justifySelf: 'center' }}
@@ -859,12 +760,7 @@ function Phone({ small, progress, center, expansion, landscapeGrowth, fullscreen
 }
 
 
-/* === PROPERTY GALLERY / MINIMAL EARTH SCROLL JOURNEY ===
-   A minimal Three.js globe with dark charcoal land, near-black sea and restrained coastline.
-   Map texture: generated from Basemap/GSHHS geographic coastline dataset; no satellite imagery.
-   All geographic pin positions use real latitude/longitude.
-   Geographic projection is aligned to the equirectangular Earth texture.
-   WebGL is only active while this scene is mounted; renders on scroll/resize. */
+
 const EARTH_STOPS = [
   {name:'Delhi NCR',lat:28.6139,lon:77.2090,country:'India'},
   // {name:'Panipat',lat:29.3909,lon:76.9635,country:'India'},
@@ -1158,7 +1054,40 @@ function StackCard({ sec, i, n, progress, isMobile }) {
   );
 }
 
-function StackText({ sections, progress, isMobile }) {
+function PropertyFacts({ project, isMobile }) {
+  const location = project.location || project.subtitle?.split(' · ').at(-1) || 'On request';
+  const facts = [
+    ['Price', project.price || project.referencePrice || 'On request'],
+    [/^[\d,]+[–-]/.test(project.specs ?? '') ? 'Size' : 'Configuration', project.specs || 'On request'],
+    ['Location', location],
+  ];
+
+  return (
+    <dl style={{
+      display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+      margin: isMobile ? '10px 0 0' : '18px 0 0', border: '1px solid rgba(251,239,202,.22)',
+      borderRadius: 10, overflow: 'hidden', background: 'linear-gradient(135deg, #1c1810, #100f0c)',
+    }}>
+      {facts.map(([label, value], index) => (
+        <div key={label} style={{
+          gridColumn: index === 2 ? '1 / -1' : undefined,
+          borderLeft: index === 1 ? '1px solid rgba(251,239,202,.18)' : undefined,
+          borderTop: index === 2 ? '1px solid rgba(251,239,202,.18)' : undefined,
+          padding: isMobile ? '6px 9px' : '9px 13px',
+        }}>
+          <dt style={{ fontSize: 10, letterSpacing: '.11em', textTransform: 'uppercase', color: GOLD }}>
+            {label}
+          </dt>
+          <dd style={{ margin: '3px 0 0', fontSize: isMobile ? 12 : 15, lineHeight: 1.3, fontWeight: 600, color: CREAM, overflowWrap: 'anywhere' }}>
+            {value}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function StackText({ project, sections, progress, isMobile }) {
   const n = sections.length;
   const [active, setActive] = useState(0);
 
@@ -1229,9 +1158,10 @@ function StackText({ sections, progress, isMobile }) {
               <p style={{ fontFamily: sans, fontSize: isMobile ? STACK.bodyPxMobile : STACK.bodyPx, lineHeight: 1.75, opacity: 0.85, margin: '14px 0 0' }}>
                 {sec.text}
               </p>
-              <div style={{ marginTop: isMobile ? 16 : 26 }}>
+              <PropertyFacts project={project} isMobile={isMobile} />
+              <div style={{ marginTop: isMobile ? 12 : 20 }}>
                 <a
-                  href={WA_URL}
+                  href={projectEnquiryUrl(project.title)}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
@@ -1258,13 +1188,13 @@ function StackText({ sections, progress, isMobile }) {
   );
 }
 
-function StackedCards({ sections, isMobile }) {
+function StackedCards({ project, sections, isMobile }) {
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end end'] });
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
-      <StackText sections={sections} progress={scrollYProgress} isMobile={isMobile} />
+      <StackText project={project} sections={sections} progress={scrollYProgress} isMobile={isMobile} />
       <div style={{ marginTop: `calc(${V(100)} * -1)` }}>
         {sections.map((sec, i) => (
           <StackCard key={i} sec={sec} i={i} n={sections.length} progress={scrollYProgress} isMobile={isMobile} />
@@ -2023,7 +1953,7 @@ function AboutTitle({ isMobile, enabled, showFounder, setShowFounder }) {
 
     const timer = window.setInterval(() => {
       setShowFounder((current) => !current);
-    }, 4000);
+    }, 6000);
 
     return () => window.clearInterval(timer);
   }, [enabled, inView, setShowFounder]);
@@ -2401,7 +2331,24 @@ const DUBAI_PROPERTIES = [
   }],
 }));
 
-const PROJECT_CATALOG = [...PROJECTS, ...ADDITIONAL_PROPERTIES, ...DUBAI_PROPERTIES];
+const HERO_HOMES_COVER = import.meta.env.BASE_URL + 'Project/Hero-homes.jpg';
+const HERO_HOMES_AMENITIES = import.meta.env.BASE_URL + 'Project/hero-homes1.jpg';
+const HERO_HOMES_KUNDLI = {
+  id: 'hero-homes-kundli',
+  category: 'plots',
+  title: 'Hero Homes Kundli',
+  subtitle: 'Hero Homes · Kundli, Sonipat',
+  price: 'Price on request',
+  specs: 'Residential plots',
+  desc: 'Residential plots at Swarnpath by Hero Earth in Kundli, Sonipat, Haryana.',
+  image: HERO_HOMES_COVER,
+  sections: [
+    { title: 'Hero Homes Kundli', sub: 'Residential plots · Kundli, Sonipat', text: 'Explore the plotted development at Swarnpath by Hero Earth.', image: HERO_HOMES_COVER },
+    { title: 'Outdoor amenities', sub: 'Swarnpath by Hero Earth', text: 'The project renders show landscaped open spaces and outdoor recreation areas.', image: HERO_HOMES_AMENITIES },
+  ],
+};
+
+const PROJECT_CATALOG = [...PROJECTS, ...ADDITIONAL_PROPERTIES, ...DUBAI_PROPERTIES, HERO_HOMES_KUNDLI];
 
 // Budget bands use lakh as the unit, with the upper bound excluded.
 const PROPERTY_BUDGETS = [
@@ -2419,6 +2366,25 @@ function propertyPriceInLakh(price) {
   return match[2].toLowerCase() === 'cr' ? amount * 100 : amount;
 }
 
+function MorePropertiesRow({ columns, gap, reducedMotion, children }) {
+  const rowRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: rowRef,
+    offset: ['start 1', 'start 0.55'],
+  });
+  const staggerRaw = useTransform(scrollYProgress, [0, 1], [1, 0]);
+  const stagger = useSpring(staggerRaw, { stiffness: 120, damping: 25, mass: 0.4 });
+
+  return (
+    <motion.div ref={rowRef} style={{
+      display: 'grid', gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`, gap,
+      '--pg-more-stagger': reducedMotion ? 0 : stagger,
+    }}>
+      {children}
+    </motion.div>
+  );
+}
+
 function AllProjectsView({ isMobile, onOpen }) {
   const reveal = useMotionValue(1);
   const listingsRef = useRef(null);
@@ -2431,11 +2397,17 @@ function AllProjectsView({ isMobile, onOpen }) {
   const [budget, setBudget] = useState('');
   const selectedBudget = PROPERTY_BUDGETS.find(({ label }) => label === budget);
   const activeFilterCount = [propertyType, status, location, budget].filter(Boolean).length;
-  const statuses = [...new Set(PROJECT_CATALOG.map(({ tag }) => tag))];
+  const statuses = [...new Set(PROJECT_CATALOG.map(({ tag }) => tag).filter(Boolean))];
   const properties = PROJECT_CATALOG.filter((property) => {
     const price = property.budgetPriceInLakh ?? propertyPriceInLakh(property.price);
-    const propertyLocation = DUBAI_PROPERTIES.includes(property) ? 'Dubai' : 'India';
-    return (!location || propertyLocation === location)
+const address = property.subtitle ?? '';
+const propertyLocation = DUBAI_PROPERTIES.includes(property)
+  ? 'Dubai'
+  : /\b(delhi|ncr|gurugram|gurgaon|noida|sonipat|kundli)\b/i.test(address)
+    ? 'Delhi NCR'
+    : ['Ahmedabad', 'Nagpur', 'Mumbai', 'Goa'].find((city) =>
+        new RegExp(`\\b${city}\\b`, 'i').test(address)
+      );    return (!location || propertyLocation === location)
       && (!propertyType || property.category === propertyType)
       && (!status || property.tag === status)
       && (!selectedBudget || (price >= selectedBudget.min && price < selectedBudget.max));
@@ -2446,6 +2418,9 @@ function AllProjectsView({ isMobile, onOpen }) {
       minHeight: V(100), paddingBottom: isMobile ? 64 : 96,
     }}>
       <style>{`
+        .pg-more-property-card {
+          translate: 0 calc(var(--pg-more-stagger, 0) * var(--pg-column, 0) * clamp(20px, 4vw, 55px));
+        }
         .pg-filters-glass {
           display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
           padding: 5px; border-radius: 16px;
@@ -2522,7 +2497,11 @@ function AllProjectsView({ isMobile, onOpen }) {
                   </select>
                   <select aria-label="Location" value={location} onChange={(event) => setLocation(event.target.value)}>
                     <option value="">All locations</option>
-                    <option value="India">India</option>
+                    <option value="Delhi NCR">Delhi NCR</option>
+                    <option value="Ahmedabad">Ahmedabad</option>
+                    <option value="Nagpur">Nagpur</option>
+                    <option value="Mumbai">Mumbai</option>
+                    <option value="Goa">Goa</option>
                     <option value="Dubai">Dubai</option>
                   </select>
                   <label className="pg-budget-filter">
@@ -2554,37 +2533,45 @@ function AllProjectsView({ isMobile, onOpen }) {
         </div>
         {properties.length === 0 && <p role="status">No properties match these filters.</p>}
         {properties.length > 0 && (
-          <div style={{
-            display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, minmax(0, 1fr))',
-            gap: isMobile ? 12 : 20,
-          }}>
-            {properties.map((property) => (
-              <button key={property.id} type="button" onClick={(event) => {
-                const cover = event.currentTarget.querySelector('img');
-                onOpen(property, cover?.naturalWidth ? cover.getAttribute('src') : null);
-              }}
-                aria-label={`View details for ${property.title}`}
-                style={{
-                  position: 'relative', display: 'block', textAlign: 'left', color: CREAM,
-                  background: '#151410', border: '1px solid rgba(244,211,94,.23)', borderRadius: 12,
-                  height: isMobile ? 'clamp(225px, 59vw, 320px)' : 'clamp(300px, 32vw, 480px)',
-                  padding: 0, overflow: 'hidden', cursor: 'pointer',
-                }}>
-                <img src={property.image} onError={tryNextProjectPhoto} alt="" loading="lazy" decoding="async"
-                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-                <span style={{
-                  position: 'absolute', inset: 'auto 0 0', background: 'linear-gradient(transparent, rgba(0,0,0,.94))',
-                  display: 'block', padding: isMobile ? '56px 10px 12px' : '96px 16px 18px',
-                }}>
-                  <span style={{
-                    display: 'block', fontWeight: 700, fontSize: isMobile ? 17 : 'clamp(20px, 2.25vw, 32px)',
-                    lineHeight: 1.1, overflowWrap: 'anywhere',
-                  }}>
-                    {property.title}
-                  </span>
-                </span>
-              </button>
-            ))}
+          <div style={{ display: 'grid', gap: isMobile ? 12 : 20 }}>
+            {Array.from({ length: Math.ceil(properties.length / (isMobile ? 2 : 4)) }, (_, index) => {
+              const columns = isMobile ? 2 : 4;
+              const row = properties.slice(index * columns, (index + 1) * columns);
+              return (
+                <MorePropertiesRow key={row[0].id} columns={columns} gap={isMobile ? 12 : 20} reducedMotion={reducedMotion}>
+                  {row.map((property, column) => (
+                  <button key={property.id} type="button" className="pg-more-property-card" onClick={(event) => {
+                    const cover = event.currentTarget.querySelector('img');
+                    onOpen(property, cover?.naturalWidth ? cover.getAttribute('src') : null);
+                  }}
+                    aria-label={`View details for ${property.title}`}
+                    style={{
+                      '--pg-column': column, position: 'relative', display: 'block', textAlign: 'left', color: CREAM,
+                      background: '#151410', border: '1px solid rgba(244,211,94,.23)', borderRadius: 12,
+                      height: isMobile ? 'clamp(225px, 59vw, 320px)' : 'clamp(300px, 32vw, 480px)',
+                      padding: 0, overflow: 'hidden', cursor: 'pointer',
+                    }}>
+                    <img src={property.image} onError={tryNextProjectPhoto} alt="" loading="lazy" decoding="async"
+                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <span style={{
+                      position: 'absolute', inset: 'auto 0 0', background: 'linear-gradient(transparent, rgba(0,0,0,.94))',
+                      display: 'block', padding: isMobile ? '56px 10px 12px' : '96px 16px 18px',
+                    }}>
+                      <span style={{
+                        display: 'block', fontWeight: 700, fontSize: isMobile ? 17 : 'clamp(20px, 2.25vw, 32px)',
+                        lineHeight: 1.1, overflowWrap: 'anywhere',
+                      }}>
+                        {property.title}
+                      </span>
+                      <span style={{ display: 'block', marginTop: 4, fontSize: isMobile ? 10 : 14 }}>
+                        Lorem ipsum dolor sit amet.
+                      </span>
+                    </span>
+                  </button>
+                  ))}
+                </MorePropertiesRow>
+              );
+            })}
           </div>
         )}
       </section>
@@ -2653,6 +2640,113 @@ function ProjectsView({ isMobile, onOpen, categoryId, onBackToCategories }) {
   );
 }
 
+function PropertySearch({ onOpen }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const root = useRef(null);
+  const trigger = useRef(null);
+  const input = useRef(null);
+  const panelId = useId();
+  const terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  const results = terms.length ? PROJECT_CATALOG.filter(({ title }) => {
+    const name = title.toLowerCase();
+    return terms.every((term) => name.includes(term));
+  }) : [];
+
+  useEffect(() => {
+    if (!open) return;
+    input.current?.focus();
+    const dismiss = (event) => {
+      if (!root.current?.contains(event.target)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', dismiss);
+    return () => document.removeEventListener('pointerdown', dismiss);
+  }, [open]);
+
+  const close = () => {
+    setOpen(false);
+    requestAnimationFrame(() => trigger.current?.focus());
+  };
+
+  const select = (property) => {
+    setOpen(false);
+    setQuery('');
+    onOpen(property);
+  };
+
+  return (
+    <div ref={root} className={open ? 'pg-search pg-search-open' : 'pg-search'} onKeyDown={(event) => {
+      if (event.key === 'Escape' && open) {
+        event.stopPropagation();
+        close();
+      }
+    }}>
+      <style>{`
+        .pg-search { margin-inline-start: calc(8px - var(--pg-nav-gap)); border-radius: inherit; }
+        .pg-site-nav:has(> .pg-search-open) > button { visibility: hidden; }
+        .pg-search-form {
+          position: absolute; inset: 0; z-index: 1;
+          width: 100%; height: 100%; box-sizing: border-box; margin: 0;
+          display: grid; grid-template-columns: minmax(0, 1fr) 44px; align-items: center;
+          background: transparent; color: inherit;
+          border: 0; border-radius: inherit;
+          padding: 0 4px 0 14px;
+        }
+        .pg-search-form input::placeholder { color: currentColor; opacity: .78; }
+        .pg-search-form input:focus { outline: none; }
+        .pg-search-form:focus-within { box-shadow: inset 0 0 0 1px currentColor; }
+        @media (max-width: 767px) {
+          .pg-site-nav:has(> .pg-search-open) { min-width: min(240px, calc(100vw - 96px)); }
+          .pg-search-form { background: rgba(23, 23, 21, .7); color: #fbefca; backdrop-filter: blur(8px); }
+        }
+        .pg-search-results {
+          position: absolute; inset: calc(100% + 6px) 0 auto;
+          border-radius: 10px; background: #171715; color: #fbefca;
+          border: 1px solid #665e4a; padding: 6px 10px;
+          box-shadow: 0 12px 30px rgba(0,0,0,.28);
+        }
+      `}</style>
+      <button ref={trigger} type="button" aria-label="Search properties" aria-expanded={open}
+        aria-controls={open ? panelId : undefined} onClick={() => setOpen(!open)}
+        style={{ display: 'grid', visibility: open ? 'hidden' : undefined, placeItems: 'center', width: 44, height: 44, padding: 0, background: 'none', color: 'inherit', border: 0, borderRadius: 6, cursor: 'pointer' }}>
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true">
+          <circle cx="10.5" cy="10.5" r="6.5" />
+          <path d="m16 16 4.5 4.5" />
+        </svg>
+      </button>
+      {open && (
+        <form id={panelId} role="search" aria-label="Property search" onSubmit={(event) => {
+          event.preventDefault();
+          if (results[0]) select(results[0]);
+        }} className="pg-search-form">
+          <input ref={input} type="search" aria-label="Property name" placeholder="Search…"
+            value={query} onChange={(event) => setQuery(event.target.value)}
+            style={{ width: '100%', minWidth: 0, background: 'transparent', color: 'inherit', font: 'inherit', fontSize: 16, border: 0, padding: '10px 0' }} />
+          <button type="button" aria-label="Close search" onClick={close}
+            style={{ width: 44, height: 44, background: 'none', color: 'inherit', border: 0, fontSize: 24, cursor: 'pointer' }}>×</button>
+          {terms.length > 0 && <div className="pg-search-results">
+          <div aria-live="polite" role="status" style={{ padding: '9px 4px 3px', fontSize: 13 }}>
+            {terms.length ? (results.length ? `${results.length} found` : 'No matching properties.') : 'Type a property name.'}
+          </div>
+          {results.length > 0 && (
+            <ul style={{ listStyle: 'none', padding: 0, margin: '4px 0 0', maxHeight: 'min(48vh, 320px)', overflowY: 'auto' }}>
+              {results.map((property) => (
+                <li key={property.id}>
+                  <button type="button" onClick={() => select(property)}
+                    style={{ width: '100%', padding: '10px 6px', textAlign: 'left', background: 'none', color: 'inherit', border: 0, borderBottom: '1px solid #38352d', font: 'inherit', cursor: 'pointer' }}>
+                    {property.title}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          </div>}
+        </form>
+      )}
+    </div>
+  );
+}
+
 export default function App() {
   const [showFounder, setShowFounder] = useState(false);
   const isMobile = useIsMobile();
@@ -2663,7 +2757,6 @@ export default function App() {
   const [projectsOpen, setProjectsOpen] = useState(false);
   const [projectCategory, setProjectCategory] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
-  const [phoneScreenImage, setPhoneScreenImage] = useState(DEFAULT_PHONE_SCREEN_IMAGE);
   const landingActive = pageVisible && !projectsOpen;
 
   const stmtRef = useRef(null);
@@ -2698,7 +2791,6 @@ export default function App() {
       setProjectsOpen(Boolean(view?.projectsOpen));
       setSelectedProject(project);
       setProjectCategory(view?.categoryId ?? null);
-      if (view?.phoneImage) setPhoneScreenImage(view.phoneImage);
     };
     const onPopState = (event) => restoreView(event.state);
     restoreView(window.history.state);
@@ -2706,7 +2798,7 @@ export default function App() {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  const navigateProjectView = (showProjects, project = null, phoneImage, categoryId = showProjects && project ? projectCategory : null) => {
+  const navigateProjectView = (showProjects, project = null, categoryId = showProjects && project ? projectCategory : null) => {
     const { history } = window;
     const current = history.state?.propertyGallery;
     const projectId = project?.id ?? null;
@@ -2718,18 +2810,16 @@ export default function App() {
           projectId,
           categoryId,
           fromProjects: showProjects && Boolean(project) && projectsOpen && !selectedProject,
-          phoneImage: phoneImage || current?.phoneImage,
         },
       }, '');
     }
     setProjectsOpen(showProjects);
     setProjectCategory(categoryId);
     setSelectedProject(project);
-    if (phoneImage) setPhoneScreenImage(phoneImage);
   };
 
   const openProjectCategory = (categoryId) => {
-    navigateProjectView(true, null, undefined, categoryId);
+    navigateProjectView(true, null, categoryId);
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
   };
   const goFeaturedProjects = () => {
@@ -2747,8 +2837,8 @@ export default function App() {
     }
     goProjects();
   };
-  const openProject = (project, phoneImage = project.image) => {
-    navigateProjectView(true, project, phoneImage);
+  const openProject = (project) => {
+    navigateProjectView(true, project);
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
   };
   const goFooter = () => footerRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -2782,7 +2872,6 @@ export default function App() {
   // One eased value keeps desktop translation, rotation, and scale in lockstep in both directions.
   const desktopMotion = useTransform(phoneProgress, [0, DESKTOP_PHONE_END], [0, 1], { ease: smoothStep });
   const desktopLandscapeGrowth = useTransform(phoneProgress, [0.88, 1], [0, 1], { ease: smoothStep });
-  const desktopFullscreen = useTransform(phoneProgress, [0.88, 0.96], [0, 1], { ease: smoothStep });
   const socialScrollRef = useRef(null);
   const { scrollYProgress: socialProgress } = useScroll({ target: socialScrollRef, offset: ['start start', 'end start'] });
   const homeShowcase = useTransform(socialProgress, [.72, .94], [0, 1]);
@@ -3073,11 +3162,12 @@ export default function App() {
           />
         </motion.div>
 
-        <motion.nav
+        <motion.nav className="pg-site-nav"
           style={{
             opacity: projectsOpen ? 1 : headerLogoOpacity,
             y: projectsOpen ? 0 : headerLogoY,
-            display: 'flex', alignItems: 'center', gap: isMobile ? 12 : NAV_GAP,
+            position: 'relative', display: 'flex', alignItems: 'center', gap: 'var(--pg-nav-gap)',
+            '--pg-nav-gap': isMobile ? '12px' : NAV_GAP,
             fontFamily: sans, fontSize: isMobile ? 13 : NAV_FONT, fontWeight: 500,
             color: projectsOpen ? '#fff' : headerText, pointerEvents: 'auto',
             visibility: projectsOpen ? 'visible' : phoneNavVisibility,
@@ -3110,7 +3200,8 @@ export default function App() {
               </button>
             </>
           )}
-        </motion.nav>
+          {!isMobile && <PropertySearch onOpen={openProject} />}  
+      </motion.nav>
       </header>
 
       <AnimatePresence>
@@ -3155,7 +3246,7 @@ export default function App() {
             ))}
 
             <motion.a
-              href={WA_URL}
+              href={selectedProject ? projectEnquiryUrl(selectedProject.title) : WA_URL}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setMenuOpen(false)}
@@ -3204,7 +3295,7 @@ export default function App() {
               </p>
             </div>
 
-            <StackedCards sections={selectedProject.sections} isMobile={isMobile} />
+            <StackedCards project={selectedProject} sections={selectedProject.sections} isMobile={isMobile} />
           </div>
         </div>
       )}
@@ -3368,7 +3459,7 @@ export default function App() {
                     )}
                   </motion.div>
                   <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-evenly', gap: 8, paddingBottom: '2vh' }}>
-                    <Phone small progress={sp} center={mobileCenter} expansion={mobileZoom} settle={mobileSettle} enabled={landingActive} image={phoneScreenImage} />
+                    <Phone small progress={sp} center={mobileCenter} expansion={mobileZoom} settle={mobileSettle} enabled={landingActive} showFounder={showFounder} />
                   </div>
                 </div>
               ) : (
@@ -3382,7 +3473,7 @@ export default function App() {
                     <AboutTitle key={isMobile ? "mobile-about" : "desktop-about"} isMobile={isMobile} enabled={landingActive} showFounder={showFounder} setShowFounder={setShowFounder} />
                   </motion.div>
                   <div style={{ justifySelf: 'center' }}>
-                    <Phone progress={sp} center={desktopMotion} expansion={desktopMotion} landscapeGrowth={desktopLandscapeGrowth} fullscreen={desktopFullscreen} settle={settle} enabled={landingActive} image={phoneScreenImage} />
+                    <Phone progress={sp} center={desktopMotion} expansion={desktopMotion} landscapeGrowth={desktopLandscapeGrowth} settle={settle} enabled={landingActive} showFounder={showFounder} />
                   </div>
                 </div>
               )}
@@ -3400,7 +3491,7 @@ export default function App() {
             <ProjectShowcaseReveal
               reveal={homeShowcase}
               slideY={projectsSlideY}
-              isMobile={isMobile}
+              isMobile={isMobile} 
               enabled={landingActive}
               onExplore={goProjects}
             />
